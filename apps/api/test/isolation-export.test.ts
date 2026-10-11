@@ -101,7 +101,7 @@ describe('export', () => {
     const data = res.json<WorldExport>();
     expect(data).toMatchObject({ format: 'atlas-ink.world', version: 1, world: { id: world.id } });
     expect(data.entityTypes).toHaveLength(8);
-    expect(data.relationshipTypes).toHaveLength(10);
+    expect(data.relationshipTypes).toHaveLength(11);
     expect(data.tags).toEqual([tag]);
     expect(data.entities.map((e) => e.name).sort()).toEqual(['Eel', 'Mira']);
     expect(data.entities.find((e) => e.id === mira.id)?.tagIds).toEqual([tag.id]);

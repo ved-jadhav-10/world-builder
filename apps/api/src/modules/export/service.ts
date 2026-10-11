@@ -13,7 +13,9 @@ import {
 } from '../../db/schema';
 import { notFound } from '../../errors';
 import { exportAtlas } from '../atlas/service';
+import { getSavedCalendar } from '../calendar/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
+import { listWorldProgressions } from '../progressions/service';
 
 /** Everything in a world as one JSON document. Trashed entities are left out. */
 export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExport> {
@@ -57,10 +59,12 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       ),
   ]);
 
-  const [manuscript, bodies, atlas] = await Promise.all([
+  const [manuscript, bodies, atlas, calendar, progressionList] = await Promise.all([
     listTree(db, worldId),
     getSceneBodies(db, worldId),
     exportAtlas(db, worldId),
+    getSavedCalendar(db, worldId),
+    listWorldProgressions(db, worldId),
   ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
@@ -88,6 +92,8 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       fieldSchema: t.fieldSchema,
       isBuiltin: t.isBuiltin,
       sortOrder: t.sortOrder,
+      startLabel: t.startLabel,
+      endLabel: t.endLabel,
     })),
     relationshipTypes: relTypeRows.map((t) => ({
       id: t.id,
@@ -106,6 +112,8 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       visibility: e.visibility,
       fields: e.fields,
       body: e.body,
+      startDay: e.startDay,
+      endDay: e.endDay,
       tagIds: tagIdsByEntity.get(e.id) ?? [],
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
@@ -121,5 +129,7 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     })),
     manuscript: manuscript.map((node) => ({ ...node, body: bodies.get(node.id) ?? null })),
     atlas,
+    calendar,
+    progressions: progressionList,
   };
 }

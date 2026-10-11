@@ -1,5 +1,7 @@
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
+import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
+import type { ProgressionChanges } from './schemas/progression';
 import type { Role, Visibility } from './schemas/common';
 import type { FieldDefinition } from './schemas/entity-type';
 import type { RichTextDoc } from './schemas/entity';
@@ -25,6 +27,9 @@ export interface EntityType {
   fieldSchema: FieldDefinition[];
   isBuiltin: boolean;
   sortOrder: number;
+  /** What this type's two dates are called: Born and Died, Founded and Fallen… */
+  startLabel: string;
+  endLabel: string;
   entityCount: number;
 }
 
@@ -47,6 +52,9 @@ export interface EntitySummary {
 export interface Entity extends EntitySummary {
   fields: Record<string, unknown>;
   body: RichTextDoc | null;
+  /** In-world day numbers (see calendar.ts); null when not dated. */
+  startDay: number | null;
+  endDay: number | null;
   tags: Tag[];
   createdAt: string;
 }
@@ -70,6 +78,9 @@ export interface EntityRelationship {
   typeId: string;
   label: string;
   notes: string;
+  /** When the link holds, as in-world day numbers; null = no limit on that side. */
+  validFromDay: number | null;
+  validToDay: number | null;
   other: { id: string; name: string; typeId: string };
 }
 
@@ -108,6 +119,9 @@ export interface WorldExport {
   manuscript: (ManuscriptNode & { body: RichTextDoc | null })[];
   /** Map details and everything drawn on them. The map images themselves are not included. */
   atlas: { maps: AtlasMap[]; features: MapFeature[] };
+  /** The world's calendar, or null if it still uses the default one. */
+  calendar: { name: string; definition: CalendarDef } | null;
+  progressions: Progression[];
 }
 
 export interface ApiErrorBody {
@@ -129,7 +143,10 @@ export interface ManuscriptNode {
   wordCount: number;
   povId: string | null;
   locationId: string | null;
+  /** Free text, such as "the morning after the storm". */
   inWorldDate: string;
+  /** The scene's date as a day number in the world's calendar. */
+  inWorldDay: number | null;
   updatedAt: string;
 }
 
@@ -225,4 +242,51 @@ export interface AtlasSearchResult {
   featureId: string | null;
   kind: 'map' | FeatureKind;
   label: string;
+}
+
+// ---- Calendar, progressions and the timeline ------------------------------------------------
+
+export interface Calendar {
+  name: string;
+  definition: CalendarDef;
+  /** True until the world saves a calendar of its own. */
+  isDefault: boolean;
+  updatedAt: string | null;
+}
+
+/** A change to an entry that takes effect at a scene (reading order) or an in-world day. */
+export interface Progression {
+  id: string;
+  entityId: string;
+  title: string;
+  note: string;
+  /** Exactly one of these is set, unless the scene it pointed at has been deleted. */
+  sceneId: string | null;
+  day: number | null;
+  changes: ProgressionChanges;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** An entry with at least one date. With only one date it is a single point in time. */
+export interface TimelineEntity {
+  id: string;
+  typeId: string;
+  name: string;
+  startDay: number | null;
+  endDay: number | null;
+}
+
+export interface TimelineScene {
+  id: string;
+  title: string;
+  day: number;
+  chapterTitle: string | null;
+  bookTitle: string | null;
+}
+
+/** Everything with a date, for the timeline. */
+export interface TimelineData {
+  entities: TimelineEntity[];
+  scenes: TimelineScene[];
 }

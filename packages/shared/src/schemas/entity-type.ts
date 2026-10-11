@@ -64,11 +64,16 @@ export const fieldSchemaSchema = z
     });
   });
 
+/** What the two dates are called for this type: Born and Died, Founded and Fallen… */
+const dateLabelSchema = z.string().trim().min(1, 'A label is required').max(30);
+
 export const entityTypeCreateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(60),
   icon: iconSchema.default('file-text'),
   color: colorSchema.default('#64748b'),
   fieldSchema: fieldSchemaSchema.default([]),
+  startLabel: dateLabelSchema.default('Starts'),
+  endLabel: dateLabelSchema.default('Ends'),
 });
 export type EntityTypeCreateInput = z.input<typeof entityTypeCreateSchema>;
 
@@ -77,6 +82,8 @@ export const entityTypeUpdateSchema = z.object({
   icon: iconSchema.optional(),
   color: colorSchema.optional(),
   fieldSchema: fieldSchemaSchema.optional(),
+  startLabel: dateLabelSchema.optional(),
+  endLabel: dateLabelSchema.optional(),
   sortOrder: z.number().int().min(0).max(10_000).optional(),
 });
 export type EntityTypeUpdateInput = z.input<typeof entityTypeUpdateSchema>;

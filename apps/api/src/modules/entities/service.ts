@@ -49,6 +49,8 @@ function toEntity(row: EntityRow, entityTagList: Tag[]): Entity {
     ...toSummary(row),
     fields: row.fields,
     body: row.body,
+    startDay: row.startDay,
+    endDay: row.endDay,
     tags: entityTagList,
     createdAt: row.createdAt.toISOString(),
   };
@@ -103,6 +105,8 @@ export async function createEntity(
       fields,
       body: input.body,
       visibility: input.visibility,
+      startDay: input.startDay,
+      endDay: input.endDay,
       searchText: deriveSearchText({ ...input, fields }),
       createdBy: userId,
     })
@@ -134,9 +138,14 @@ export async function updateEntity(
     visibility: input.visibility ?? existing.visibility,
     fields,
   };
+  const startDay = input.startDay === undefined ? existing.startDay : input.startDay;
+  const endDay = input.endDay === undefined ? existing.endDay : input.endDay;
+  if (startDay !== null && endDay !== null && endDay < startDay) {
+    throw badRequest('The end cannot come before the start');
+  }
   const [row] = await db
     .update(entities)
-    .set({ ...merged, searchText: deriveSearchText(merged) })
+    .set({ ...merged, startDay, endDay, searchText: deriveSearchText(merged) })
     .where(eq(entities.id, existing.id))
     .returning();
   // Names and aliases drive mention detection, so a rename means rescanning the manuscript.

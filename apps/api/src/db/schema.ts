@@ -23,8 +23,10 @@ import {
   NODE_KINDS,
   ROLES,
   VISIBILITIES,
+  type CalendarDef,
   type FieldDefinition,
   type MapPoint,
+  type ProgressionChanges,
   type RichTextDoc,
 } from '@atlas/shared';
 import { user } from './auth-schema';
@@ -89,6 +91,9 @@ export const entityTypes = pgTable(
     fieldSchema: jsonb('field_schema').$type<FieldDefinition[]>().notNull().default([]),
     isBuiltin: boolean('is_builtin').notNull().default(false),
     sortOrder: integer('sort_order').notNull().default(0),
+    /** What the entry's two dates are called for this type: Born and Died, Founded and Fallen… */
+    startLabel: text('start_label').notNull().default('Starts'),
+    endLabel: text('end_label').notNull().default('Ends'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -120,6 +125,9 @@ export const entities = pgTable(
       sql`to_tsvector('simple'::regconfig, search_text)`,
     ),
     visibility: visibilityEnum('visibility').notNull().default('gm'),
+    /** In-world day numbers (see calendars): born/died, founded/fallen, begins/ends. */
+    startDay: bigint('start_day', { mode: 'number' }),
+    endDay: bigint('end_day', { mode: 'number' }),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -129,6 +137,7 @@ export const entities = pgTable(
     index('entities_world_type_idx').on(t.worldId, t.typeId),
     index('entities_world_deleted_idx').on(t.worldId, t.deletedAt),
     index('entities_search_idx').using('gin', t.searchVector),
+    index('entities_world_start_idx').on(t.worldId, t.startDay),
   ],
 );
 
@@ -230,6 +239,8 @@ export const manuscriptNodes = pgTable(
     povId: uuid('pov_id').references(() => entities.id, { onDelete: 'set null' }),
     locationId: uuid('location_id').references(() => entities.id, { onDelete: 'set null' }),
     inWorldDate: text('in_world_date').notNull().default(''),
+    /** The same date as a day number in the world's calendar; the text above is a free note. */
+    inWorldDay: bigint('in_world_day', { mode: 'number' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -323,5 +334,46 @@ export const mapFeatures = pgTable(
     index('map_features_map_idx').on(t.mapId),
     index('map_features_world_idx').on(t.worldId),
     index('map_features_entity_idx').on(t.entityId),
+  ],
+);
+
+/** A world's calendar. One per world; worlds without a row use the default calendar. */
+export const calendars = pgTable('calendars', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  worldId: uuid('world_id')
+    .notNull()
+    .unique()
+    .references(() => worlds.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  definition: jsonb('definition').$type<CalendarDef>().notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * A change to an entry that takes effect at a scene or on a day. If the scene is deleted the
+ * progression is kept, but unplaced, rather than silently losing what the writer recorded.
+ */
+export const progressions = pgTable(
+  'progressions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    note: text('note').notNull().default(''),
+    sceneId: uuid('scene_id').references(() => manuscriptNodes.id, { onDelete: 'set null' }),
+    day: bigint('day', { mode: 'number' }),
+    changes: jsonb('changes').$type<ProgressionChanges>().notNull().default({}),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('progressions_entity_idx').on(t.entityId),
+    index('progressions_world_idx').on(t.worldId),
   ],
 );

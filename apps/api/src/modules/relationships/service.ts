@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import type {
   EntityRelationship,
   relationshipCreateSchema,
+  relationshipUpdateSchema,
   RelationshipType,
   relationshipTypeCreateSchema,
 } from '@atlas/shared';
@@ -90,6 +91,8 @@ export async function listEntityRelationships(
         id: relationships.id,
         typeId: relationships.typeId,
         notes: relationships.notes,
+        validFromDay: relationships.validFromDay,
+        validToDay: relationships.validToDay,
         label: direction === 'outgoing' ? relationshipTypes.label : relationshipTypes.inverseLabel,
         otherId: entities.id,
         otherName: entities.name,
@@ -117,6 +120,8 @@ export async function listEntityRelationships(
       typeId: r.typeId,
       label: r.label,
       notes: r.notes,
+      validFromDay: r.validFromDay,
+      validToDay: r.validToDay,
       other: { id: r.otherId, name: r.otherName, typeId: r.otherTypeId },
     });
 
@@ -172,7 +177,46 @@ export async function createRelationship(
     typeId: type.id,
     label: type.label,
     notes: row!.notes,
+    validFromDay: row!.validFromDay,
+    validToDay: row!.validToDay,
     other: target,
+  };
+}
+
+/** Sets a link's notes and the period it holds for. Returns the new values. */
+export async function updateRelationship(
+  db: DbOrTx,
+  worldId: string,
+  relationshipId: string,
+  input: z.output<typeof relationshipUpdateSchema>,
+): Promise<{ id: string; notes: string; validFromDay: number | null; validToDay: number | null }> {
+  const [existing] = await db
+    .select()
+    .from(relationships)
+    .where(
+      and(
+        eq(relationships.id, relationshipId),
+        eq(relationships.worldId, worldId),
+        isNull(relationships.deletedAt),
+      ),
+    );
+  if (!existing) throw notFound('Relationship');
+  // The schema checks the order of dates sent together; check against the stored one too.
+  const from = input.validFromDay === undefined ? existing.validFromDay : input.validFromDay;
+  const to = input.validToDay === undefined ? existing.validToDay : input.validToDay;
+  if (from !== null && to !== null && to < from) {
+    throw badRequest('The end cannot come before the start');
+  }
+  const [row] = await db
+    .update(relationships)
+    .set(input)
+    .where(eq(relationships.id, existing.id))
+    .returning();
+  return {
+    id: row!.id,
+    notes: row!.notes,
+    validFromDay: row!.validFromDay,
+    validToDay: row!.validToDay,
   };
 }
 

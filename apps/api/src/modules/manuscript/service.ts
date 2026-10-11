@@ -35,6 +35,7 @@ function toNode(row: TreeRow, wordCount = row.wordCount): ManuscriptNode {
     povId: row.povId,
     locationId: row.locationId,
     inWorldDate: row.inWorldDate,
+    inWorldDay: row.inWorldDay,
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -139,7 +140,9 @@ export async function updateNode(
   input: z.output<typeof nodeUpdateSchema>,
 ): Promise<ManuscriptNode> {
   const existing = await getNodeRow(db, worldId, nodeId);
-  const sceneOnly = [input.povId, input.locationId, input.inWorldDate].some((v) => v !== undefined);
+  const sceneOnly = [input.povId, input.locationId, input.inWorldDate, input.inWorldDay].some(
+    (v) => v !== undefined,
+  );
   if (sceneOnly && existing.kind !== 'scene') {
     throw badRequest('Only scenes have a POV, location and in-world date');
   }

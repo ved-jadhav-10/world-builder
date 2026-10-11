@@ -18,6 +18,8 @@ function toEntityType(row: EntityTypeRow, entityCount = 0): EntityType {
     fieldSchema: row.fieldSchema,
     isBuiltin: row.isBuiltin,
     sortOrder: row.sortOrder,
+    startLabel: row.startLabel,
+    endLabel: row.endLabel,
     entityCount,
   };
 }

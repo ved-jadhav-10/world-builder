@@ -7,13 +7,16 @@ import {
 } from 'fastify-type-provider-zod';
 import { errorHandler } from './errors';
 import { atlasRoutes } from './modules/atlas/routes';
+import { calendarRoutes } from './modules/calendar/routes';
 import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
 import { manuscriptRoutes } from './modules/manuscript/routes';
+import { progressionRoutes } from './modules/progressions/routes';
 import { relationshipRoutes } from './modules/relationships/routes';
 import { searchRoutes } from './modules/search/routes';
 import { tagRoutes } from './modules/tags/routes';
+import { timelineRoutes } from './modules/timeline/routes';
 import { worldCollectionRoutes, worldItemRoutes } from './modules/worlds/routes';
 import { requireSession, requireWorldMember } from './plugins/auth-guard';
 import { authRoutes } from './plugins/auth-routes';
@@ -31,6 +34,9 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(exportRoutes);
   await app.register(manuscriptRoutes);
   await app.register(atlasRoutes);
+  await app.register(calendarRoutes);
+  await app.register(progressionRoutes);
+  await app.register(timelineRoutes);
 };
 
 export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {

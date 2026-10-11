@@ -6,12 +6,17 @@ interface BuiltinEntityType {
   icon: string;
   color: string;
   fieldSchema: FieldDefinition[];
+  /** What the entry's two dates are called for this type. */
+  startLabel: string;
+  endLabel: string;
 }
 
 /** Copied into every new world, where users can edit them like their own types. */
 export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   {
     key: 'character',
+    startLabel: 'Born',
+    endLabel: 'Died',
     name: 'Character',
     icon: 'user',
     color: '#e11d48',
@@ -32,6 +37,8 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'location',
+    startLabel: 'Founded',
+    endLabel: 'Abandoned',
     name: 'Location',
     icon: 'map-pin',
     color: '#059669',
@@ -59,6 +66,8 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'faction',
+    startLabel: 'Founded',
+    endLabel: 'Dissolved',
     name: 'Faction',
     icon: 'shield',
     color: '#7c3aed',
@@ -76,6 +85,8 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'item',
+    startLabel: 'Created',
+    endLabel: 'Destroyed',
     name: 'Item',
     icon: 'gem',
     color: '#d97706',
@@ -97,6 +108,8 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'species',
+    startLabel: 'Appeared',
+    endLabel: 'Died out',
     name: 'Species',
     icon: 'dna',
     color: '#0891b2',
@@ -108,6 +121,8 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'culture',
+    startLabel: 'Emerged',
+    endLabel: 'Faded',
     name: 'Culture',
     icon: 'landmark',
     color: '#ca8a04',
@@ -119,17 +134,17 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
   },
   {
     key: 'event',
+    startLabel: 'Begins',
+    endLabel: 'Ends',
     name: 'Event',
     icon: 'calendar',
     color: '#2563eb',
-    fieldSchema: [
-      { key: 'start_date', label: 'Start date', type: 'date' },
-      { key: 'end_date', label: 'End date', type: 'date' },
-      { key: 'outcome', label: 'Outcome', type: 'long_text' },
-    ],
+    fieldSchema: [{ key: 'outcome', label: 'Outcome', type: 'long_text' }],
   },
   {
     key: 'lore_article',
+    startLabel: 'Starts',
+    endLabel: 'Ends',
     name: 'Lore Article',
     icon: 'book-open',
     color: '#475569',
@@ -155,4 +170,5 @@ export const BUILTIN_RELATIONSHIP_TYPES = [
   { key: 'spouse_of', label: 'spouse of', inverseLabel: 'spouse of' },
   { key: 'of_species', label: 'of species', inverseLabel: 'species of' },
   { key: 'of_culture', label: 'of culture', inverseLabel: 'culture of' },
+  { key: 'took_part_in', label: 'took part in', inverseLabel: 'had participant' },
 ] as const;

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dayNumberSchema } from './calendar';
 import { idSchema, visibilitySchema } from './common';
 
 /** A TipTap/ProseMirror document. Node contents are re-validated by the editor schema on render. */
@@ -11,26 +12,39 @@ export type RichTextDoc = z.infer<typeof richTextDocSchema>;
 const nameSchema = z.string().trim().min(1, 'Name is required').max(200);
 const aliasesSchema = z.array(z.string().trim().min(1).max(200)).max(50);
 
-export const entityCreateSchema = z.object({
-  typeId: idSchema,
-  name: nameSchema,
-  aliases: aliasesSchema.default([]),
-  summary: z.string().trim().max(2000).default(''),
-  /** Validated against the entity type's field schema on the server. */
-  fields: z.record(z.string(), z.unknown()).default({}),
-  body: richTextDocSchema.nullable().default(null),
-  visibility: visibilitySchema.default('gm'),
-});
+/** Born/died, founded/fallen, begins/ends: in-world day numbers, see calendar.ts. */
+const entityDateRange = (value: { startDay?: number | null; endDay?: number | null }) =>
+  value.startDay == null || value.endDay == null || value.endDay >= value.startDay;
+const dateRangeIssue = { path: ['endDay'], message: 'The end cannot come before the start' };
+
+export const entityCreateSchema = z
+  .object({
+    typeId: idSchema,
+    name: nameSchema,
+    aliases: aliasesSchema.default([]),
+    summary: z.string().trim().max(2000).default(''),
+    /** Validated against the entity type's field schema on the server. */
+    fields: z.record(z.string(), z.unknown()).default({}),
+    body: richTextDocSchema.nullable().default(null),
+    visibility: visibilitySchema.default('gm'),
+    startDay: dayNumberSchema.nullable().default(null),
+    endDay: dayNumberSchema.nullable().default(null),
+  })
+  .refine(entityDateRange, dateRangeIssue);
 export type EntityCreateInput = z.input<typeof entityCreateSchema>;
 
-export const entityUpdateSchema = z.object({
-  name: nameSchema.optional(),
-  aliases: aliasesSchema.optional(),
-  summary: z.string().trim().max(2000).optional(),
-  fields: z.record(z.string(), z.unknown()).optional(),
-  body: richTextDocSchema.nullable().optional(),
-  visibility: visibilitySchema.optional(),
-});
+export const entityUpdateSchema = z
+  .object({
+    name: nameSchema.optional(),
+    aliases: aliasesSchema.optional(),
+    summary: z.string().trim().max(2000).optional(),
+    fields: z.record(z.string(), z.unknown()).optional(),
+    body: richTextDocSchema.nullable().optional(),
+    visibility: visibilitySchema.optional(),
+    startDay: dayNumberSchema.nullable().optional(),
+    endDay: dayNumberSchema.nullable().optional(),
+  })
+  .refine(entityDateRange, dateRangeIssue);
 export type EntityUpdateInput = z.input<typeof entityUpdateSchema>;
 
 export const ENTITY_SORTS = ['name', 'updated'] as const;

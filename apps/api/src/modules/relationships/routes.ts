@@ -2,6 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   relationshipCreateSchema,
   relationshipTypeCreateSchema,
+  relationshipUpdateSchema,
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
@@ -13,6 +14,7 @@ import {
   deleteRelationshipType,
   listEntityRelationships,
   listRelationshipTypes,
+  updateRelationship,
 } from './service';
 
 export const relationshipRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -51,6 +53,16 @@ export const relationshipRoutes: FastifyPluginAsyncZod = async (app) => {
       const relationship = await createRelationship(db, currentWorldId(request), request.body);
       return reply.status(201).send(relationship);
     },
+  );
+
+  app.patch(
+    '/relationships/:id',
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: worldItemParamsSchema, body: relationshipUpdateSchema },
+    },
+    async (request) =>
+      updateRelationship(db, currentWorldId(request), request.params.id, request.body),
   );
 
   app.delete(

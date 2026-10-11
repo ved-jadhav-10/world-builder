@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dayNumberSchema } from './calendar';
 import { idSchema } from './common';
 import { richTextDocSchema } from './entity';
 
@@ -38,6 +39,8 @@ export const nodeUpdateSchema = z.object({
   povId: idSchema.nullable().optional(),
   locationId: idSchema.nullable().optional(),
   inWorldDate: z.string().trim().max(100).optional(),
+  /** The scene's date as a day number in the world's calendar. */
+  inWorldDay: dayNumberSchema.nullable().optional(),
 });
 export type NodeUpdateInput = z.input<typeof nodeUpdateSchema>;
 
