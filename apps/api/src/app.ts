@@ -11,8 +11,10 @@ import { calendarRoutes } from './modules/calendar/routes';
 import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
+import { galleryRoutes } from './modules/gallery/routes';
 import { manuscriptRoutes } from './modules/manuscript/routes';
 import { progressionRoutes } from './modules/progressions/routes';
+import { questRoutes } from './modules/quests/routes';
 import { relationshipRoutes } from './modules/relationships/routes';
 import { searchRoutes } from './modules/search/routes';
 import { tagRoutes } from './modules/tags/routes';
@@ -37,6 +39,8 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(calendarRoutes);
   await app.register(progressionRoutes);
   await app.register(timelineRoutes);
+  await app.register(galleryRoutes);
+  await app.register(questRoutes);
 };
 
 export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {

@@ -1,8 +1,9 @@
 import { and, desc, eq, isNull, sql, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { SearchResult, searchQuerySchema } from '@atlas/shared';
+import type { Audience, SearchResult, searchQuerySchema } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import { entities } from '../../db/schema';
+import { visibleTo } from '../../lib/visibility';
 
 /**
  * Turns free text into a prefix tsquery: "gild ee" -> "gild:* & ee:*".
@@ -17,6 +18,7 @@ export async function searchEntities(
   db: DbOrTx,
   worldId: string,
   query: z.output<typeof searchQuerySchema>,
+  audience: Audience = 'gm',
 ): Promise<SearchResult[]> {
   const prefixQuery = toPrefixQuery(query.q);
   if (!prefixQuery) return [];
@@ -28,6 +30,8 @@ export async function searchEntities(
     sql`${entities.searchVector} @@ ${tsquery}`,
   ];
   if (query.typeId) conditions.push(eq(entities.typeId, query.typeId));
+  const visible = visibleTo(entities.visibility, audience);
+  if (visible) conditions.push(visible);
 
   return db
     .select({

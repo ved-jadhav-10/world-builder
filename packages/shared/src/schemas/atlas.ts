@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { colorSchema, iconSchema, idSchema } from './common';
+import { colorSchema, iconSchema, idSchema, visibilitySchema } from './common';
 
 export const MAP_STATUSES = ['processing', 'ready', 'failed'] as const;
 export type MapStatus = (typeof MAP_STATUSES)[number];
@@ -64,6 +64,8 @@ export const mapCreateSchema = z.object({
   parentId: optionalId,
   /** The entry this map shows, such as a Location. */
   entityId: optionalId,
+  /** Who can open the map. New maps are the GM's until revealed. */
+  visibility: visibilitySchema.default('gm'),
 });
 export type MapCreateInput = z.input<typeof mapCreateSchema>;
 
@@ -72,6 +74,7 @@ export const mapUpdateSchema = z.object({
   description: mapDescriptionSchema.optional(),
   parentId: idSchema.nullable().optional(),
   entityId: idSchema.nullable().optional(),
+  visibility: visibilitySchema.optional(),
 });
 export type MapUpdateInput = z.input<typeof mapUpdateSchema>;
 
@@ -119,6 +122,8 @@ export const featureCreateSchema = z
     size: z.enum(FEATURE_SIZES).default('md'),
     lineStyle: z.enum(LINE_STYLES).default('solid'),
     minZoom: z.number().int().min(0).max(MAX_FEATURE_ZOOM).default(0),
+    /** Who can see it on the map. New pins are the GM's until revealed. */
+    visibility: visibilitySchema.default('gm'),
   })
   .superRefine((feature, ctx) => {
     const problem = pointCountProblem(feature.kind, feature.points);
@@ -141,6 +146,7 @@ export const featureUpdateSchema = z.object({
   size: z.enum(FEATURE_SIZES).optional(),
   lineStyle: z.enum(LINE_STYLES).optional(),
   minZoom: z.number().int().min(0).max(MAX_FEATURE_ZOOM).optional(),
+  visibility: visibilitySchema.optional(),
 });
 export type FeatureUpdateInput = z.input<typeof featureUpdateSchema>;
 

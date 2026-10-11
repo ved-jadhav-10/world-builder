@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { expect } from 'vitest';
-import type { EntityType, World } from '@atlas/shared';
+import type { EntityType, Role, World } from '@atlas/shared';
 import type { buildApp } from '../src/app';
+import { db } from '../src/db/client';
+import { user, worldMembers } from '../src/db/schema';
 import { env } from '../src/env';
 
 export type TestApp = Awaited<ReturnType<typeof buildApp>>;
@@ -9,10 +12,15 @@ type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 export const PASSWORD = 'correct-horse-battery';
 
-/** Calls /api/* as a signed-in user. */
-export function apiClient(app: TestApp, cookie: string) {
+/** Calls /api/* as a signed-in user. `headers` are sent on every call, such as `x-view-as`. */
+export function apiClient(app: TestApp, cookie: string, headers: Record<string, string> = {}) {
   const call = (method: Method, url: string, payload?: object) =>
-    app.inject({ method, url: `/api${url}`, headers: { cookie }, ...(payload ? { payload } : {}) });
+    app.inject({
+      method,
+      url: `/api${url}`,
+      headers: { cookie, ...headers },
+      ...(payload ? { payload } : {}),
+    });
   return {
     get: (url: string) => call('GET', url),
     post: (url: string, payload?: object) => call('POST', url, payload),
@@ -81,4 +89,12 @@ export async function signUpWithWorld(app: TestApp, worldName = 'Aerth') {
     return type.id;
   };
   return { ...user, world, types, typeId, w: `/worlds/${world.id}` };
+}
+
+/** Signs up another user and adds them to a world with the given role. */
+export async function joinWorld(app: TestApp, worldId: string, role: Role) {
+  const member = await signUp(app, `${role} member`);
+  const [row] = await db.select({ id: user.id }).from(user).where(eq(user.email, member.email));
+  await db.insert(worldMembers).values({ worldId, userId: row!.id, role });
+  return member;
 }

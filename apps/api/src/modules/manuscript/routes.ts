@@ -7,7 +7,13 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import {
+  currentAudience,
+  currentWorldId,
+  requireAudience,
+  requireRole,
+} from '../../plugins/auth-guard';
+import { getEntityRow } from '../entities/service';
 import {
   createNode,
   deleteNode,
@@ -21,7 +27,10 @@ import {
 } from './service';
 
 export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
-  app.get('/manuscript', async (request) => listTree(db, currentWorldId(request)));
+  // The manuscript is the author's own workspace, so only the GM's view reads it.
+  const gmOnly = { onRequest: requireAudience('gm') };
+
+  app.get('/manuscript', gmOnly, async (request) => listTree(db, currentWorldId(request)));
 
   app.post(
     '/manuscript/nodes',
@@ -61,7 +70,7 @@ export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get(
     '/manuscript/scenes/:id',
-    { schema: { params: worldItemParamsSchema } },
+    { ...gmOnly, schema: { params: worldItemParamsSchema } },
     async (request) => getScene(db, currentWorldId(request), request.params.id),
   );
 
@@ -75,11 +84,19 @@ export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
       saveSceneBody(db, currentWorldId(request), request.params.id, request.body.body),
   );
 
-  app.get('/mention-index', async (request) => mentionIndex(db, currentWorldId(request)));
+  app.get('/mention-index', gmOnly, async (request) => mentionIndex(db, currentWorldId(request)));
 
   app.get(
     '/entities/:id/appearances',
     { schema: { params: worldItemParamsSchema } },
-    async (request) => listAppearances(db, currentWorldId(request), request.params.id),
+    async (request) => {
+      const audience = currentAudience(request);
+      if (audience !== 'gm') {
+        // Scenes are the author's; other audiences see no appearances (but not hidden entries).
+        await getEntityRow(db, currentWorldId(request), request.params.id, audience);
+        return [];
+      }
+      return listAppearances(db, currentWorldId(request), request.params.id);
+    },
   );
 };

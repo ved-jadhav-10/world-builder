@@ -21,8 +21,8 @@ export const thumbnailPath = (worldId: string, mapId: string) =>
 export const tilePath = (worldId: string, mapId: string, z: number, x: number, y: number) =>
   join(tilesDir(worldId, mapId), String(z), String(y), `${x}.webp`);
 
-/** Uploads land here first, until the form has been validated. */
-export const uploadsDir = () => join(env.storageDir, 'tmp');
+// Uploads of every kind land in one temporary folder first.
+export { uploadsDir } from '../../lib/storage';
 
 export const removeMapFiles = (worldId: string, mapId: string) =>
-  rm(mapDir(worldId, mapId), { recursive: true, force: true });
+  rm(mapDir(worldId, mapId), { recursive: true, force: true, maxRetries: 4, retryDelay: 100 });

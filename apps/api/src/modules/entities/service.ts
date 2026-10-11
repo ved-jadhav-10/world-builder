@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import {
   deriveSearchText,
   parseFieldValues,
+  type Audience,
   type Entity,
   type entityCreateSchema,
   type entityListQuerySchema,
@@ -13,9 +14,11 @@ import {
   type TrashedEntity,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities, entityTags, tags } from '../../db/schema';
+import { entities, entityTags, images, tags } from '../../db/schema';
 import { badRequest, notFound } from '../../errors';
+import { visibleTo } from '../../lib/visibility';
 import { getEntityTypeRow } from '../entity-types/service';
+import { removeImageFiles } from '../gallery/files';
 import { rebuildSceneMentions } from '../manuscript/mentions';
 
 type EntityRow = typeof entities.$inferSelect;
@@ -65,24 +68,38 @@ async function tagsFor(db: DbOrTx, entityId: string): Promise<Tag[]> {
     .orderBy(sql`lower(${tags.name})`);
 }
 
-/** Fetches a live (not trashed) entity row and proves it belongs to the world. */
+/**
+ * Fetches a live (not trashed) entity row and proves it belongs to the world. Given the audience
+ * of a read, an entry that audience can't see is "not found", exactly as if it didn't exist.
+ */
 export async function getEntityRow(
   db: DbOrTx,
   worldId: string,
   entityId: string,
+  audience: Audience = 'gm',
 ): Promise<EntityRow> {
   const [row] = await db
     .select()
     .from(entities)
     .where(
-      and(eq(entities.id, entityId), eq(entities.worldId, worldId), isNull(entities.deletedAt)),
+      and(
+        eq(entities.id, entityId),
+        eq(entities.worldId, worldId),
+        isNull(entities.deletedAt),
+        visibleTo(entities.visibility, audience),
+      ),
     );
   if (!row) throw notFound('Entity');
   return row;
 }
 
-export async function getEntity(db: DbOrTx, worldId: string, entityId: string): Promise<Entity> {
-  const row = await getEntityRow(db, worldId, entityId);
+export async function getEntity(
+  db: DbOrTx,
+  worldId: string,
+  entityId: string,
+  audience: Audience = 'gm',
+): Promise<Entity> {
+  const row = await getEntityRow(db, worldId, entityId, audience);
   return toEntity(row, await tagsFor(db, row.id));
 }
 
@@ -191,6 +208,11 @@ export async function restoreEntity(
 
 /** Permanently deletes a trashed entity; its relationships and tag links cascade. */
 export async function purgeEntity(db: DbOrTx, worldId: string, entityId: string): Promise<void> {
+  // The picture rows go with the entry; their files need removing too.
+  const pictures = await db
+    .select({ id: images.id })
+    .from(images)
+    .where(and(eq(images.entityId, entityId), eq(images.worldId, worldId)));
   const [row] = await db
     .delete(entities)
     .where(
@@ -198,6 +220,7 @@ export async function purgeEntity(db: DbOrTx, worldId: string, entityId: string)
     )
     .returning({ id: entities.id });
   if (!row) throw notFound('Trashed entity');
+  await Promise.all(pictures.map((picture) => removeImageFiles(worldId, picture.id)));
 }
 
 export async function listTrash(db: DbOrTx, worldId: string): Promise<TrashedEntity[]> {
@@ -234,6 +257,7 @@ export async function listEntities(
   db: DbOrTx,
   worldId: string,
   query: z.output<typeof entityListQuerySchema>,
+  audience: Audience = 'gm',
 ): Promise<Page<EntitySummary>> {
   const byName = query.sort === 'name';
   // Timestamps go through text so the cursor keeps Postgres' microsecond precision.
@@ -242,6 +266,8 @@ export async function listEntities(
     : sql<string>`${entities.updatedAt}::text`;
 
   const conditions: SQL[] = [eq(entities.worldId, worldId), isNull(entities.deletedAt)];
+  const visible = visibleTo(entities.visibility, audience);
+  if (visible) conditions.push(visible);
   if (query.typeId) conditions.push(eq(entities.typeId, query.typeId));
   if (query.tagId) {
     conditions.push(

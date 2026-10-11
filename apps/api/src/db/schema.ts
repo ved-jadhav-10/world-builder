@@ -290,6 +290,8 @@ export const maps = pgTable(
     entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
+    /** Who can open the map; new maps are the GM's until revealed. */
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
     status: mapStatusEnum('status').notNull().default('processing'),
     error: text('error').notNull().default(''),
     width: integer('width').notNull(),
@@ -327,6 +329,7 @@ export const mapFeatures = pgTable(
     size: featureSizeEnum('size').notNull().default('md'),
     lineStyle: lineStyleEnum('line_style').notNull().default('solid'),
     minZoom: integer('min_zoom').notNull().default(0),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -369,11 +372,47 @@ export const progressions = pgTable(
     sceneId: uuid('scene_id').references(() => manuscriptNodes.id, { onDelete: 'set null' }),
     day: bigint('day', { mode: 'number' }),
     changes: jsonb('changes').$type<ProgressionChanges>().notNull().default({}),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     index('progressions_entity_idx').on(t.entityId),
     index('progressions_world_idx').on(t.worldId),
+  ],
+);
+
+/**
+ * Gallery images: a portrait or appearance of an entry (optionally tagged to a scene or an
+ * in-world day), or a picture in the world's own gallery when `entityId` is null. The files are
+ * kept in storage under the image's ID; uploads are re-saved as WebP at a bounded size.
+ */
+export const images = pgTable(
+  'images',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'cascade' }),
+    caption: text('caption').notNull().default(''),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    sceneId: uuid('scene_id').references(() => manuscriptNodes.id, { onDelete: 'set null' }),
+    day: bigint('day', { mode: 'number' }),
+    isPortrait: boolean('is_portrait').notNull().default(false),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    bytes: integer('bytes').notNull(),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('images_world_idx').on(t.worldId),
+    index('images_entity_idx').on(t.entityId),
+    // An entry has at most one portrait, whatever the code does.
+    uniqueIndex('images_one_portrait_uq')
+      .on(t.entityId)
+      .where(sql`${t.isPortrait}`),
   ],
 );

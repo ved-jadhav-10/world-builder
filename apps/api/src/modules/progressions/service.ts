@@ -1,7 +1,8 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   buildFieldValuesSchema,
+  type Audience,
   type Progression,
   type ProgressionChanges,
   type progressionCreateSchema,
@@ -10,6 +11,7 @@ import {
 import type { DbOrTx } from '../../db/client';
 import { manuscriptNodes, progressions } from '../../db/schema';
 import { badRequest, notFound } from '../../errors';
+import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
 import { getEntityTypeRow } from '../entity-types/service';
 
@@ -24,6 +26,7 @@ function toProgression(row: ProgressionRow): Progression {
     sceneId: row.sceneId,
     day: row.day,
     changes: row.changes,
+    visibility: row.visibility,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -75,16 +78,28 @@ async function cleanChanges(
   };
 }
 
+/**
+ * An entry's progressions. Other audiences only get the ones shared with them, and only those set
+ * on an in-world day: a scene anchor would point into the author's manuscript.
+ */
 export async function listProgressions(
   db: DbOrTx,
   worldId: string,
   entityId: string,
+  audience: Audience = 'gm',
 ): Promise<Progression[]> {
-  await getEntityRow(db, worldId, entityId);
+  await getEntityRow(db, worldId, entityId, audience);
   const rows = await db
     .select()
     .from(progressions)
-    .where(and(eq(progressions.worldId, worldId), eq(progressions.entityId, entityId)))
+    .where(
+      and(
+        eq(progressions.worldId, worldId),
+        eq(progressions.entityId, entityId),
+        visibleTo(progressions.visibility, audience),
+        audience === 'gm' ? undefined : isNotNull(progressions.day),
+      ),
+    )
     .orderBy(asc(progressions.createdAt));
   return rows.map(toProgression);
 }
@@ -116,6 +131,7 @@ export async function createProgression(
       note: input.note,
       sceneId: input.sceneId,
       day: input.day,
+      visibility: input.visibility,
       changes: await cleanChanges(db, worldId, entity.typeId, input.changes),
     })
     .returning();

@@ -122,6 +122,8 @@ export interface WorldExport {
   /** The world's calendar, or null if it still uses the default one. */
   calendar: { name: string; definition: CalendarDef } | null;
   progressions: Progression[];
+  /** Details of every gallery image. The image files themselves are not included. */
+  gallery: GalleryImage[];
 }
 
 export interface ApiErrorBody {
@@ -199,6 +201,7 @@ export interface AtlasMap {
   /** The entry this map shows, such as the Location it covers. */
   entityId: string | null;
   entity: MapEntityRef | null;
+  visibility: Visibility;
   featureCount: number;
   createdAt: string;
   updatedAt: string;
@@ -222,6 +225,7 @@ export interface MapFeature {
   lineStyle: LineStyle;
   /** Zoom levels in from the whole-map view before this feature appears. */
   minZoom: number;
+  visibility: Visibility;
   updatedAt: string;
 }
 
@@ -264,6 +268,7 @@ export interface Progression {
   sceneId: string | null;
   day: number | null;
   changes: ProgressionChanges;
+  visibility: Visibility;
   createdAt: string;
   updatedAt: string;
 }
@@ -289,4 +294,36 @@ export interface TimelineScene {
 export interface TimelineData {
   entities: TimelineEntity[];
   scenes: TimelineScene[];
+}
+
+// ---- Galleries and quests ---------------------------------------------------------------------
+
+export interface GalleryImage {
+  id: string;
+  /** The entry this image belongs to; null for the world's own gallery. */
+  entityId: string | null;
+  entityName: string | null;
+  caption: string;
+  visibility: Visibility;
+  /** An appearance tagged to a scene or an in-world day (at most one is set). */
+  sceneId: string | null;
+  day: number | null;
+  /** The entry's main picture. At most one image per entry. */
+  isPortrait: boolean;
+  width: number;
+  height: number;
+  bytes: number;
+  createdAt: string;
+}
+
+export interface QuestSummary {
+  id: string;
+  name: string;
+  summary: string;
+  /** One of QUEST_STATUSES; anything else (or nothing) counts as "Not started". */
+  status: string;
+  visibility: Visibility;
+  updatedAt: string;
+  /** What the quest is linked to: where it happens, who gave it, who it involves. */
+  links: { label: string; other: { id: string; name: string; typeId: string } }[];
 }

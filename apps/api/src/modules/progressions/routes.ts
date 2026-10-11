@@ -5,7 +5,7 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
   createProgression,
   deleteProgression,
@@ -17,7 +17,8 @@ export const progressionRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/entities/:id/progressions',
     { schema: { params: worldItemParamsSchema } },
-    async (request) => listProgressions(db, currentWorldId(request), request.params.id),
+    async (request) =>
+      listProgressions(db, currentWorldId(request), request.params.id, currentAudience(request)),
   );
 
   app.post(

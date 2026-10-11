@@ -1,4 +1,4 @@
-import type { FieldDefinition } from '@atlas/shared';
+import { QUEST_STATUSES, type FieldDefinition } from '@atlas/shared';
 
 interface BuiltinEntityType {
   key: string;
@@ -142,6 +142,19 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
     fieldSchema: [{ key: 'outcome', label: 'Outcome', type: 'long_text' }],
   },
   {
+    key: 'quest',
+    startLabel: 'Offered',
+    endLabel: 'Resolved',
+    name: 'Quest',
+    icon: 'scroll-text',
+    color: '#d97706',
+    fieldSchema: [
+      { key: 'status', label: 'Status', type: 'select', options: [...QUEST_STATUSES] },
+      { key: 'objectives', label: 'Objectives', type: 'long_text' },
+      { key: 'reward', label: 'Reward', type: 'text' },
+    ],
+  },
+  {
     key: 'lore_article',
     startLabel: 'Starts',
     endLabel: 'Ends',
@@ -171,4 +184,5 @@ export const BUILTIN_RELATIONSHIP_TYPES = [
   { key: 'of_species', label: 'of species', inverseLabel: 'species of' },
   { key: 'of_culture', label: 'of culture', inverseLabel: 'culture of' },
   { key: 'took_part_in', label: 'took part in', inverseLabel: 'had participant' },
+  { key: 'given_by', label: 'given by', inverseLabel: 'gave quest' },
 ] as const;

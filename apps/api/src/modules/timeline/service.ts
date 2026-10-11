@@ -1,11 +1,16 @@
 import { and, asc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
-import type { TimelineData } from '@atlas/shared';
+import type { Audience, TimelineData } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import { entities } from '../../db/schema';
+import { visibleTo } from '../../lib/visibility';
 import { listTree } from '../manuscript/service';
 
 /** Everything that has a date: entries with a start or end, and scenes with a day. */
-export async function getTimeline(db: DbOrTx, worldId: string): Promise<TimelineData> {
+export async function getTimeline(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<TimelineData> {
   const [entityRows, tree] = await Promise.all([
     db
       .select({
@@ -20,11 +25,13 @@ export async function getTimeline(db: DbOrTx, worldId: string): Promise<Timeline
         and(
           eq(entities.worldId, worldId),
           isNull(entities.deletedAt),
+          visibleTo(entities.visibility, audience),
           or(isNotNull(entities.startDay), isNotNull(entities.endDay)),
         ),
       )
       .orderBy(asc(sql`coalesce(${entities.startDay}, ${entities.endDay})`), asc(entities.name)),
-    listTree(db, worldId),
+    // Scenes belong to the author's manuscript, which other audiences don't see.
+    audience === 'gm' ? listTree(db, worldId) : Promise.resolve([]),
   ]);
 
   const byId = new Map(tree.map((node) => [node.id, node]));

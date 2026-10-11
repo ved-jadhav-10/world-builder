@@ -14,6 +14,7 @@ import {
 import { notFound } from '../../errors';
 import { exportAtlas } from '../atlas/service';
 import { getSavedCalendar } from '../calendar/service';
+import { listWorldImages } from '../gallery/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
 import { listWorldProgressions } from '../progressions/service';
 
@@ -59,12 +60,13 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       ),
   ]);
 
-  const [manuscript, bodies, atlas, calendar, progressionList] = await Promise.all([
+  const [manuscript, bodies, atlas, calendar, progressionList, gallery] = await Promise.all([
     listTree(db, worldId),
     getSceneBodies(db, worldId),
     exportAtlas(db, worldId),
     getSavedCalendar(db, worldId),
     listWorldProgressions(db, worldId),
+    listWorldImages(db, worldId),
   ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
@@ -131,5 +133,6 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     atlas,
     calendar,
     progressions: progressionList,
+    gallery,
   };
 }

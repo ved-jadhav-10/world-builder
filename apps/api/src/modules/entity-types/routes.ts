@@ -5,11 +5,13 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import { createEntityType, deleteEntityType, listEntityTypes, updateEntityType } from './service';
 
 export const entityTypeRoutes: FastifyPluginAsyncZod = async (app) => {
-  app.get('/entity-types', async (request) => listEntityTypes(db, currentWorldId(request)));
+  app.get('/entity-types', async (request) =>
+    listEntityTypes(db, currentWorldId(request), currentAudience(request)),
+  );
 
   app.post(
     '/entity-types',

@@ -1,10 +1,16 @@
 import { and, asc, count, eq, getTableColumns, isNull, max, sql } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { EntityType, entityTypeCreateSchema, entityTypeUpdateSchema } from '@atlas/shared';
+import type {
+  Audience,
+  EntityType,
+  entityTypeCreateSchema,
+  entityTypeUpdateSchema,
+} from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import { entities, entityTypes } from '../../db/schema';
 import { conflict, notFound } from '../../errors';
 import { uniqueKey } from '../../lib/keys';
+import { visibleTo } from '../../lib/visibility';
 
 type EntityTypeRow = typeof entityTypes.$inferSelect;
 
@@ -24,12 +30,18 @@ function toEntityType(row: EntityTypeRow, entityCount = 0): EntityType {
   };
 }
 
-export async function listEntityTypes(db: DbOrTx, worldId: string): Promise<EntityType[]> {
+/** Types, with how many entries each has. Counts only include entries the audience can see. */
+export async function listEntityTypes(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<EntityType[]> {
+  const visible = visibleTo(entities.visibility, audience) ?? sql`true`;
   const rows = await db
     .select({
       ...getTableColumns(entityTypes),
       entityCount:
-        sql<number>`count(${entities.id}) filter (where ${entities.deletedAt} is null)`.mapWith(
+        sql<number>`count(${entities.id}) filter (where ${entities.deletedAt} is null and ${visible})`.mapWith(
           Number,
         ),
     })

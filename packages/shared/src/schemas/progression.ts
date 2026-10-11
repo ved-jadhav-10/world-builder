@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema } from './common';
+import { idSchema, visibilitySchema } from './common';
 import { dayNumberSchema } from './calendar';
 
 /**
@@ -23,6 +23,8 @@ export const progressionCreateSchema = z
     sceneId: idSchema.nullable().default(null),
     day: dayNumberSchema.nullable().default(null),
     changes: progressionChangesSchema.default({}),
+    /** Who can see this change in an entry's history. Hidden from players until revealed. */
+    visibility: visibilitySchema.default('gm'),
   })
   .refine((p) => (p.sceneId === null) !== (p.day === null), {
     path: ['sceneId'],
@@ -36,5 +38,6 @@ export const progressionUpdateSchema = z.object({
   sceneId: idSchema.nullable().optional(),
   day: dayNumberSchema.nullable().optional(),
   changes: progressionChangesSchema.optional(),
+  visibility: visibilitySchema.optional(),
 });
 export type ProgressionUpdateInput = z.input<typeof progressionUpdateSchema>;

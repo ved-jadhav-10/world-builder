@@ -1,6 +1,7 @@
 import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import type { z } from 'zod';
 import type {
+  Audience,
   EntityRelationship,
   relationshipCreateSchema,
   relationshipUpdateSchema,
@@ -11,6 +12,7 @@ import type { DbOrTx } from '../../db/client';
 import { entities, relationships, relationshipTypes } from '../../db/schema';
 import { badRequest, conflict, notFound } from '../../errors';
 import { uniqueKey } from '../../lib/keys';
+import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
 
 type RelationshipTypeRow = typeof relationshipTypes.$inferSelect;
@@ -80,8 +82,9 @@ export async function listEntityRelationships(
   db: DbOrTx,
   worldId: string,
   entityId: string,
+  audience: Audience = 'gm',
 ): Promise<EntityRelationship[]> {
-  await getEntityRow(db, worldId, entityId);
+  await getEntityRow(db, worldId, entityId, audience);
 
   const query = (direction: 'outgoing' | 'incoming') => {
     const self = direction === 'outgoing' ? relationships.sourceId : relationships.targetId;
@@ -107,6 +110,8 @@ export async function listEntityRelationships(
           eq(relationships.worldId, worldId),
           isNull(relationships.deletedAt),
           isNull(entities.deletedAt),
+          // The entry at the other end is hidden from this audience, so the link is too.
+          visibleTo(entities.visibility, audience),
         ),
       );
   };

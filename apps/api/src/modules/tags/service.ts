@@ -1,18 +1,43 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, exists, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { Tag, tagCreateSchema, tagUpdateSchema } from '@atlas/shared';
+import type { Audience, Tag, tagCreateSchema, tagUpdateSchema } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entityTags, tags } from '../../db/schema';
+import { entities, entityTags, tags } from '../../db/schema';
 import { notFound } from '../../errors';
+import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
 
 const tagColumns = { id: tags.id, name: tags.name, color: tags.color };
 
-export async function listTags(db: DbOrTx, worldId: string): Promise<Tag[]> {
+/**
+ * The world's tags. A tag's name can give away what it marks, so other audiences only get the
+ * tags on entries they can see.
+ */
+export async function listTags(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<Tag[]> {
+  const onVisibleEntry =
+    audience === 'gm'
+      ? undefined
+      : exists(
+          db
+            .select({ one: sql`1` })
+            .from(entityTags)
+            .innerJoin(entities, eq(entities.id, entityTags.entityId))
+            .where(
+              and(
+                eq(entityTags.tagId, tags.id),
+                isNull(entities.deletedAt),
+                visibleTo(entities.visibility, audience),
+              ),
+            ),
+        );
   return db
     .select(tagColumns)
     .from(tags)
-    .where(eq(tags.worldId, worldId))
+    .where(and(eq(tags.worldId, worldId), onVisibleEntry))
     .orderBy(sql`lower(${tags.name})`);
 }
 

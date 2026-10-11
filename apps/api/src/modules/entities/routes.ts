@@ -6,7 +6,12 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentUser, currentWorldId, requireRole } from '../../plugins/auth-guard';
+import {
+  currentAudience,
+  currentUser,
+  currentWorldId,
+  requireRole,
+} from '../../plugins/auth-guard';
 import {
   createEntity,
   getEntity,
@@ -20,7 +25,7 @@ import {
 
 export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/entities', { schema: { querystring: entityListQuerySchema } }, async (request) =>
-    listEntities(db, currentWorldId(request), request.query),
+    listEntities(db, currentWorldId(request), request.query, currentAudience(request)),
   );
 
   app.post(
@@ -38,7 +43,7 @@ export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
   );
 
   app.get('/entities/:id', { schema: { params: worldItemParamsSchema } }, async (request) =>
-    getEntity(db, currentWorldId(request), request.params.id),
+    getEntity(db, currentWorldId(request), request.params.id, currentAudience(request)),
   );
 
   app.patch(

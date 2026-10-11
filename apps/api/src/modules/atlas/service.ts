@@ -1,10 +1,22 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename } from 'node:fs/promises';
-import { and, asc, eq, getTableColumns, ilike, isNull, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  eq,
+  getTableColumns,
+  ilike,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   mapMaxZoom,
   pointCountProblem,
+  type Audience,
   type AtlasMap,
   type AtlasSearchResult,
   type EntityMapLink,
@@ -19,6 +31,7 @@ import {
 import type { DbOrTx } from '../../db/client';
 import { entities, mapFeatures, maps } from '../../db/schema';
 import { badRequest, conflict, notFound } from '../../errors';
+import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
 import { mapDir, originalPath, removeMapFiles, thumbnailPath, tilePath } from './files';
 import { enqueueTiling, type TilingLog } from './tiling';
@@ -55,7 +68,7 @@ const roundPoints = (points: MapPoint[]): MapPoint[] =>
 
 // ---- Maps -----------------------------------------------------------------
 
-function selectMaps(db: DbOrTx) {
+function selectMaps(db: DbOrTx, audience: Audience = 'gm') {
   return db
     .select({
       map: getTableColumns(maps),
@@ -63,45 +76,97 @@ function selectMaps(db: DbOrTx) {
       ...entityRefColumns,
     })
     .from(maps)
-    .leftJoin(entities, and(eq(entities.id, maps.entityId), isNull(entities.deletedAt)));
+    .leftJoin(
+      entities,
+      and(
+        eq(entities.id, maps.entityId),
+        isNull(entities.deletedAt),
+        visibleTo(entities.visibility, audience),
+      ),
+    );
 }
 
-function toMap(row: Awaited<ReturnType<typeof selectMaps>>[number]): AtlasMap {
+/**
+ * `view` is given for audiences other than the GM: their own feature count, and whether the
+ * parent map is one they can see (if not, this map reads as a top-level map to them).
+ */
+function toMap(
+  row: Awaited<ReturnType<typeof selectMaps>>[number],
+  view?: { featureCount: number; parentVisible: boolean },
+): AtlasMap {
   const { map } = row;
+  const entity = toEntityRef(row);
   return {
     id: map.id,
-    parentId: map.parentId,
+    parentId: view && !view.parentVisible ? null : map.parentId,
     name: map.name,
     description: map.description,
     status: map.status,
     error: map.error,
     width: map.width,
     height: map.height,
-    entityId: map.entityId,
-    entity: toEntityRef(row),
-    featureCount: row.featureCount,
+    entityId: view ? (entity?.id ?? null) : map.entityId,
+    entity,
+    visibility: map.visibility,
+    featureCount: view ? view.featureCount : row.featureCount,
     createdAt: map.createdAt.toISOString(),
     updatedAt: map.updatedAt.toISOString(),
   };
 }
 
-async function getMapRow(db: DbOrTx, worldId: string, mapId: string): Promise<MapRow> {
+async function getMapRow(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  audience: Audience = 'gm',
+): Promise<MapRow> {
   const [row] = await db
     .select()
     .from(maps)
-    .where(and(eq(maps.id, mapId), eq(maps.worldId, worldId)));
+    .where(
+      and(eq(maps.id, mapId), eq(maps.worldId, worldId), visibleTo(maps.visibility, audience)),
+    );
   if (!row) throw notFound('Map');
   return row;
 }
 
-export async function listMaps(db: DbOrTx, worldId: string): Promise<AtlasMap[]> {
-  const rows = await selectMaps(db)
-    .where(eq(maps.worldId, worldId))
+/** The maps an audience can open. Other audiences get counts and parents for what they can see. */
+export async function listMaps(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<AtlasMap[]> {
+  const rows = await selectMaps(db, audience)
+    .where(and(eq(maps.worldId, worldId), visibleTo(maps.visibility, audience)))
     .orderBy(sql`lower(${maps.name})`, asc(maps.createdAt));
-  return rows.map(toMap);
+  if (audience === 'gm') return rows.map((row) => toMap(row));
+
+  const visibleIds = new Set(rows.map((row) => row.map.id));
+  const counts = new Map<string, number>();
+  const features = await selectFeatures(db, audience).where(
+    and(eq(mapFeatures.worldId, worldId), featureVisible(audience)),
+  );
+  for (const { feature } of features)
+    counts.set(feature.mapId, (counts.get(feature.mapId) ?? 0) + 1);
+  return rows.map((row) =>
+    toMap(row, {
+      featureCount: counts.get(row.map.id) ?? 0,
+      parentVisible: row.map.parentId === null || visibleIds.has(row.map.parentId),
+    }),
+  );
 }
 
-export async function getMap(db: DbOrTx, worldId: string, mapId: string): Promise<AtlasMap> {
+export async function getMap(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  audience: Audience = 'gm',
+): Promise<AtlasMap> {
+  if (audience !== 'gm') {
+    const found = (await listMaps(db, worldId, audience)).find((map) => map.id === mapId);
+    if (!found) throw notFound('Map');
+    return found;
+  }
   const [row] = await selectMaps(db).where(and(eq(maps.id, mapId), eq(maps.worldId, worldId)));
   if (!row) throw notFound('Map');
   return toMap(row);
@@ -138,6 +203,7 @@ export async function createMap(
       entityId: input.entityId,
       name: input.name,
       description: input.description,
+      visibility: input.visibility,
       width: image.width,
       height: image.height,
     });
@@ -204,29 +270,68 @@ export async function readTile(
   z: number,
   x: number,
   y: number,
+  audience: Audience = 'gm',
 ): Promise<Buffer> {
-  const map = await getMapRow(db, worldId, mapId);
+  const map = await getMapRow(db, worldId, mapId, audience);
   if (map.status !== 'ready' || z > mapMaxZoom(map.width, map.height)) throw notFound('Tile');
   return readMapFile(tilePath(worldId, mapId, z, x, y));
 }
 
-export async function readThumbnail(db: DbOrTx, worldId: string, mapId: string): Promise<Buffer> {
-  const map = await getMapRow(db, worldId, mapId);
+export async function readThumbnail(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  audience: Audience = 'gm',
+): Promise<Buffer> {
+  const map = await getMapRow(db, worldId, mapId, audience);
   if (map.status !== 'ready') throw notFound('Thumbnail');
   return readMapFile(thumbnailPath(worldId, mapId));
 }
 
 // ---- Features -------------------------------------------------------------
 
-function selectFeatures(db: DbOrTx) {
+function selectFeatures(db: DbOrTx, audience: Audience = 'gm') {
   return db
     .select({ feature: getTableColumns(mapFeatures), ...entityRefColumns })
     .from(mapFeatures)
-    .leftJoin(entities, and(eq(entities.id, mapFeatures.entityId), isNull(entities.deletedAt)));
+    .leftJoin(
+      entities,
+      and(
+        eq(entities.id, mapFeatures.entityId),
+        isNull(entities.deletedAt),
+        visibleTo(entities.visibility, audience),
+      ),
+    );
 }
 
-function toFeature(row: Awaited<ReturnType<typeof selectFeatures>>[number]): MapFeature {
+/**
+ * Which features an audience sees: those shared with them, and, for one tied to an entry, only
+ * if that entry is visible to them too (the join in `selectFeatures` finds nothing otherwise).
+ */
+function featureVisible(audience: Audience): SQL | undefined {
+  if (audience === 'gm') return undefined;
+  return and(
+    visibleTo(mapFeatures.visibility, audience),
+    or(isNull(mapFeatures.entityId), isNotNull(entities.id)),
+  );
+}
+
+/** The maps an audience can open, so links to any other map can be left out. */
+async function visibleMapIds(db: DbOrTx, worldId: string, audience: Audience) {
+  const rows = await db
+    .select({ id: maps.id })
+    .from(maps)
+    .where(and(eq(maps.worldId, worldId), visibleTo(maps.visibility, audience)));
+  return new Set(rows.map((row) => row.id));
+}
+
+/** `linkable`, for audiences other than the GM, is the set of maps they can open. */
+function toFeature(
+  row: Awaited<ReturnType<typeof selectFeatures>>[number],
+  linkable?: Set<string>,
+): MapFeature {
   const { feature } = row;
+  const entity = toEntityRef(row);
   return {
     id: feature.id,
     mapId: feature.mapId,
@@ -234,14 +339,16 @@ function toFeature(row: Awaited<ReturnType<typeof selectFeatures>>[number]): Map
     points: feature.points,
     label: feature.label,
     notes: feature.notes,
-    entityId: feature.entityId,
-    entity: toEntityRef(row),
-    linkMapId: feature.linkMapId,
+    entityId: linkable ? (entity?.id ?? null) : feature.entityId,
+    entity,
+    linkMapId:
+      linkable && feature.linkMapId && !linkable.has(feature.linkMapId) ? null : feature.linkMapId,
     icon: feature.icon,
     color: feature.color,
     size: feature.size,
     lineStyle: feature.lineStyle,
     minZoom: feature.minZoom,
+    visibility: feature.visibility,
     updatedAt: feature.updatedAt.toISOString(),
   };
 }
@@ -250,12 +357,17 @@ export async function listFeatures(
   db: DbOrTx,
   worldId: string,
   mapId: string,
+  audience: Audience = 'gm',
 ): Promise<MapFeature[]> {
-  await getMapRow(db, worldId, mapId);
-  const rows = await selectFeatures(db)
-    .where(and(eq(mapFeatures.mapId, mapId), eq(mapFeatures.worldId, worldId)))
+  await getMapRow(db, worldId, mapId, audience);
+  const rows = await selectFeatures(db, audience)
+    .where(
+      and(eq(mapFeatures.mapId, mapId), eq(mapFeatures.worldId, worldId), featureVisible(audience)),
+    )
     .orderBy(asc(mapFeatures.createdAt));
-  return rows.map(toFeature);
+  if (audience === 'gm') return rows.map((row) => toFeature(row));
+  const linkable = await visibleMapIds(db, worldId, audience);
+  return rows.map((row) => toFeature(row, linkable));
 }
 
 async function getFeature(
@@ -344,13 +456,20 @@ export async function listEntityMapLinks(
   db: DbOrTx,
   worldId: string,
   entityId: string,
+  audience: Audience = 'gm',
 ): Promise<EntityMapLink[]> {
-  await getEntityRow(db, worldId, entityId);
+  await getEntityRow(db, worldId, entityId, audience);
   const [depicting, pinned] = await Promise.all([
     db
       .select({ mapId: maps.id, mapName: maps.name })
       .from(maps)
-      .where(and(eq(maps.worldId, worldId), eq(maps.entityId, entityId)))
+      .where(
+        and(
+          eq(maps.worldId, worldId),
+          eq(maps.entityId, entityId),
+          visibleTo(maps.visibility, audience),
+        ),
+      )
       .orderBy(asc(maps.name)),
     db
       .select({
@@ -361,7 +480,14 @@ export async function listEntityMapLinks(
       })
       .from(mapFeatures)
       .innerJoin(maps, eq(maps.id, mapFeatures.mapId))
-      .where(and(eq(mapFeatures.worldId, worldId), eq(mapFeatures.entityId, entityId)))
+      .where(
+        and(
+          eq(mapFeatures.worldId, worldId),
+          eq(mapFeatures.entityId, entityId),
+          visibleTo(mapFeatures.visibility, audience),
+          visibleTo(maps.visibility, audience),
+        ),
+      )
       .orderBy(asc(maps.name), asc(mapFeatures.createdAt)),
   ]);
   return [
@@ -378,13 +504,20 @@ export async function searchAtlas(
   worldId: string,
   q: string,
   limit: number,
+  audience: Audience = 'gm',
 ): Promise<AtlasSearchResult[]> {
   const pattern = `%${escapeLike(q)}%`;
   const [mapRows, featureRows] = await Promise.all([
     db
       .select({ id: maps.id, name: maps.name })
       .from(maps)
-      .where(and(eq(maps.worldId, worldId), ilike(maps.name, pattern)))
+      .where(
+        and(
+          eq(maps.worldId, worldId),
+          ilike(maps.name, pattern),
+          visibleTo(maps.visibility, audience),
+        ),
+      )
       .orderBy(sql`lower(${maps.name})`)
       .limit(limit),
     db
@@ -397,7 +530,22 @@ export async function searchAtlas(
       })
       .from(mapFeatures)
       .innerJoin(maps, eq(maps.id, mapFeatures.mapId))
-      .where(and(eq(mapFeatures.worldId, worldId), ilike(mapFeatures.label, pattern)))
+      .leftJoin(
+        entities,
+        and(
+          eq(entities.id, mapFeatures.entityId),
+          isNull(entities.deletedAt),
+          visibleTo(entities.visibility, audience),
+        ),
+      )
+      .where(
+        and(
+          eq(mapFeatures.worldId, worldId),
+          ilike(mapFeatures.label, pattern),
+          visibleTo(maps.visibility, audience),
+          featureVisible(audience),
+        ),
+      )
       .orderBy(sql`lower(${mapFeatures.label})`)
       .limit(limit),
   ]);
@@ -430,5 +578,5 @@ export async function exportAtlas(db: DbOrTx, worldId: string) {
     listMaps(db, worldId),
     selectFeatures(db).where(eq(mapFeatures.worldId, worldId)).orderBy(asc(mapFeatures.createdAt)),
   ]);
-  return { maps: mapList, features: featureRows.map(toFeature) };
+  return { maps: mapList, features: featureRows.map((row) => toFeature(row)) };
 }

@@ -61,6 +61,7 @@ const progression = (
   sceneId: anchor.sceneId ?? null,
   day: anchor.day ?? null,
   changes,
+  visibility: 'gm',
   createdAt: `2026-01-01T00:00:${String(counter).padStart(2, '0')}.000Z`,
   updatedAt: '2026-01-01T00:00:00.000Z',
 });

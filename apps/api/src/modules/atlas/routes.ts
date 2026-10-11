@@ -14,7 +14,8 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { receiveUpload } from '../../lib/upload';
+import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
   createFeature,
   createMap,
@@ -32,7 +33,6 @@ import {
   updateMap,
 } from './service';
 import { inspectImage } from './tiling';
-import { receiveUpload } from './upload';
 
 // Tiles never change for a given map, but they are private: only the browser may keep them.
 const TILE_CACHE = 'private, max-age=31536000, immutable';
@@ -42,10 +42,12 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     limits: { fileSize: MAX_MAP_BYTES, files: 1, fields: 10, parts: 12 },
   });
 
-  app.get('/maps', async (request) => listMaps(db, currentWorldId(request)));
+  app.get('/maps', async (request) =>
+    listMaps(db, currentWorldId(request), currentAudience(request)),
+  );
 
   app.post('/maps', { onRequest: requireRole('editor') }, async (request, reply) => {
-    const upload = await receiveUpload(request);
+    const upload = await receiveUpload(request, MAX_MAP_BYTES);
     try {
       const input = mapCreateSchema.parse(upload.fields);
       const size = await inspectImage(upload.imagePath);
@@ -64,7 +66,7 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
   });
 
   app.get('/maps/:id', { schema: { params: mapItemParamsSchema } }, async (request) =>
-    getMap(db, currentWorldId(request), request.params.id),
+    getMap(db, currentWorldId(request), request.params.id, currentAudience(request)),
   );
 
   app.patch(
@@ -96,7 +98,15 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     { schema: { params: tileParamsSchema } },
     async (request, reply) => {
       const { id, z, x, y } = request.params;
-      const tile = await readTile(db, currentWorldId(request), id, z, x, y);
+      const tile = await readTile(
+        db,
+        currentWorldId(request),
+        id,
+        z,
+        x,
+        y,
+        currentAudience(request),
+      );
       return reply
         .header('content-type', 'image/webp')
         .header('cache-control', TILE_CACHE)
@@ -108,7 +118,12 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     '/maps/:id/thumbnail',
     { schema: { params: mapItemParamsSchema } },
     async (request, reply) => {
-      const image = await readThumbnail(db, currentWorldId(request), request.params.id);
+      const image = await readThumbnail(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        currentAudience(request),
+      );
       return reply
         .header('content-type', 'image/webp')
         .header('cache-control', 'private, max-age=3600')
@@ -117,7 +132,7 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
   );
 
   app.get('/maps/:id/features', { schema: { params: mapItemParamsSchema } }, async (request) =>
-    listFeatures(db, currentWorldId(request), request.params.id),
+    listFeatures(db, currentWorldId(request), request.params.id, currentAudience(request)),
   );
 
   app.post(
@@ -163,10 +178,16 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
   );
 
   app.get('/entities/:id/maps', { schema: { params: worldItemParamsSchema } }, async (request) =>
-    listEntityMapLinks(db, currentWorldId(request), request.params.id),
+    listEntityMapLinks(db, currentWorldId(request), request.params.id, currentAudience(request)),
   );
 
   app.get('/atlas/search', { schema: { querystring: atlasSearchQuerySchema } }, async (request) =>
-    searchAtlas(db, currentWorldId(request), request.query.q, request.query.limit),
+    searchAtlas(
+      db,
+      currentWorldId(request),
+      request.query.q,
+      request.query.limit,
+      currentAudience(request),
+    ),
   );
 };

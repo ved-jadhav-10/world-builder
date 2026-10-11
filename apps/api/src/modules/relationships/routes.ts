@@ -6,7 +6,7 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
   createRelationship,
   createRelationshipType,
@@ -43,7 +43,13 @@ export const relationshipRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/entities/:id/relationships',
     { schema: { params: worldItemParamsSchema } },
-    async (request) => listEntityRelationships(db, currentWorldId(request), request.params.id),
+    async (request) =>
+      listEntityRelationships(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        currentAudience(request),
+      ),
   );
 
   app.post(

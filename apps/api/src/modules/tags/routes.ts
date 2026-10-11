@@ -2,13 +2,15 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { idSchema, tagCreateSchema, tagUpdateSchema, worldItemParamsSchema } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import { attachTag, createTag, deleteTag, detachTag, listTags, updateTag } from './service';
 
 const entityTagParams = z.object({ worldId: idSchema, id: idSchema, tagId: idSchema });
 
 export const tagRoutes: FastifyPluginAsyncZod = async (app) => {
-  app.get('/tags', async (request) => listTags(db, currentWorldId(request)));
+  app.get('/tags', async (request) =>
+    listTags(db, currentWorldId(request), currentAudience(request)),
+  );
 
   app.post(
     '/tags',

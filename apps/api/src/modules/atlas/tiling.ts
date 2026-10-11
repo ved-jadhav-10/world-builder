@@ -1,11 +1,12 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { and, eq } from 'drizzle-orm';
-import sharp, { type Metadata } from 'sharp';
+import type { Metadata } from 'sharp';
 import { MAX_MAP_PIXELS, MAX_MAP_SIDE, TILE_SIZE } from '@atlas/shared';
 import { db } from '../../db/client';
 import { maps } from '../../db/schema';
 import { badRequest } from '../../errors';
+import sharp from '../../lib/sharp';
 import { originalPath, thumbnailPath, tilesDir } from './files';
 
 const SUPPORTED_FORMATS = new Set(['jpeg', 'png', 'webp', 'tiff', 'avif']);
