@@ -16,6 +16,7 @@ import type { DbOrTx } from '../../db/client';
 import { entities, entityTags, tags } from '../../db/schema';
 import { badRequest, notFound } from '../../errors';
 import { getEntityTypeRow } from '../entity-types/service';
+import { rebuildSceneMentions } from '../manuscript/mentions';
 
 type EntityRow = typeof entities.$inferSelect;
 
@@ -106,6 +107,7 @@ export async function createEntity(
       createdBy: userId,
     })
     .returning();
+  await rebuildSceneMentions(db, worldId);
   return toEntity(row!, []);
 }
 
@@ -137,6 +139,11 @@ export async function updateEntity(
     .set({ ...merged, searchText: deriveSearchText(merged) })
     .where(eq(entities.id, existing.id))
     .returning();
+  // Names and aliases drive mention detection, so a rename means rescanning the manuscript.
+  const renamed =
+    merged.name !== existing.name ||
+    JSON.stringify(merged.aliases) !== JSON.stringify(existing.aliases);
+  if (renamed) await rebuildSceneMentions(db, worldId);
   return toEntity(row!, await tagsFor(db, existing.id));
 }
 
@@ -153,6 +160,7 @@ export async function softDeleteEntity(
     )
     .returning({ id: entities.id });
   if (!row) throw notFound('Entity');
+  await rebuildSceneMentions(db, worldId);
 }
 
 export async function restoreEntity(
@@ -168,6 +176,7 @@ export async function restoreEntity(
     )
     .returning();
   if (!row) throw notFound('Trashed entity');
+  await rebuildSceneMentions(db, worldId);
   return toEntity(row, await tagsFor(db, row.id));
 }
 

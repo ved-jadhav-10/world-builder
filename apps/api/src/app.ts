@@ -9,6 +9,7 @@ import { errorHandler } from './errors';
 import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
+import { manuscriptRoutes } from './modules/manuscript/routes';
 import { relationshipRoutes } from './modules/relationships/routes';
 import { searchRoutes } from './modules/search/routes';
 import { tagRoutes } from './modules/tags/routes';
@@ -27,6 +28,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(tagRoutes);
   await app.register(searchRoutes);
   await app.register(exportRoutes);
+  await app.register(manuscriptRoutes);
 };
 
 export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {

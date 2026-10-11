@@ -17,7 +17,7 @@ export function apiClient(app: TestApp, cookie: string) {
     get: (url: string) => call('GET', url),
     post: (url: string, payload?: object) => call('POST', url, payload),
     patch: (url: string, payload: object) => call('PATCH', url, payload),
-    put: (url: string) => call('PUT', url),
+    put: (url: string, payload?: object) => call('PUT', url, payload),
     delete: (url: string) => call('DELETE', url),
   };
 }

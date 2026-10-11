@@ -1,3 +1,4 @@
+import type { NodeKind } from './schemas/manuscript';
 import type { Role, Visibility } from './schemas/common';
 import type { FieldDefinition } from './schemas/entity-type';
 import type { RichTextDoc } from './schemas/entity';
@@ -102,10 +103,53 @@ export interface WorldExport {
     validFromDay: number | null;
     validToDay: number | null;
   }[];
+  /** Book > part > chapter > scene, flat with parent links; scenes include their text. */
+  manuscript: (ManuscriptNode & { body: RichTextDoc | null })[];
 }
 
 export interface ApiErrorBody {
   error: string;
   message: string;
   issues?: { path: string; message: string }[];
+}
+
+// ---- Manuscript -----------------------------------------------------------
+
+export interface ManuscriptNode {
+  id: string;
+  kind: NodeKind;
+  parentId: string | null;
+  title: string;
+  summary: string;
+  sortOrder: number;
+  /** Scenes carry their own count; other nodes hold the total of everything beneath them. */
+  wordCount: number;
+  povId: string | null;
+  locationId: string | null;
+  inWorldDate: string;
+  updatedAt: string;
+}
+
+export interface Scene extends ManuscriptNode {
+  kind: 'scene';
+  body: RichTextDoc | null;
+}
+
+/** Everything a writer needs to highlight and preview mentions in the editor. */
+export interface MentionIndexEntry {
+  id: string;
+  name: string;
+  aliases: string[];
+  typeId: string;
+  summary: string;
+}
+
+export interface Appearance {
+  sceneId: string;
+  sceneTitle: string;
+  chapterTitle: string | null;
+  bookTitle: string | null;
+  mentions: number;
+  asPov: boolean;
+  asLocation: boolean;
 }

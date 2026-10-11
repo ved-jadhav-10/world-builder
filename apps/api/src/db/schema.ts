@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   customType,
@@ -14,7 +15,13 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { ROLES, VISIBILITIES, type FieldDefinition, type RichTextDoc } from '@atlas/shared';
+import {
+  NODE_KINDS,
+  ROLES,
+  VISIBILITIES,
+  type FieldDefinition,
+  type RichTextDoc,
+} from '@atlas/shared';
 import { user } from './auth-schema';
 
 export * from './auth-schema';
@@ -192,4 +199,55 @@ export const entityTags = pgTable(
       .references(() => tags.id, { onDelete: 'cascade' }),
   },
   (t) => [primaryKey({ columns: [t.entityId, t.tagId] }), index('entity_tags_tag_idx').on(t.tagId)],
+);
+
+export const nodeKindEnum = pgEnum('manuscript_node_kind', NODE_KINDS);
+
+/** The manuscript tree: book > (part >) chapter > scene. Only scenes have a body. */
+export const manuscriptNodes = pgTable(
+  'manuscript_nodes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    kind: nodeKindEnum('kind').notNull(),
+    parentId: uuid('parent_id').references((): AnyPgColumn => manuscriptNodes.id, {
+      onDelete: 'cascade',
+    }),
+    title: text('title').notNull(),
+    summary: text('summary').notNull().default(''),
+    sortOrder: integer('sort_order').notNull().default(0),
+    body: jsonb('body').$type<RichTextDoc>(),
+    /** Text of the body, one block per line; kept so mentions can be rescanned cheaply. */
+    plainText: text('plain_text').notNull().default(''),
+    wordCount: integer('word_count').notNull().default(0),
+    povId: uuid('pov_id').references(() => entities.id, { onDelete: 'set null' }),
+    locationId: uuid('location_id').references(() => entities.id, { onDelete: 'set null' }),
+    inWorldDate: text('in_world_date').notNull().default(''),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('manuscript_nodes_world_idx').on(t.worldId),
+    index('manuscript_nodes_parent_idx').on(t.parentId, t.sortOrder),
+  ],
+);
+
+/** Derived: which entities each scene mentions, by name or alias. Rebuilt on scene/entity edits. */
+export const sceneMentions = pgTable(
+  'scene_mentions',
+  {
+    sceneId: uuid('scene_id')
+      .notNull()
+      .references(() => manuscriptNodes.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    count: integer('count').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.sceneId, t.entityId] }),
+    index('scene_mentions_entity_idx').on(t.entityId),
+  ],
 );
