@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { RedirectIfSignedIn, RequireAuth } from '@/components/require-auth';
 import { NotFoundScreen, RouteError } from '@/components/route-error';
+import { AtlasIndexPage } from '@/routes/atlas-pages';
 import { SignInPage, SignUpPage } from '@/routes/auth-pages';
 import { CodexHome, EntityListPage } from '@/routes/codex-pages';
 import { TrashPage } from '@/routes/trash-page';
@@ -31,6 +32,8 @@ export const router = createBrowserRouter([
               { path: 'codex/:typeKey', element: <EntityListPage /> },
               // The editor-heavy pages load on demand to keep the first load small.
               { path: 'e/:entityId', lazy: () => import('@/routes/entity-page') },
+              { path: 'atlas', element: <AtlasIndexPage /> },
+              { path: 'atlas/:mapId', lazy: () => import('@/routes/map-page') },
               { path: 'trash', element: <TrashPage /> },
               { path: 'settings', element: <WorldSettingsPage /> },
               { path: 'settings/types', lazy: () => import('@/routes/types-settings-page') },

@@ -1,9 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  MAX_MAP_BYTES,
   mapMaxZoom,
   type AtlasMap,
   type AtlasSearchResult,
@@ -169,6 +171,58 @@ describe('map upload and tiling', () => {
     expect((await api.get(`${w}/maps/${map.id}/tiles/1/0/1`)).statusCode).toBe(200);
     expect((await api.get(`${w}/maps/${map.id}/tiles/1/1/0`)).statusCode).toBe(404);
   });
+
+  it('takes uploads far larger than the normal request size limit', async () => {
+    const { api, w, upload } = await setup();
+    // Noise does not compress, so this PNG is several megabytes: over the 2 MB limit for JSON.
+    const noisy = await sharp({
+      create: {
+        width: 2000,
+        height: 1500,
+        channels: 3,
+        background: '#000',
+        noise: { type: 'gaussian', mean: 128, sigma: 60 },
+      },
+    })
+      .png()
+      .toBuffer();
+    expect(noisy.length).toBeGreaterThan(4 * 1024 * 1024);
+    const res = await upload(
+      { name: 'Detailed' },
+      { name: 'big.png', type: 'image/png', data: noisy },
+    );
+    expect(res.statusCode, res.body).toBe(201);
+    await tilingIdle();
+    const map = (await api.get(`${w}/maps/${res.json<AtlasMap>().id}`)).json<AtlasMap>();
+    expect(map).toMatchObject({ status: 'ready', width: 2000, height: 1500 });
+  });
+
+  it('refuses a file over the size cap without keeping any of it', async () => {
+    const { cookie, w, api } = await setup();
+    const boundary = '----too-big';
+    const head = Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="name"\r\n\r\nHuge\r\n` +
+        `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="huge.png"\r\n` +
+        'Content-Type: image/png\r\n\r\n',
+    );
+    const chunk = Buffer.alloc(1024 * 1024);
+    // Stream the body, so the test never holds 200 MB in memory.
+    async function* body() {
+      yield head;
+      for (let i = 0; i < MAX_MAP_BYTES / chunk.length + 2; i++) yield chunk;
+      yield Buffer.from(`\r\n--${boundary}--\r\n`);
+    }
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api${w}/maps`,
+      headers: { cookie, 'content-type': `multipart/form-data; boundary=${boundary}` },
+      payload: Readable.from(body()),
+    });
+    expect(res.statusCode, res.body).toBe(413);
+    expect(res.json<{ message: string }>().message).toContain('200 MB');
+    expect(readdirSync(uploadsDir())).toEqual([]);
+    expect((await api.get(`${w}/maps`)).json<AtlasMap[]>()).toHaveLength(0);
+  }, 60_000);
 
   it('rejects things that are not usable map images', async () => {
     const { upload, api, w } = await setup();

@@ -2,7 +2,7 @@
 
 A browser-based "story operating system": one linked graph of story entities (characters, places, factions, lore) seen through three views — **Atlas** (maps), **Codex** (characters and lore) and **Manuscript** (chapters).
 
-This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex) and **Milestone 2** (the Manuscript). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
+This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex), **Milestone 2** (the Manuscript) and **Milestone 3** (the Atlas). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
 
 ## What works today
 
@@ -17,6 +17,10 @@ This repo currently contains **Milestone 1** (accounts, the entity / type / rela
 - Scene details: point of view, location, in-world date and summary
 - Codex names and aliases are underlined as you write, with hover previews, a Codex side panel and a distraction-free focus mode
 - Every entry lists the scenes it **appears in** (by mention, point of view or setting)
+- **Atlas:** upload a map image of any size; it is cut into tiles in the background and zooms smoothly
+- Pins linked to entries, text labels, roads and rivers, and regions, each shown only from the zoom level you choose
+- Maps inside maps: a pin can open a child map, with breadcrumbs (World › Kaldor › Port Vael)
+- Entry pages list the maps they appear on, and Ctrl/Cmd+K also finds maps and map labels
 
 ## Prerequisites
 
@@ -34,7 +38,7 @@ pnpm db:seed                  # optional demo world: demo@atlas.local / demo-pas
 pnpm dev                      # web on http://localhost:5173, API on :3000
 ```
 
-Open http://localhost:5173. The Vite dev server proxies `/api` to the API, so the browser and API share an origin and session cookies just work.
+Open http://localhost:5173. Uploaded maps and their tiles are kept in `storage/` (set `STORAGE_DIR` to move it). The Vite dev server proxies `/api` to the API, so the browser and API share an origin and session cookies just work.
 
 ## Scripts
 

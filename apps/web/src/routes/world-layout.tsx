@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
 import { EntityIcon } from '@/components/entity-icon';
@@ -26,18 +26,6 @@ const navItem = ({ isActive }: { isActive: boolean }) =>
     'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-muted',
     isActive && 'bg-accent font-medium text-accent-foreground hover:bg-accent',
   );
-
-function ComingSoon({ icon, label }: { icon: ReactNode; label: string }) {
-  return (
-    <div className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground/70">
-      {icon}
-      {label}
-      <span className="ml-auto rounded-full border px-1.5 text-[10px] uppercase tracking-wide">
-        Soon
-      </span>
-    </div>
-  );
-}
 
 function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => void }) {
   const { world, types, base, canEdit } = ctx;
@@ -68,7 +56,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <NavLink to={base} end className={navItem}>
           <Library /> Codex
         </NavLink>
-        <ComingSoon icon={<MapIcon />} label="Atlas" />
+        <NavLink to={`${base}/atlas`} className={navItem}>
+          <MapIcon /> Atlas
+        </NavLink>
         <NavLink to={`${base}/manuscript`} className={navItem}>
           <PenLine /> Manuscript
         </NavLink>
@@ -145,6 +135,7 @@ export function WorldLayout() {
     );
   }
   if (!ctx) return <PageSpinner />;
+  const isMapView = pathname.startsWith(`${ctx.base}/atlas/`);
 
   return (
     <WorldContext.Provider value={ctx}>
@@ -190,9 +181,12 @@ export function WorldLayout() {
           </header>
           <main
             className={cn(
-              'mx-auto px-4 py-6 lg:px-10 lg:py-10',
+              'mx-auto',
+              // An open map fills the screen; the map list reads like the other pages.
+              isMapView ? 'max-w-none' : 'px-4 py-6 lg:px-10 lg:py-10',
               // Writing gets the full width for the contents, scene and Codex panel.
-              pathname.startsWith(`${ctx.base}/manuscript`) ? 'max-w-[1600px]' : 'max-w-6xl',
+              !isMapView &&
+                (pathname.startsWith(`${ctx.base}/manuscript`) ? 'max-w-[1600px]' : 'max-w-6xl'),
             )}
           >
             <Outlet />

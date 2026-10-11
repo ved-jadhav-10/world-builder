@@ -41,3 +41,18 @@ export function errorMessage(error: unknown): string {
   }
   return error instanceof Error ? error.message : 'Something went wrong';
 }
+
+/** Sends a multipart form (file uploads). The browser sets the content type and boundary. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const response = await fetch(`/api${path}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: form,
+  });
+  const data = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok) {
+    const error = data as Partial<ApiErrorBody> | null;
+    throw new ApiError(response.status, error?.message ?? response.statusText, error?.issues);
+  }
+  return data as T;
+}

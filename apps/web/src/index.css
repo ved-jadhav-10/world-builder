@@ -120,3 +120,111 @@
 .prose-manuscript > * + * {
   @apply mt-4;
 }
+
+/* Atlas: Leaflet map, pins and labels */
+.atlas-map {
+  @apply bg-muted;
+  font-family: inherit;
+}
+.atlas-drawing .atlas-map,
+.atlas-drawing .atlas-map.leaflet-grab,
+.atlas-drawing .atlas-map .leaflet-interactive {
+  cursor: crosshair;
+}
+.atlas-map .leaflet-control-zoom {
+  @apply overflow-hidden rounded-lg border border-border bg-card shadow-md;
+}
+.atlas-map .leaflet-control-zoom a {
+  @apply border-border bg-card text-foreground;
+}
+.atlas-map .leaflet-control-zoom a:hover {
+  @apply bg-muted;
+}
+
+.atlas-pin-wrap,
+.atlas-text-wrap {
+  background: none;
+  border: none;
+}
+.atlas-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: var(--c);
+  color: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
+  transition: transform 0.12s ease;
+}
+.atlas-pin svg {
+  width: 56%;
+  height: 56%;
+}
+.atlas-pin:hover {
+  transform: scale(1.12);
+}
+.atlas-pin.is-selected {
+  box-shadow:
+    0 0 0 3px var(--c),
+    0 0 0 6px rgb(255 255 255 / 0.9),
+    0 2px 6px rgb(0 0 0 / 0.5);
+}
+.atlas-pin-label,
+.atlas-label {
+  white-space: nowrap;
+  font-weight: 600;
+  pointer-events: none;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 6px #fff;
+}
+.atlas-pin-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 2px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #1f2937;
+}
+.atlas-text-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.atlas-label {
+  font-family: var(--font-serif);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.atlas-label.is-selected {
+  outline: 2px dashed currentColor;
+  outline-offset: 4px;
+}
+
+.atlas-map .atlas-tooltip {
+  @apply rounded border-0 bg-transparent px-1 py-0 text-xs font-semibold shadow-none;
+  color: #1f2937;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 6px #fff;
+}
+.atlas-map .atlas-tooltip::before {
+  display: none;
+}
+
+.atlas-handle {
+  background: #fff;
+  border: 2px solid #1f2937;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  cursor: grab;
+}
+.atlas-handle:active {
+  cursor: grabbing;
+}

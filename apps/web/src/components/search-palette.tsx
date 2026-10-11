@@ -1,20 +1,24 @@
 import { Dialog as DialogPrimitive } from 'radix-ui';
+import { Map as MapIcon } from 'lucide-react';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useAtlasSearch } from '@/api/atlas-queries';
 import { useSearch } from '@/api/queries';
 import { EntityIcon } from '@/components/entity-icon';
 import {
   Command,
   CommandEmpty,
+  CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
 import { Spinner } from '@/components/ui/misc';
 import { useDebounced } from '@/lib/use-debounced';
+import { FEATURE_KIND_ICONS } from '@/lib/feature-kind-icons';
 import { useWorld } from '@/lib/world-context';
 
-/** Ctrl/Cmd+K: search every entity in the world by name, alias or text. */
+/** Ctrl/Cmd+K: search every entity in the world by name, alias or text, plus maps and map labels. */
 export function SearchPalette({
   open,
   onOpenChange,
@@ -27,6 +31,9 @@ export function SearchPalette({
   const [query, setQuery] = useState('');
   const debounced = useDebounced(query.trim(), 150);
   const { data: results = [], isFetching } = useSearch(world.id, debounced);
+  const { data: mapResults = [], isFetching: isFetchingMaps } = useAtlasSearch(world.id, debounced);
+  const searching = isFetching || isFetchingMaps;
+  const nothing = results.length === 0 && mapResults.length === 0;
 
   const setOpen = (next: boolean) => {
     if (!next) setQuery('');
@@ -52,7 +59,7 @@ export function SearchPalette({
         <DialogPrimitive.Content className="fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border bg-card shadow-2xl">
           <DialogPrimitive.Title className="sr-only">Search {world.name}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            Find characters, places and lore by name, alias or text.
+            Find characters, places, lore and maps by name, alias or text.
           </DialogPrimitive.Description>
           <Command shouldFilter={false}>
             <CommandInput
@@ -61,15 +68,13 @@ export function SearchPalette({
               placeholder={`Search ${world.name}…`}
             />
             <CommandList>
-              {debounced && !isFetching && results.length === 0 ? (
-                <CommandEmpty>No matches.</CommandEmpty>
-              ) : null}
+              {debounced && !searching && nothing ? <CommandEmpty>No matches.</CommandEmpty> : null}
               {!debounced ? (
                 <p className="px-3 py-6 text-center text-sm text-muted-foreground">
                   Type a name, alias or phrase.
                 </p>
               ) : null}
-              {debounced && isFetching && results.length === 0 ? (
+              {debounced && searching && nothing ? (
                 <div className="flex justify-center py-6">
                   <Spinner />
                 </div>
@@ -100,6 +105,35 @@ export function SearchPalette({
                     );
                   })
                 : null}
+              {debounced && mapResults.length > 0 ? (
+                <CommandGroup heading="Maps">
+                  {mapResults.map((result) => {
+                    const Icon = result.kind === 'map' ? MapIcon : FEATURE_KIND_ICONS[result.kind];
+                    return (
+                      <CommandItem
+                        key={`${result.kind}-${result.id}`}
+                        value={`${result.kind}-${result.id}`}
+                        onSelect={() => {
+                          setOpen(false);
+                          void navigate(
+                            `${base}/atlas/${result.mapId}${
+                              result.featureId ? `?feature=${result.featureId}` : ''
+                            }`,
+                          );
+                        }}
+                      >
+                        <Icon className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate font-medium">{result.label}</span>
+                        {result.kind !== 'map' ? (
+                          <span className="ml-auto shrink-0 truncate text-xs text-muted-foreground">
+                            on {result.mapName}
+                          </span>
+                        ) : null}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              ) : null}
             </CommandList>
           </Command>
         </DialogPrimitive.Content>

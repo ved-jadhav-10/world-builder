@@ -19,6 +19,7 @@ import { useDeleteEntity, useEntity, useUpdateEntity } from '@/api/queries';
 import { AliasesInput } from '@/components/aliases-input';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
+import { EntityMaps } from '@/components/entity-maps';
 import { FieldRenderer } from '@/components/field-renderer';
 import { RelationshipsPanel } from '@/components/relationships-panel';
 import { RichTextEditor } from '@/components/rich-text-editor';
@@ -289,6 +290,7 @@ function EntityEditor({ entity }: { entity: Entity }) {
           <RelationshipsPanel entity={entity} />
           <TagsEditor entity={entity} />
           <AppearsIn entityId={entity.id} />
+          <EntityMaps entityId={entity.id} />
         </aside>
       </div>
 
