@@ -69,7 +69,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
           <Library /> Codex
         </NavLink>
         <ComingSoon icon={<MapIcon />} label="Atlas" />
-        <ComingSoon icon={<PenLine />} label="Manuscript" />
+        <NavLink to={`${base}/manuscript`} className={navItem}>
+          <PenLine /> Manuscript
+        </NavLink>
       </nav>
 
       <nav className="space-y-0.5">
@@ -186,7 +188,13 @@ export function WorldLayout() {
               <span className="sr-only">Search</span>
             </Button>
           </header>
-          <main className="mx-auto max-w-6xl px-4 py-6 lg:px-10 lg:py-10">
+          <main
+            className={cn(
+              'mx-auto px-4 py-6 lg:px-10 lg:py-10',
+              // Writing gets the full width for the contents, scene and Codex panel.
+              pathname.startsWith(`${ctx.base}/manuscript`) ? 'max-w-[1600px]' : 'max-w-6xl',
+            )}
+          >
             <Outlet />
           </main>
         </div>

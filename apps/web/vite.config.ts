@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // Pre-bundle editor internals the lazily loaded scene editor imports, so opening the first
+  // scene in dev does not trigger a dependency re-optimisation and page reload.
+  optimizeDeps: { include: ['@tiptap/pm/state', '@tiptap/pm/view'] },
   server: {
     port: 5173,
     strictPort: true,

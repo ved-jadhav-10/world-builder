@@ -23,6 +23,7 @@ import { FieldRenderer } from '@/components/field-renderer';
 import { RelationshipsPanel } from '@/components/relationships-panel';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { TagsEditor } from '@/components/tags-editor';
+import { AppearsIn } from '@/components/appears-in';
 import { Button } from '@/components/ui/button';
 import { FieldError, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
@@ -287,6 +288,7 @@ function EntityEditor({ entity }: { entity: Entity }) {
 
           <RelationshipsPanel entity={entity} />
           <TagsEditor entity={entity} />
+          <AppearsIn entityId={entity.id} />
         </aside>
       </div>
 

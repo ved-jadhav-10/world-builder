@@ -2,7 +2,7 @@
 
 A browser-based "story operating system": one linked graph of story entities (characters, places, factions, lore) seen through three views — **Atlas** (maps), **Codex** (characters and lore) and **Manuscript** (chapters).
 
-This repo currently contains **Milestone 1: the MVP foundation** — accounts, the entity / type / relationship model and a working Codex. See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
+This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex) and **Milestone 2** (the Manuscript). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
 
 ## What works today
 
@@ -12,7 +12,11 @@ This repo currently contains **Milestone 1: the MVP foundation** — accounts, t
 - Entity pages: aliases, summary, rich-text notes, typed fields, visibility
 - Two-way relationships ("located in" ↔ "contains") and custom relationship types
 - Tags, Ctrl/Cmd+K search across names, aliases and text, Trash with restore
-- Full JSON export of a world
+- Full JSON export of a world, including the manuscript
+- **Manuscript:** books, parts, chapters and scenes; reorder and move them from the contents; an autosaving scene editor with word counts
+- Scene details: point of view, location, in-world date and summary
+- Codex names and aliases are underlined as you write, with hover previews, a Codex side panel and a distraction-free focus mode
+- Every entry lists the scenes it **appears in** (by mention, point of view or setting)
 
 ## Prerequisites
 

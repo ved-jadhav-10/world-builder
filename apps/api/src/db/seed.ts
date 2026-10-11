@@ -9,6 +9,7 @@ import { entityCreateSchema, worldCreateSchema, type RichTextDoc } from '@atlas/
 import { auth } from '../auth';
 import { createEntity } from '../modules/entities/service';
 import { listEntityTypes } from '../modules/entity-types/service';
+import { createNode, saveSceneBody, updateNode } from '../modules/manuscript/service';
 import { createRelationship, listRelationshipTypes } from '../modules/relationships/service';
 import { attachTag, createTag } from '../modules/tags/service';
 import { createWorld } from '../modules/worlds/service';
@@ -102,6 +103,51 @@ async function main() {
 
   const mainCast = await createTag(db, world.id, { name: 'Main cast', color: '#e11d48' });
   await attachTag(db, world.id, mira.id, mainCast.id);
+
+  // A short manuscript, so the Manuscript view and "appears in" lists have something to show.
+  const book = await createNode(db, world.id, {
+    kind: 'book',
+    parentId: null,
+    title: 'The Salt Road',
+  });
+  const chapter = await createNode(db, world.id, {
+    kind: 'chapter',
+    parentId: book.id,
+    title: 'Low Tide',
+  });
+  const docks = await createNode(db, world.id, {
+    kind: 'scene',
+    parentId: chapter.id,
+    title: 'At the docks',
+  });
+  await updateNode(db, world.id, docks.id, {
+    povId: mira.id,
+    locationId: vesh.id,
+    inWorldDate: '3rd of Frostfall',
+  });
+  await saveSceneBody(
+    db,
+    world.id,
+    docks.id,
+    doc(
+      'Fog rolled off the harbour as Mira counted the ships of the Tide Guild riding at anchor.',
+      'Vesh was quiet before dawn. Too quiet, she thought, and turned the Drowned Compass over in her pocket.',
+    ),
+  );
+  const tavern = await createNode(db, world.id, {
+    kind: 'scene',
+    parentId: chapter.id,
+    title: 'Closing time',
+  });
+  await updateNode(db, world.id, tavern.id, { povId: mira.id, locationId: eel.id });
+  await saveSceneBody(
+    db,
+    world.id,
+    tavern.id,
+    doc(
+      'The last drinker left the Gilded Eel at midnight. The barkeep bolted the door and lifted the trapdoor.',
+    ),
+  );
 
   console.info(`Seeded world "${world.name}". Sign in as ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 }

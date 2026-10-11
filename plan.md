@@ -126,3 +126,15 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
    - Delete Mira and restore her from Trash.
    - Download the JSON export.
    - A second user in a private window is refused on the first world's URL.
+
+## Milestone 2 (Manuscript): done
+
+- **Data:** `manuscript_nodes` is one tree table (book › part › chapter › scene) holding body, plain text, word count, POV, location and in-world date. `scene_mentions` is derived from scene text.
+- **Mentions:** `packages/shared/src/mentions.ts` matches names and aliases: whole words, case-insensitive, longest first, ambiguous terms skipped.
+  - The server rebuilds a scene's mentions on save, and rescans the world when an entity is created, renamed, trashed or restored.
+  - The editor highlights using the same matcher.
+- **API:** the `/manuscript` tree, node create / update / move / delete, `/manuscript/scenes/:id` (and `/body`), `/mention-index` and `/entities/:id/appearances`. The JSON export now includes the manuscript.
+- **Web:** contents binder, autosaving scene editor (serialized saves, Ctrl+S), scene details, hover cards (tap on touch screens), Codex side panel, focus mode, and "Appears in" on entry pages.
+- **Deferred:**
+  - writing goals and streaks, and revision snapshots (both v1 in the research)
+  - drag-and-drop reordering (moves are menu-based for now)

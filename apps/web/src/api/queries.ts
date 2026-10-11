@@ -157,6 +157,8 @@ function invalidateWorldContent(
     keys.relationships(worldId),
     ['search', worldId],
     keys.trash(worldId),
+    ['mention-index', worldId],
+    ['appearances', worldId],
   ]) {
     void qc.invalidateQueries({
       queryKey: key,

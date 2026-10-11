@@ -106,3 +106,17 @@
   content: attr(data-placeholder);
   @apply pointer-events-none float-left h-0 text-muted-foreground;
 }
+
+/* Entity names detected in manuscript prose */
+.mention {
+  @apply rounded-sm underline decoration-primary/40 decoration-dotted underline-offset-4 transition-colors hover:bg-accent hover:decoration-primary;
+  cursor: help;
+}
+
+/* Manuscript prose reads like a book page */
+.prose-manuscript {
+  @apply font-serif text-[17px] leading-[1.8];
+}
+.prose-manuscript > * + * {
+  @apply mt-4;
+}

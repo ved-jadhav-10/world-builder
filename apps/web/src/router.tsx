@@ -34,6 +34,19 @@ export const router = createBrowserRouter([
               { path: 'trash', element: <TrashPage /> },
               { path: 'settings', element: <WorldSettingsPage /> },
               { path: 'settings/types', lazy: () => import('@/routes/types-settings-page') },
+              {
+                path: 'manuscript',
+                lazy: () => import('@/routes/manuscript-layout'),
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({
+                      Component: (await import('@/routes/manuscript-layout')).ManuscriptHome,
+                    }),
+                  },
+                  { path: 's/:sceneId', lazy: () => import('@/routes/scene-page') },
+                ],
+              },
             ],
           },
         ],
