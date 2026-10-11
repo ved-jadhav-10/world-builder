@@ -223,7 +223,11 @@ describe('dated links', () => {
 });
 
 describe('latestApplicable', () => {
-  const picture = (id: string, anchor: { sceneId?: string; day?: number }, createdAt = '2026-01-01T00:00:00.000Z') => ({
+  const picture = (
+    id: string,
+    anchor: { sceneId?: string; day?: number },
+    createdAt = '2026-01-01T00:00:00.000Z',
+  ) => ({
     id,
     sceneId: anchor.sceneId ?? null,
     day: anchor.day ?? null,
@@ -246,7 +250,13 @@ describe('latestApplicable', () => {
   });
 
   it('ignores pictures that cannot be placed, and handles none at all', () => {
-    expect(latestApplicable([picture('ghost', { sceneId: 'deleted' }), picture('loose', {})], pointAtDay(100), scenes)).toBeNull();
+    expect(
+      latestApplicable(
+        [picture('ghost', { sceneId: 'deleted' }), picture('loose', {})],
+        pointAtDay(100),
+        scenes,
+      ),
+    ).toBeNull();
     expect(latestApplicable([], pointAtDay(100), scenes)).toBeNull();
   });
 });

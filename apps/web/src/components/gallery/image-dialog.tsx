@@ -181,7 +181,7 @@ export function ImageDialog({
     <Dialog open={Boolean(image)} onOpenChange={(open) => !open && onClose()}>
       {image ? (
         <DialogContent
-          className="max-h-[90dvh] max-w-2xl overflow-y-auto"
+          className="top-[5dvh] max-h-[90dvh] max-w-2xl overflow-y-auto"
           title={image.caption || 'Picture'}
           description={image.entityName ?? 'In the world gallery'}
         >

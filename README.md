@@ -2,7 +2,7 @@
 
 A browser-based "story operating system": one linked graph of story entities (characters, places, factions, lore) seen through three views — **Atlas** (maps), **Codex** (characters and lore) and **Manuscript** (chapters).
 
-This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex), **Milestone 2** (the Manuscript), **Milestone 3** (the Atlas) and **Milestone 4** (calendars, progressions and the timeline). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
+This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex), **Milestone 2** (the Manuscript), **Milestone 3** (the Atlas), **Milestone 4** (calendars, progressions and the timeline) and **Milestone 5** (GM tools, galleries and Markdown export). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
 
 ## What works today
 
@@ -25,6 +25,11 @@ This repo currently contains **Milestone 1** (accounts, the entity / type / rela
 - Dates on entries (born and died, founded, begins and ends), on scenes, and on relationships that only held for a while
 - **Progressions:** record how an entry changes at a scene or date, then view it "as of" any point in the story
 - **Timeline:** entries and scenes in swimlanes you can pan and zoom, or as a list, with a marker that opens entries as they were on that date
+- **View as a player:** preview the whole world as a player, a reader or the public. The API does the filtering, so hidden entries, pins, maps and pictures really are hidden, and previews can't change anything
+- Everything has a **visibility**: entries, maps, pins, pictures and changes. New ones start as GM-only
+- **Quest log:** a board of quests by status (not started, ongoing, completed, abandoned), linked to the people and places involved
+- **Galleries:** portraits and appearances for each entry, tagged to a scene or date, plus a gallery for the whole world
+- **Markdown export:** download the world as notes for Obsidian (one per entry, with links), plus your pictures and the full JSON
 
 ## Prerequisites
 
