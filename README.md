@@ -2,7 +2,7 @@
 
 A browser-based "story operating system": one linked graph of story entities (characters, places, factions, lore) seen through three views — **Atlas** (maps), **Codex** (characters and lore) and **Manuscript** (chapters).
 
-This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex), **Milestone 2** (the Manuscript) and **Milestone 3** (the Atlas). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
+This repo currently contains **Milestone 1** (accounts, the entity / type / relationship model and a working Codex), **Milestone 2** (the Manuscript), **Milestone 3** (the Atlas) and **Milestone 4** (calendars, progressions and the timeline). See [plan.md](plan.md) for the plan and tech-stack decisions, and [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md) for the product research.
 
 ## What works today
 
@@ -21,6 +21,10 @@ This repo currently contains **Milestone 1** (accounts, the entity / type / rela
 - Pins linked to entries, text labels, roads and rivers, and regions, each shown only from the zoom level you choose
 - Maps inside maps: a pin can open a child map, with breadcrumbs (World › Kaldor › Port Vael)
 - Entry pages list the maps they appear on, and Ctrl/Cmd+K also finds maps and map labels
+- **Custom calendars:** any months, weekdays, leap rules, eras and moons; every date is stored as a day count, so changing the calendar never reorders history
+- Dates on entries (born and died, founded, begins and ends), on scenes, and on relationships that only held for a while
+- **Progressions:** record how an entry changes at a scene or date, then view it "as of" any point in the story
+- **Timeline:** entries and scenes in swimlanes you can pan and zoom, or as a list, with a marker that opens entries as they were on that date
 
 ## Prerequisites
 

@@ -153,3 +153,21 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
   - replacing a map's image (delete and re-upload for now), and moving tiles to object storage
   - pin clustering (zoom-level visibility covers clutter for now)
   - the v1 items from the research: drill-down transitions, measure tool with travel times, and layers
+
+## Milestone 4 (Timeline): done
+
+- **Calendar:** one per world, with a default fantasy calendar until the world saves its own. It has any months, a weekday cycle, leap rules (every N years, with an offset, "except every M, unless every K"), eras and moons. Dates are stored as one **day number**: day 0 is the first day of year 0, and earlier days are negative. `packages/shared/src/calendar.ts` converts both ways. Changing the calendar relabels dates but never reorders them.
+  - Leap years are counted in closed form over one repeat of the pattern, so any year converts in constant time. The tests check real Gregorian facts (leap years, known weekdays, day counts) and round-trip over ±60,000 days on odd calendars.
+- **Dates:** every entry has two (`start_day`, `end_day`), named per type (Born/Died, Founded/Dissolved, Begins/Ends…). Scenes get a numeric `in_world_day`; the old free-text date stays as a note. Relationships can now hold for a period, editable with `PATCH /relationships/:id`.
+- **Progressions:** a change to an entry's fields (a null clears one) or summary, anchored to a **scene** (reading order) or an **in-world day**. The rules live in `packages/shared/src/progressions.ts`:
+  - same-kind anchors compare directly; a scene's day lets scenes and dates be compared
+  - what can't be placed (a deleted scene, or an undated scene against a date) is reported as unplaced, never guessed
+  - deleting a scene keeps its progressions, unplaced, rather than losing them
+- **As of:** `?asOf=s:<scene>` or `?asOf=d:<day>` opens a read-only view of an entry at that point: changes applied and marked, relationships filtered by their period, and a note when it is before its start or after its end.
+- **Timeline:** `GET /timeline` returns dated entries and scenes. The page has an SVG chart (lanes by type, drag to pan, Ctrl+scroll or buttons to zoom, an era-aware date ruler) and a list view. Clicking the ruler drops a marker, and entries opened from the timeline then show as of that date.
+- **Also:** a calendar editor with presets and a preview, a "took part in" link type, dates in the demo seed and the JSON export, and date labels in the type editor.
+- **Verified in Chrome** (scripted, 27 steps): calendar editing and validation, entry dates and range checks, progressions at a scene and a date, as-of views, link periods, scene dates, and the timeline (lanes, selection, marker, zoom, pan, filters, list, phone width).
+- **Deferred:**
+  - several calendars, and parallel timeline tracks beyond lanes by type
+  - progressions for relationships, names and aliases; as-of views for the Atlas (borders by year) and the manuscript
+  - timeline playback and journey lines, calendar reminders, and the continuity checker (all v1 or v2 in the research)

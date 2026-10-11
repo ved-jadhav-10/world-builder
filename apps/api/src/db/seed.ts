@@ -5,12 +5,24 @@
  *   pnpm db:seed   ->  demo@atlas.local / demo-password
  */
 import { eq } from 'drizzle-orm';
-import { entityCreateSchema, worldCreateSchema, type RichTextDoc } from '@atlas/shared';
+import {
+  dateToDay,
+  DEFAULT_CALENDAR,
+  entityCreateSchema,
+  progressionCreateSchema,
+  worldCreateSchema,
+  type RichTextDoc,
+} from '@atlas/shared';
 import { auth } from '../auth';
 import { createEntity } from '../modules/entities/service';
 import { listEntityTypes } from '../modules/entity-types/service';
 import { createNode, saveSceneBody, updateNode } from '../modules/manuscript/service';
-import { createRelationship, listRelationshipTypes } from '../modules/relationships/service';
+import { createProgression } from '../modules/progressions/service';
+import {
+  createRelationship,
+  listRelationshipTypes,
+  updateRelationship,
+} from '../modules/relationships/service';
 import { attachTag, createTag } from '../modules/tags/service';
 import { createWorld } from '../modules/worlds/service';
 import { db, sql } from './client';
@@ -18,6 +30,10 @@ import { user } from './schema';
 
 const DEMO_EMAIL = 'demo@atlas.local';
 const DEMO_PASSWORD = 'demo-password';
+
+/** A day in the default calendar: `month` counts from 0 (Frostmoon). */
+const day = (year: number, month: number, dayOfMonth: number) =>
+  dateToDay(DEFAULT_CALENDAR, { year, month, day: dayOfMonth });
 
 const doc = (...paragraphs: string[]): RichTextDoc => ({
   type: 'doc',
@@ -83,6 +99,7 @@ async function main() {
     aliases: ['Mira', 'The Barkeep'],
     summary: 'Owner of the Gilded Eel and a former Tide Guild pilot.',
     fields: { age: '41', life_status: 'Alive', personality: 'Dry, watchful, generous to a fault.' },
+    startDay: day(273, 2, 9),
     body: doc(
       'Mira ran contraband through the Drowned Channels for twenty years before buying the Eel.',
       'She still keeps a pilot’s chart of the harbour under the bar.',
@@ -94,12 +111,54 @@ async function main() {
     fields: { item_type: 'Artifact', rarity: 'Unique' },
   });
 
+  const riots = await add('event', {
+    name: 'The Lantern Riots',
+    summary: 'Three nights of unrest in Vesh after the Guild raised harbour fees.',
+    startDay: day(311, 9, 14),
+    endDay: day(311, 9, 17),
+  });
+
   await link(vesh.id, 'located_in', kaldor.id);
   await link(eel.id, 'located_in', vesh.id);
   await link(mira.id, 'located_in', eel.id);
-  await link(mira.id, 'member_of', guild.id);
+  const membership = await link(mira.id, 'member_of', guild.id);
+  // She flew for the Guild for fifteen years, then left it behind.
+  await updateRelationship(db, world.id, membership.id, {
+    validFromDay: day(291, 0, 1),
+    validToDay: day(306, 4, 20),
+  });
+  await link(mira.id, 'took_part_in', riots.id);
   await link(mira.id, 'of_species', human.id);
   await link(mira.id, 'owns', compass.id);
+
+  // Changes over time: view Mira "as of" a year, or a scene, to see them take effect.
+  await createProgression(
+    db,
+    world.id,
+    mira.id,
+    progressionCreateSchema.parse({
+      title: 'Joins the Tide Guild',
+      day: day(291, 0, 1),
+      changes: {
+        summary: 'A reckless young pilot of the Tide Guild.',
+        fields: { age: '18', personality: 'Reckless, proud, hungry for the open sea.' },
+      },
+    }),
+  );
+  await createProgression(
+    db,
+    world.id,
+    mira.id,
+    progressionCreateSchema.parse({
+      title: 'Buys the Gilded Eel',
+      note: 'Spent her last pilot’s purse on the tavern, and never flew again.',
+      day: day(306, 4, 20),
+      changes: {
+        summary: 'Owner of the Gilded Eel and a former Tide Guild pilot.',
+        fields: { age: '33', personality: 'Dry, watchful, generous to a fault.' },
+      },
+    }),
+  );
 
   const mainCast = await createTag(db, world.id, { name: 'Main cast', color: '#e11d48' });
   await attachTag(db, world.id, mira.id, mainCast.id);
@@ -123,7 +182,8 @@ async function main() {
   await updateNode(db, world.id, docks.id, {
     povId: mira.id,
     locationId: vesh.id,
-    inWorldDate: '3rd of Frostfall',
+    inWorldDate: 'before dawn',
+    inWorldDay: day(314, 9, 3),
   });
   await saveSceneBody(
     db,
@@ -139,7 +199,11 @@ async function main() {
     parentId: chapter.id,
     title: 'Closing time',
   });
-  await updateNode(db, world.id, tavern.id, { povId: mira.id, locationId: eel.id });
+  await updateNode(db, world.id, tavern.id, {
+    povId: mira.id,
+    locationId: eel.id,
+    inWorldDay: day(314, 9, 3),
+  });
   await saveSceneBody(
     db,
     world.id,
