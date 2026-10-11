@@ -20,6 +20,7 @@ import { AliasesInput } from '@/components/aliases-input';
 import { AsOfControl } from '@/components/as-of-control';
 import { DateField } from '@/components/date-field';
 import { EntityAsOfView } from '@/components/entity-as-of';
+import { EntityGallery, EntityPortrait } from '@/components/entity-gallery';
 import { ProgressionsPanel } from '@/components/progressions-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
@@ -34,15 +35,8 @@ import { FieldError, Label, NativeSelect, Textarea } from '@/components/ui/input
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { formatAsOf, parseAsOf, type AsOf } from '@/lib/as-of';
 import { timeAgo } from '@/lib/utils';
+import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
-
-const VISIBILITY_LABELS: Record<Visibility, string> = {
-  gm: 'GM only',
-  player: 'Players',
-  reader: 'Readers',
-  public: 'Public',
-  hidden: 'Hidden',
-};
 
 interface FormValues {
   name: string;
@@ -243,6 +237,7 @@ function EntityEditor({
       {/* The editor stays mounted while an "as of" view is open, so unsaved edits aren't lost. */}
       <div className={asOf ? 'hidden' : undefined}>
         <div className="mt-2 flex items-start gap-3">
+          <EntityPortrait entityId={entity.id} className="mt-1" />
           <input
             {...form.register('name')}
             aria-label="Name"
@@ -311,6 +306,7 @@ function EntityEditor({
               />
             </div>
             <ProgressionsPanel entity={entity} type={type} />
+            <EntityGallery entity={entity} />
           </div>
 
           <aside className="space-y-8">
@@ -368,7 +364,9 @@ function EntityEditor({
                     </option>
                   ))}
                 </NativeSelect>
-                <p className="text-xs text-muted-foreground">Takes effect once sharing arrives.</p>
+                <p className="text-xs text-muted-foreground">
+                  Who can see this entry. Use “View as” in the sidebar to check.
+                </p>
               </div>
             </section>
 

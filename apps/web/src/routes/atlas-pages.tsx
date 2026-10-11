@@ -6,6 +6,7 @@ import { UploadMapDialog } from '@/components/atlas/upload-map-dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState, PageSpinner, Spinner } from '@/components/ui/misc';
 import { childMaps } from '@/lib/atlas-tree';
+import { VisibilityBadge } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 function Thumbnail({ map, worldId }: { map: AtlasMap; worldId: string }) {
@@ -35,14 +36,17 @@ function Thumbnail({ map, worldId }: { map: AtlasMap; worldId: string }) {
 }
 
 function MapCard({ map, maps }: { map: AtlasMap; maps: AtlasMap[] }) {
-  const { world, base } = useWorld();
+  const { world, base, audience } = useWorld();
   const inside = childMaps(maps, map.id);
   return (
     <div className="overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
       <Link to={`${base}/atlas/${map.id}`} className="block">
         <Thumbnail map={map} worldId={world.id} />
         <div className="space-y-0.5 p-3">
-          <h2 className="truncate font-serif text-lg font-semibold">{map.name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="truncate font-serif text-lg font-semibold">{map.name}</h2>
+            {audience === 'gm' ? <VisibilityBadge visibility={map.visibility} /> : null}
+          </div>
           <p className="text-xs text-muted-foreground">
             {map.width.toLocaleString()} × {map.height.toLocaleString()} px · {map.featureCount}{' '}
             {map.featureCount === 1 ? 'item' : 'items'}

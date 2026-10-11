@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import type { EntitySummary } from '@atlas/shared';
 import { EntityIcon } from '@/components/entity-icon';
 import { timeAgo } from '@/lib/utils';
+import { VisibilityBadge } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 export function EntityRow({
@@ -11,7 +12,7 @@ export function EntityRow({
   entity: EntitySummary;
   showType?: boolean;
 }) {
-  const { typeById, base } = useWorld();
+  const { typeById, base, audience } = useWorld();
   const type = typeById.get(entity.typeId);
   return (
     <li>
@@ -23,6 +24,7 @@ export function EntityRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="truncate font-medium">{entity.name}</span>
+            {audience === 'gm' ? <VisibilityBadge visibility={entity.visibility} /> : null}
             {entity.aliases.length ? (
               <span className="truncate text-xs text-muted-foreground">
                 {entity.aliases.join(' · ')}

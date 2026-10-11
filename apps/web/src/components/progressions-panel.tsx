@@ -7,6 +7,7 @@ import {
   type EntityType,
   type Progression,
   type ProgressionChanges,
+  type Visibility,
 } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import {
@@ -24,6 +25,7 @@ import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { Spinner } from '@/components/ui/misc';
 import { useAnchorLabel, useScenes } from '@/lib/as-of';
 import { describeChanges } from '@/lib/progression-text';
+import { VisibilityBadge, VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 /** The form inside the dialog. It only exists while the dialog is open, so it starts fresh each time. */
@@ -52,6 +54,7 @@ function ProgressionForm({
   const [fields, setFields] = useState<Record<string, unknown>>(existing?.changes.fields ?? {});
   const [summaryOn, setSummaryOn] = useState(existing?.changes.summary !== undefined);
   const [summary, setSummary] = useState(existing?.changes.summary ?? entity.summary);
+  const [visibility, setVisibility] = useState<Visibility>(existing?.visibility ?? 'gm');
 
   const unused = type.fieldSchema.filter((f) => !(f.key in fields));
   const placed = anchor === 'scene' ? sceneId !== '' : day !== null;
@@ -69,6 +72,7 @@ function ProgressionForm({
       sceneId: anchor === 'scene' ? sceneId : null,
       day: anchor === 'day' ? day : null,
       changes,
+      visibility,
     };
     try {
       if (existing) await update.mutateAsync({ id: existing.id, ...payload });
@@ -207,6 +211,11 @@ function ProgressionForm({
       </div>
 
       <div className="space-y-1.5">
+        <Label htmlFor="progression-visibility">Who can see this change</Label>
+        <VisibilitySelect id="progression-visibility" value={visibility} onChange={setVisibility} />
+      </div>
+
+      <div className="space-y-1.5">
         <Label htmlFor="progression-note">Note</Label>
         <Textarea
           id="progression-note"
@@ -301,7 +310,10 @@ export function ProgressionsPanel({ entity, type }: { entity: Entity; type: Enti
               <li key={progression.id} className="group rounded-lg border bg-card p-3 text-sm">
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium">{progression.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{progression.title}</p>
+                      {canEdit ? <VisibilityBadge visibility={progression.visibility} /> : null}
+                    </div>
                     <p
                       className={
                         unplaced

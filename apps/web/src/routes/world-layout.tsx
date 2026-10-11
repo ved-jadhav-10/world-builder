@@ -1,10 +1,12 @@
 import {
   CalendarRange,
   ChevronLeft,
+  Images,
   Library,
   Map as MapIcon,
   Menu,
   PenLine,
+  ScrollText,
   Search,
   Settings,
   SlidersHorizontal,
@@ -20,7 +22,9 @@ import { SearchPalette } from '@/components/search-palette';
 import { Button } from '@/components/ui/button';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { UserMenu } from '@/components/user-menu';
+import { PreviewBanner, ViewAsSwitcher } from '@/components/view-as-switcher';
 import { cn } from '@/lib/utils';
+import { useViewAs } from '@/lib/view-as';
 import { buildWorldContext, WorldContext, type WorldContextValue } from '@/lib/world-context';
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
@@ -30,7 +34,9 @@ const navItem = ({ isActive }: { isActive: boolean }) =>
   );
 
 function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => void }) {
-  const { world, types, base, canEdit } = ctx;
+  const { world, types, base, canEdit, audience } = ctx;
+  // Only someone who can edit has a GM view to switch away from (and back to).
+  const isGm = world.role === 'owner' || world.role === 'editor';
   return (
     <div className="flex h-full flex-col gap-5 overflow-y-auto p-4 [&_svg]:size-4">
       <div>
@@ -54,6 +60,8 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <kbd className="ml-auto rounded border px-1.5 text-[11px]">Ctrl K</kbd>
       </button>
 
+      {isGm ? <ViewAsSwitcher /> : null}
+
       <nav className="space-y-0.5">
         <NavLink to={base} end className={navItem}>
           <Library /> Codex
@@ -61,11 +69,19 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <NavLink to={`${base}/atlas`} className={navItem}>
           <MapIcon /> Atlas
         </NavLink>
-        <NavLink to={`${base}/manuscript`} className={navItem}>
-          <PenLine /> Manuscript
-        </NavLink>
+        {audience === 'gm' ? (
+          <NavLink to={`${base}/manuscript`} className={navItem}>
+            <PenLine /> Manuscript
+          </NavLink>
+        ) : null}
         <NavLink to={`${base}/timeline`} className={navItem}>
           <CalendarRange /> Timeline
+        </NavLink>
+        <NavLink to={`${base}/quests`} className={navItem}>
+          <ScrollText /> Quests
+        </NavLink>
+        <NavLink to={`${base}/gallery`} className={navItem}>
+          <Images /> Gallery
         </NavLink>
       </nav>
 
@@ -113,6 +129,7 @@ export function WorldLayout() {
   const worldQuery = useWorldBySlug(slug);
   const typesQuery = useEntityTypes(worldQuery.data?.id);
   const calendarQuery = useCalendar(worldQuery.data?.id);
+  const viewAs = useViewAs();
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
   // The mobile menu remembers the page it was opened on, so navigating closes it.
@@ -123,9 +140,9 @@ export function WorldLayout() {
   const ctx = useMemo(
     () =>
       worldQuery.data && typesQuery.data && calendarQuery.data
-        ? buildWorldContext(worldQuery.data, typesQuery.data, calendarQuery.data.definition)
+        ? buildWorldContext(worldQuery.data, typesQuery.data, calendarQuery.data.definition, viewAs)
         : null,
-    [worldQuery.data, typesQuery.data, calendarQuery.data],
+    [worldQuery.data, typesQuery.data, calendarQuery.data, viewAs],
   );
 
   if (worldQuery.isError) {
@@ -200,6 +217,7 @@ export function WorldLayout() {
         </div>
       </div>
       <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      {ctx.previewing && viewAs ? <PreviewBanner audience={viewAs} /> : null}
     </WorldContext.Provider>
   );
 }

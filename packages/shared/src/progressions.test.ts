@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyProgressions,
+  latestApplicable,
   buildSceneIndex,
   isActiveAt,
   placeProgression,
@@ -218,5 +219,34 @@ describe('dated links', () => {
   it('shows everything when there is no day to go by', () => {
     expect(isActiveAt(50, 60, null)).toBe(true);
     expect(isActiveAt(50, 60, { sceneIndex: 3, day: null })).toBe(true);
+  });
+});
+
+describe('latestApplicable', () => {
+  const picture = (id: string, anchor: { sceneId?: string; day?: number }, createdAt = '2026-01-01T00:00:00.000Z') => ({
+    id,
+    sceneId: anchor.sceneId ?? null,
+    day: anchor.day ?? null,
+    createdAt,
+  });
+
+  it('picks the most recent picture that has taken effect', () => {
+    const young = picture('young', { day: 10 });
+    const old = picture('old', { day: 500 });
+    expect(latestApplicable([old, young], pointAtDay(5), scenes)).toBeNull();
+    expect(latestApplicable([old, young], pointAtDay(100), scenes)?.id).toBe('young');
+    expect(latestApplicable([young, old], pointAtDay(900), scenes)?.id).toBe('old');
+  });
+
+  it('works with scene tags, in reading order', () => {
+    const early = picture('early', { sceneId: 's1' });
+    const late = picture('late', { sceneId: 's3' });
+    expect(latestApplicable([late, early], pointAtScene(scenes, 's2')!, scenes)?.id).toBe('early');
+    expect(latestApplicable([late, early], pointAtScene(scenes, 's4')!, scenes)?.id).toBe('late');
+  });
+
+  it('ignores pictures that cannot be placed, and handles none at all', () => {
+    expect(latestApplicable([picture('ghost', { sceneId: 'deleted' }), picture('loose', {})], pointAtDay(100), scenes)).toBeNull();
+    expect(latestApplicable([], pointAtDay(100), scenes)).toBeNull();
   });
 });

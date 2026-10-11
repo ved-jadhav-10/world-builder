@@ -2,7 +2,7 @@ import { Link2, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import type { AtlasMap } from '@atlas/shared';
+import type { AtlasMap, Visibility } from '@atlas/shared';
 import { useDeleteMap, useUpdateMap } from '@/api/atlas-queries';
 import { errorMessage } from '@/api/client';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { descendantIds } from '@/lib/atlas-tree';
+import { VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 /** Rename a map, move it under another one, link it to an entry, or delete it. */
@@ -31,6 +32,7 @@ export function MapSettingsDialog({
   const [entity, setEntity] = useState<
     { id: string; name: string; typeId: string } | null | undefined
   >(undefined);
+  const [visibility, setVisibility] = useState<Visibility>(map.visibility);
   const updateMap = useUpdateMap(world.id);
   const deleteMap = useDeleteMap(world.id);
 
@@ -48,6 +50,7 @@ export function MapSettingsDialog({
         name: String(form.get('name')),
         description: String(form.get('description')),
         parentId: String(form.get('parentId')) || null,
+        visibility,
         ...(entity !== undefined ? { entityId: entity?.id ?? null } : {}),
       });
       setOpen(false);
@@ -131,6 +134,14 @@ export function MapSettingsDialog({
                 </Button>
               ) : null}
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="settings-visibility">Who can open it</Label>
+            <VisibilitySelect
+              id="settings-visibility"
+              value={visibility}
+              onChange={setVisibility}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="settings-description">Description</Label>

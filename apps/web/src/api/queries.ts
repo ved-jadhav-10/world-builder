@@ -329,15 +329,22 @@ export const useSearch = (worldId: string, q: string) =>
     staleTime: 10_000,
   });
 
-/** Downloads the world's JSON export via the browser. */
-export async function downloadExport(world: World) {
-  const response = await fetch(`/api/worlds/${world.id}/export`, { credentials: 'same-origin' });
+/** Saves a file the API sends, through the browser's download. */
+async function download(path: string, filename: string) {
+  const response = await fetch(`/api${path}`, { credentials: 'same-origin' });
   if (!response.ok) throw new Error('Export failed');
   const url = URL.createObjectURL(await response.blob());
-  const link = Object.assign(document.createElement('a'), {
-    href: url,
-    download: `${world.slug}-${new Date().toISOString().slice(0, 10)}.json`,
-  });
+  const link = Object.assign(document.createElement('a'), { href: url, download: filename });
   link.click();
   URL.revokeObjectURL(url);
 }
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Downloads the world's JSON export via the browser. */
+export const downloadExport = (world: World) =>
+  download(`/worlds/${world.id}/export`, `${world.slug}-${today()}.json`);
+
+/** Downloads the world as a zip of Markdown notes, pictures and JSON. */
+export const downloadMarkdownExport = (world: World) =>
+  download(`/worlds/${world.id}/export/markdown`, `${world.slug}-markdown-${today()}.zip`);

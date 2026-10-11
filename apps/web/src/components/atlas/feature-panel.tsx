@@ -20,6 +20,7 @@ import { ENTITY_ICONS } from '@/lib/entity-icons';
 import { FEATURE_KIND_ICONS } from '@/lib/feature-kind-icons';
 import { COLOR_PRESETS, resolveStyle, SIZE_LABELS, ZOOM_CHOICES } from '@/lib/map-style';
 import { cn } from '@/lib/utils';
+import { VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 function Segmented<T extends string>({
@@ -323,6 +324,13 @@ export function FeaturePanel({
                 </option>
               ))}
             </NativeSelect>
+          </Field>
+
+          <Field label="Who can see it">
+            <VisibilitySelect
+              value={feature.visibility}
+              onChange={(visibility) => onChange({ visibility })}
+            />
           </Field>
 
           <Field label="Notes">

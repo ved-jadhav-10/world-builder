@@ -1,9 +1,14 @@
-import { CalendarDays, Download } from 'lucide-react';
+import { CalendarDays, Download, FileText } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
-import { downloadExport, useDeleteWorld, useUpdateWorld } from '@/api/queries';
+import {
+  downloadExport,
+  downloadMarkdownExport,
+  useDeleteWorld,
+  useUpdateWorld,
+} from '@/api/queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea } from '@/components/ui/inputs';
@@ -31,10 +36,10 @@ export function WorldSettingsPage() {
     }
   }
 
-  async function onExport() {
+  async function onExport(download: typeof downloadExport) {
     setExporting(true);
     try {
-      await downloadExport(world);
+      await download(world);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -96,9 +101,22 @@ export function WorldSettingsPage() {
           Download everything in this world (entries, types, relationships, tags, the manuscript,
           maps, calendar and timeline) as one JSON file. Your work is always yours to take with you.
         </p>
-        <Button variant="outline" onClick={onExport} disabled={exporting}>
-          <Download /> Download JSON
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => onExport(downloadExport)} disabled={exporting}>
+            <Download /> Download JSON
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => onExport(downloadMarkdownExport)}
+            disabled={exporting}
+          >
+            <FileText /> Download Markdown (zip)
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          The Markdown zip is one note per entry with links between them, ready to open in Obsidian,
+          plus your pictures and the JSON. Both include GM-only content.
+        </p>
       </section>
 
       {isOwner ? (

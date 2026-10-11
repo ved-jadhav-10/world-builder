@@ -1,5 +1,6 @@
 import { Clock, TriangleAlert, X } from 'lucide-react';
-import { applyProgressions, type Entity, type EntityType } from '@atlas/shared';
+import { applyProgressions, latestApplicable, type Entity, type EntityType } from '@atlas/shared';
+import { imageUrl, useImages } from '@/api/gm-queries';
 import { useProgressions } from '@/api/timeline-queries';
 import { FieldRenderer } from '@/components/field-renderer';
 import { RelationshipsPanel } from '@/components/relationships-panel';
@@ -28,6 +29,7 @@ export function EntityAsOfView({
   const anchorLabel = useAnchorLabel();
   const { point, missing } = useStoryPoint(asOf);
   const { data: progressions, isPending } = useProgressions(world.id, entity.id);
+  const { data: images } = useImages(world.id, { entityId: entity.id });
 
   const where =
     asOf.kind === 'scene'
@@ -68,6 +70,16 @@ export function EntityAsOfView({
   const changed = (key: string) =>
     JSON.stringify(resolved.fields[key] ?? null) !== JSON.stringify(entity.fields[key] ?? null);
 
+  // The picture tagged closest before this moment, else the main portrait.
+  const appearance =
+    latestApplicable(
+      (images ?? []).filter((image) => image.sceneId || image.day !== null),
+      point,
+      index,
+    ) ??
+    images?.find((image) => image.isPortrait) ??
+    null;
+
   // Where this moment falls against the entry's own life span, when the moment has a date.
   let lifeStatus: string | null = null;
   if (point.day !== null) {
@@ -83,6 +95,18 @@ export function EntityAsOfView({
       {banner}
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-6">
+          {appearance ? (
+            <figure className="flex items-center gap-3">
+              <img
+                src={imageUrl(world.id, appearance.id, 'thumbnail')}
+                alt={appearance.caption || ''}
+                className="size-28 rounded-lg border object-cover"
+              />
+              <figcaption className="text-sm text-muted-foreground">
+                {appearance.caption || 'How they look at this point'}
+              </figcaption>
+            </figure>
+          ) : null}
           {lifeStatus ? (
             <Badge className="border-amber-500/40 text-amber-700 dark:text-amber-300">
               {lifeStatus}

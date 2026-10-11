@@ -2,7 +2,7 @@ import { ImagePlus, Link2, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { MAX_MAP_BYTES, type AtlasMap } from '@atlas/shared';
+import { MAX_MAP_BYTES, type AtlasMap, type Visibility } from '@atlas/shared';
 import { useMaps, useUploadMap } from '@/api/atlas-queries';
 import { errorMessage } from '@/api/client';
 import { EntityIcon } from '@/components/entity-icon';
@@ -10,6 +10,7 @@ import { EntityPicker, type PickedEntity } from '@/components/entity-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
+import { VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/tiff,image/avif';
@@ -34,6 +35,7 @@ export function UploadMapDialog({
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [entity, setEntity] = useState<PickedEntity | null>(null);
+  const [visibility, setVisibility] = useState<Visibility>('gm');
   const { data: maps = [] } = useMaps(world.id);
   const upload = useUploadMap(world.id);
 
@@ -64,6 +66,7 @@ export function UploadMapDialog({
         description: String(form.get('description') ?? ''),
         parentId: String(form.get('parentId') ?? '') || null,
         entityId: entity?.id ?? null,
+        visibility,
       });
       setOpen(false);
       reset();
@@ -171,6 +174,11 @@ export function UploadMapDialog({
                 </Button>
               ) : null}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="map-visibility">Who can open it</Label>
+            <VisibilitySelect id="map-visibility" value={visibility} onChange={setVisibility} />
           </div>
 
           <div className="space-y-1.5">

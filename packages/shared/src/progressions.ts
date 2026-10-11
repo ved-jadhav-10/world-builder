@@ -61,11 +61,18 @@ export function pointAtScene(scenes: SceneIndex, sceneId: string): StoryPoint | 
 
 export const pointAtDay = (day: number): StoryPoint => ({ sceneIndex: null, day });
 
+/** Anything placed in the story: a progression, or a picture tagged to a scene or a date. */
+export interface Anchored {
+  sceneId: string | null;
+  day: number | null;
+  createdAt: string;
+}
+
 export type Placement = 'applied' | 'later' | 'unplaced';
 
 /** Has this progression happened by `point`, will it later, or can that not be told? */
 export function placeProgression(
-  progression: Pick<Progression, 'sceneId' | 'day'>,
+  progression: Pick<Anchored, 'sceneId' | 'day'>,
   point: StoryPoint,
   scenes: SceneIndex,
 ): Placement {
@@ -89,8 +96,8 @@ export function placeProgression(
  * compared by the scene's day. Ties fall back to when they were written.
  */
 function compareProgressions(
-  a: Progression,
-  b: Progression,
+  a: Anchored,
+  b: Anchored,
   scenes: SceneIndex,
   byReadingOrder: boolean,
 ): number {
@@ -107,12 +114,25 @@ function compareProgressions(
 }
 
 /** Progressions in the order they take effect. Reading order suits a writer following scenes. */
-export function sortProgressions(
-  list: readonly Progression[],
+export function sortProgressions<T extends Anchored>(
+  list: readonly T[],
   scenes: SceneIndex,
   byReadingOrder: boolean,
-): Progression[] {
+): T[] {
   return [...list].sort((a, b) => compareProgressions(a, b, scenes, byReadingOrder));
+}
+
+/**
+ * Of things anchored in the story (say, an entry's pictures), the one that most recently took
+ * effect by `point`: the picture showing how someone looked at that moment. Null if none has yet.
+ */
+export function latestApplicable<T extends Anchored>(
+  items: readonly T[],
+  point: StoryPoint,
+  scenes: SceneIndex,
+): T | null {
+  const reached = items.filter((item) => placeProgression(item, point, scenes) === 'applied');
+  return sortProgressions(reached, scenes, point.sceneIndex !== null).at(-1) ?? null;
 }
 
 export interface ResolvedEntry {

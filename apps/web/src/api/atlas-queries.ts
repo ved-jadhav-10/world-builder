@@ -7,6 +7,7 @@ import type {
   FeatureUpdateInput,
   MapFeature,
   MapUpdateInput,
+  Visibility,
 } from '@atlas/shared';
 import { api, apiUpload } from './client';
 
@@ -82,12 +83,14 @@ export function useUploadMap(worldId: string) {
       description?: string;
       parentId?: string | null;
       entityId?: string | null;
+      visibility?: Visibility;
     }) => {
       const form = new FormData();
       form.set('name', input.name);
       form.set('description', input.description ?? '');
       form.set('parentId', input.parentId ?? '');
       form.set('entityId', input.entityId ?? '');
+      form.set('visibility', input.visibility ?? 'gm');
       form.set('image', input.image);
       return apiUpload<AtlasMap>(`/worlds/${worldId}/maps`, form);
     },

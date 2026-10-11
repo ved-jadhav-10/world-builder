@@ -1,4 +1,5 @@
-import type { ApiErrorBody } from '@atlas/shared';
+import { VIEW_AS_HEADER, type ApiErrorBody } from '@atlas/shared';
+import { getViewAs } from '@/lib/view-as';
 
 export class ApiError extends Error {
   constructor(
@@ -12,13 +13,22 @@ export class ApiError extends Error {
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
+/** The GM's "view as" choice, if any, for the server to apply. */
+export function viewAsHeader(): Record<string, string> {
+  const viewAs = getViewAs();
+  return viewAs ? { [VIEW_AS_HEADER]: viewAs } : {};
+}
+
 /** Calls the API at /api (proxied to Fastify in dev, same origin in production). */
 export async function api<T>(method: Method, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method,
     credentials: 'same-origin',
-    // Only send a JSON content type with a body: Fastify rejects empty JSON bodies.
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+    headers: {
+      // Only send a JSON content type with a body: Fastify rejects empty JSON bodies.
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+      ...viewAsHeader(),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (response.status === 204) return undefined as T;
@@ -47,6 +57,7 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   const response = await fetch(`/api${path}`, {
     method: 'POST',
     credentials: 'same-origin',
+    headers: viewAsHeader(),
     body: form,
   });
   const data = (await response.json().catch(() => null)) as unknown;
