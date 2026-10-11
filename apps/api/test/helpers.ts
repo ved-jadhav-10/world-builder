@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { expect } from 'vitest';
 import type { EntityType, World } from '@atlas/shared';
-import { buildApp } from '../src/app';
+import type { buildApp } from '../src/app';
 import { env } from '../src/env';
 
 export type TestApp = Awaited<ReturnType<typeof buildApp>>;

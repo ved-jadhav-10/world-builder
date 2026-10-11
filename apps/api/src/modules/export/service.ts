@@ -2,7 +2,15 @@ import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { WorldExport } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities, entityTags, entityTypes, relationships, relationshipTypes, tags, worlds } from '../../db/schema';
+import {
+  entities,
+  entityTags,
+  entityTypes,
+  relationships,
+  relationshipTypes,
+  tags,
+  worlds,
+} from '../../db/schema';
 import { notFound } from '../../errors';
 
 /** Everything in a world as one JSON document. Trashed entities are left out. */
@@ -11,7 +19,11 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
   if (!world) throw notFound('World');
 
   const [typeRows, relTypeRows, tagRows, entityRows] = await Promise.all([
-    db.select().from(entityTypes).where(eq(entityTypes.worldId, worldId)).orderBy(asc(entityTypes.sortOrder)),
+    db
+      .select()
+      .from(entityTypes)
+      .where(eq(entityTypes.worldId, worldId))
+      .orderBy(asc(entityTypes.sortOrder)),
     db.select().from(relationshipTypes).where(eq(relationshipTypes.worldId, worldId)),
     db.select().from(tags).where(eq(tags.worldId, worldId)),
     db

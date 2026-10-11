@@ -29,7 +29,13 @@ export function deriveSearchText(entity: SearchableEntity): string {
     if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string');
     return [];
   });
-  return [entity.name, ...entity.aliases, entity.summary, richTextToPlainText(entity.body), ...fieldText]
+  return [
+    entity.name,
+    ...entity.aliases,
+    entity.summary,
+    richTextToPlainText(entity.body),
+    ...fieldText,
+  ]
     .filter(Boolean)
     .join(' ')
     .slice(0, MAX_SEARCH_TEXT);

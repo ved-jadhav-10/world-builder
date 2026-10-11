@@ -28,7 +28,10 @@ export const fieldDefinitionSchema = z
   .object({
     key: z
       .string()
-      .regex(/^[a-z][a-z0-9_]{0,47}$/, 'Lowercase letters, digits and _ only, starting with a letter'),
+      .regex(
+        /^[a-z][a-z0-9_]{0,47}$/,
+        'Lowercase letters, digits and _ only, starting with a letter',
+      ),
     label: z.string().trim().min(1, 'Label is required').max(80),
     type: z.enum(FIELD_TYPES),
     options: z.array(z.string().trim().min(1).max(80)).max(100).optional(),

@@ -21,7 +21,10 @@ export const tagRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.patch(
     '/tags/:id',
-    { onRequest: requireRole('editor'), schema: { params: worldItemParamsSchema, body: tagUpdateSchema } },
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: worldItemParamsSchema, body: tagUpdateSchema },
+    },
     async (request) => updateTag(db, currentWorldId(request), request.params.id, request.body),
   );
 
@@ -37,7 +40,8 @@ export const tagRoutes: FastifyPluginAsyncZod = async (app) => {
   app.put(
     '/entities/:id/tags/:tagId',
     { onRequest: requireRole('editor'), schema: { params: entityTagParams } },
-    async (request) => attachTag(db, currentWorldId(request), request.params.id, request.params.tagId),
+    async (request) =>
+      attachTag(db, currentWorldId(request), request.params.id, request.params.tagId),
   );
 
   app.delete(

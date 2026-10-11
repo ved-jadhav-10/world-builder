@@ -57,7 +57,10 @@ export const worldMembers = pgTable(
     role: roleEnum('role').notNull(),
     createdAt: createdAt(),
   },
-  (t) => [primaryKey({ columns: [t.worldId, t.userId] }), index('world_members_user_idx').on(t.userId)],
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.userId] }),
+    index('world_members_user_idx').on(t.userId),
+  ],
 );
 
 export const entityTypes = pgTable(
@@ -92,7 +95,10 @@ export const entities = pgTable(
       .notNull()
       .references(() => entityTypes.id, { onDelete: 'restrict' }),
     name: text('name').notNull(),
-    aliases: text('aliases').array().notNull().default(sql`'{}'::text[]`),
+    aliases: text('aliases')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     summary: text('summary').notNull().default(''),
     fields: jsonb('fields').$type<Record<string, unknown>>().notNull().default({}),
     body: jsonb('body').$type<RichTextDoc>(),

@@ -2,13 +2,15 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { worldCreateSchema, worldUpdateSchema } from '@atlas/shared';
 import { db } from '../../db/client';
+import { currentUser, currentWorldId, requireRole, requireSession } from '../../plugins/auth-guard';
 import {
-  currentUser,
-  currentWorldId,
-  requireRole,
-  requireSession,
-} from '../../plugins/auth-guard';
-import { createWorld, getWorld, getWorldBySlug, listWorlds, softDeleteWorld, updateWorld } from './service';
+  createWorld,
+  getWorld,
+  getWorldBySlug,
+  listWorlds,
+  softDeleteWorld,
+  updateWorld,
+} from './service';
 
 /** /api/worlds — the signed-in user's worlds. */
 export const worldCollectionRoutes: FastifyPluginAsyncZod = async (app) => {

@@ -18,7 +18,10 @@ describe('entities', () => {
       aliases: ['The Barkeep'],
       summary: 'Keeps the Gilded Eel',
       fields: { age: '41', life_status: 'Alive', appearance: '', removed: 'x' },
-      body: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hi' }] }] },
+      body: {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hi' }] }],
+      },
     });
     expect(created.statusCode, created.body).toBe(201);
     const mira = created.json<Entity>();
@@ -66,19 +69,25 @@ describe('entities', () => {
     } while (cursor);
     expect(names).toEqual(['Alpha', 'Bravo', 'charlie', 'delta', 'echo']);
 
-    const recent = (await api.get(`${w}/entities?sort=updated&limit=1`)).json<Page<EntitySummary>>();
+    const recent = (await api.get(`${w}/entities?sort=updated&limit=1`)).json<
+      Page<EntitySummary>
+    >();
     expect(recent.items[0]?.name).toBe('Aardvark Amulet');
     expect((await api.get(`${w}/entities?cursor=garbage`)).statusCode).toBe(400);
   });
 
   it('moves entities to trash, restores them and deletes them forever', async () => {
     const { api, w, typeId } = await signUpWithWorld(app);
-    const entity = (await api.post(`${w}/entities`, { typeId: typeId('item'), name: 'Lost Ring' })).json<Entity>();
+    const entity = (
+      await api.post(`${w}/entities`, { typeId: typeId('item'), name: 'Lost Ring' })
+    ).json<Entity>();
 
     expect((await api.delete(`${w}/entities/${entity.id}`)).statusCode).toBe(204);
     expect((await api.get(`${w}/entities/${entity.id}`)).statusCode).toBe(404);
     expect((await api.get(`${w}/entities`)).json<Page<EntitySummary>>().items).toHaveLength(0);
-    expect((await api.get(`${w}/trash`)).json<TrashedEntity[]>().map((e) => e.id)).toEqual([entity.id]);
+    expect((await api.get(`${w}/trash`)).json<TrashedEntity[]>().map((e) => e.id)).toEqual([
+      entity.id,
+    ]);
 
     expect((await api.post(`${w}/trash/${entity.id}/restore`)).statusCode).toBe(200);
     expect((await api.get(`${w}/entities/${entity.id}`)).statusCode).toBe(200);
@@ -104,15 +113,27 @@ describe('entity types', () => {
     const ship = created.json<EntityType>();
     expect(ship).toMatchObject({ key: 'ship', isBuiltin: false, sortOrder: 8 });
 
-    const bad = await api.post(`${w}/entities`, { typeId: ship.id, name: 'Wave', fields: { crew: 'many' } });
+    const bad = await api.post(`${w}/entities`, {
+      typeId: ship.id,
+      name: 'Wave',
+      fields: { crew: 'many' },
+    });
     expect(bad.statusCode).toBe(400);
-    const good = await api.post(`${w}/entities`, { typeId: ship.id, name: 'Wave', fields: { crew: 30 } });
+    const good = await api.post(`${w}/entities`, {
+      typeId: ship.id,
+      name: 'Wave',
+      fields: { crew: 30 },
+    });
     expect(good.statusCode).toBe(201);
 
     expect((await api.delete(`${w}/entity-types/${ship.id}`)).statusCode).toBe(409);
 
     const renamed = await api.patch(`${w}/entity-types/${ship.id}`, { name: 'Vessel' });
-    expect(renamed.json<EntityType>()).toMatchObject({ name: 'Vessel', key: 'ship', entityCount: 1 });
+    expect(renamed.json<EntityType>()).toMatchObject({
+      name: 'Vessel',
+      key: 'ship',
+      entityCount: 1,
+    });
 
     const second = (await api.post(`${w}/entity-types`, { name: 'ship' })).json<EntityType>();
     expect(second.key).toBe('ship_2');

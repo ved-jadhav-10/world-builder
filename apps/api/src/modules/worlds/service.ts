@@ -1,5 +1,11 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { slugify, type Role, type World, type worldCreateSchema, type worldUpdateSchema } from '@atlas/shared';
+import {
+  slugify,
+  type Role,
+  type World,
+  type worldCreateSchema,
+  type worldUpdateSchema,
+} from '@atlas/shared';
 import type { z } from 'zod';
 import type { DbOrTx } from '../../db/client';
 import { entityTypes, relationshipTypes, worldMembers, worlds } from '../../db/schema';
@@ -35,7 +41,10 @@ export async function getWorldBySlug(db: DbOrTx, userId: string, slug: string): 
   const [row] = await db
     .select({ world: worlds, role: worldMembers.role })
     .from(worlds)
-    .innerJoin(worldMembers, and(eq(worldMembers.worldId, worlds.id), eq(worldMembers.userId, userId)))
+    .innerJoin(
+      worldMembers,
+      and(eq(worldMembers.worldId, worlds.id), eq(worldMembers.userId, userId)),
+    )
     .where(and(eq(worlds.slug, slug), isNull(worlds.deletedAt)));
   if (!row) throw notFound('World');
   return toWorld(row.world, row.role);
@@ -51,7 +60,10 @@ async function uniqueSlug(db: DbOrTx, name: string): Promise<string> {
   const base = slugify(name) || 'world';
   for (let attempt = 0; attempt < 6; attempt++) {
     const candidate = attempt === 0 ? base : `${base}-${randomSuffix()}`;
-    const [taken] = await db.select({ id: worlds.id }).from(worlds).where(eq(worlds.slug, candidate));
+    const [taken] = await db
+      .select({ id: worlds.id })
+      .from(worlds)
+      .where(eq(worlds.slug, candidate));
     if (!taken) return candidate;
   }
   return `${base}-${randomSuffix(8)}`;
@@ -84,9 +96,11 @@ export async function createWorld(
         sortOrder: i,
       })),
     );
-    await tx.insert(relationshipTypes).values(
-      BUILTIN_RELATIONSHIP_TYPES.map((type) => ({ ...type, worldId: world.id, isBuiltin: true })),
-    );
+    await tx
+      .insert(relationshipTypes)
+      .values(
+        BUILTIN_RELATIONSHIP_TYPES.map((type) => ({ ...type, worldId: world.id, isBuiltin: true })),
+      );
     return toWorld(world, 'owner');
   });
 }

@@ -26,9 +26,10 @@ export async function listEntityTypes(db: DbOrTx, worldId: string): Promise<Enti
   const rows = await db
     .select({
       ...getTableColumns(entityTypes),
-      entityCount: sql<number>`count(${entities.id}) filter (where ${entities.deletedAt} is null)`.mapWith(
-        Number,
-      ),
+      entityCount:
+        sql<number>`count(${entities.id}) filter (where ${entities.deletedAt} is null)`.mapWith(
+          Number,
+        ),
     })
     .from(entityTypes)
     .leftJoin(entities, eq(entities.typeId, entityTypes.id))
@@ -39,7 +40,11 @@ export async function listEntityTypes(db: DbOrTx, worldId: string): Promise<Enti
 }
 
 /** Fetches a type and proves it belongs to the world. */
-export async function getEntityTypeRow(db: DbOrTx, worldId: string, typeId: string): Promise<EntityTypeRow> {
+export async function getEntityTypeRow(
+  db: DbOrTx,
+  worldId: string,
+  typeId: string,
+): Promise<EntityTypeRow> {
   const [row] = await db
     .select()
     .from(entityTypes)
@@ -96,12 +101,17 @@ export async function updateEntityType(
 export async function deleteEntityType(db: DbOrTx, worldId: string, typeId: string): Promise<void> {
   await getEntityTypeRow(db, worldId, typeId);
   // Trashed entities still reference the type, so count them too.
-  const [counted] = await db.select({ n: count() }).from(entities).where(eq(entities.typeId, typeId));
+  const [counted] = await db
+    .select({ n: count() })
+    .from(entities)
+    .where(eq(entities.typeId, typeId));
   const n = counted?.n ?? 0;
   if (n > 0) {
     throw conflict(
       `This type still has ${n} ${n === 1 ? 'entity' : 'entities'} (including any in Trash). Delete them first.`,
     );
   }
-  await db.delete(entityTypes).where(and(eq(entityTypes.id, typeId), eq(entityTypes.worldId, worldId)));
+  await db
+    .delete(entityTypes)
+    .where(and(eq(entityTypes.id, typeId), eq(entityTypes.worldId, worldId)));
 }

@@ -1,5 +1,9 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { relationshipCreateSchema, relationshipTypeCreateSchema, worldItemParamsSchema } from '@atlas/shared';
+import {
+  relationshipCreateSchema,
+  relationshipTypeCreateSchema,
+  worldItemParamsSchema,
+} from '@atlas/shared';
 import { db } from '../../db/client';
 import { currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
@@ -12,7 +16,9 @@ import {
 } from './service';
 
 export const relationshipRoutes: FastifyPluginAsyncZod = async (app) => {
-  app.get('/relationship-types', async (request) => listRelationshipTypes(db, currentWorldId(request)));
+  app.get('/relationship-types', async (request) =>
+    listRelationshipTypes(db, currentWorldId(request)),
+  );
 
   app.post(
     '/relationship-types',
@@ -32,8 +38,10 @@ export const relationshipRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
-  app.get('/entities/:id/relationships', { schema: { params: worldItemParamsSchema } }, async (request) =>
-    listEntityRelationships(db, currentWorldId(request), request.params.id),
+  app.get(
+    '/entities/:id/relationships',
+    { schema: { params: worldItemParamsSchema } },
+    async (request) => listEntityRelationships(db, currentWorldId(request), request.params.id),
   );
 
   app.post(

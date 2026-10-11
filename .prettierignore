@@ -1,3 +1,6 @@
 pnpm-lock.yaml
 apps/api/drizzle
 dist
+PREREQUISITE_RESEARCH.md
+plan.md
+.serena

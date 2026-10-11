@@ -1,5 +1,9 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { entityTypeCreateSchema, entityTypeUpdateSchema, worldItemParamsSchema } from '@atlas/shared';
+import {
+  entityTypeCreateSchema,
+  entityTypeUpdateSchema,
+  worldItemParamsSchema,
+} from '@atlas/shared';
 import { db } from '../../db/client';
 import { currentWorldId, requireRole } from '../../plugins/auth-guard';
 import { createEntityType, deleteEntityType, listEntityTypes, updateEntityType } from './service';
@@ -22,7 +26,8 @@ export const entityTypeRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: requireRole('editor'),
       schema: { params: worldItemParamsSchema, body: entityTypeUpdateSchema },
     },
-    async (request) => updateEntityType(db, currentWorldId(request), request.params.id, request.body),
+    async (request) =>
+      updateEntityType(db, currentWorldId(request), request.params.id, request.body),
   );
 
   app.delete(

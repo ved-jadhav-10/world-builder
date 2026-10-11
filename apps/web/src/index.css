@@ -1,0 +1,108 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-sidebar: var(--sidebar);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+}
+
+/* Warm paper and ink, light and dark. */
+:root {
+  color-scheme: light;
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.24 0.02 265);
+  --card: oklch(1 0 0);
+  --muted: oklch(0.955 0.008 85);
+  --muted-foreground: oklch(0.5 0.02 265);
+  --border: oklch(0.9 0.01 85);
+  --input: oklch(0.88 0.012 85);
+  --ring: oklch(0.55 0.14 275);
+  --primary: oklch(0.38 0.13 278);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --accent: oklch(0.94 0.02 278);
+  --accent-foreground: oklch(0.32 0.12 278);
+  --destructive: oklch(0.55 0.2 25);
+  --sidebar: oklch(0.965 0.009 85);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: oklch(0.19 0.012 270);
+    --foreground: oklch(0.93 0.01 85);
+    --card: oklch(0.22 0.014 270);
+    --muted: oklch(0.25 0.014 270);
+    --muted-foreground: oklch(0.7 0.015 270);
+    --border: oklch(0.3 0.015 270);
+    --input: oklch(0.34 0.015 270);
+    --ring: oklch(0.68 0.13 278);
+    --primary: oklch(0.72 0.12 278);
+    --primary-foreground: oklch(0.18 0.02 270);
+    --accent: oklch(0.3 0.05 278);
+    --accent-foreground: oklch(0.88 0.06 278);
+    --destructive: oklch(0.65 0.19 25);
+    --sidebar: oklch(0.21 0.013 270);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* TipTap editor content */
+.prose-ink {
+  @apply leading-relaxed text-[15px];
+}
+.prose-ink:focus {
+  outline: none;
+}
+.prose-ink > * + * {
+  @apply mt-3;
+}
+.prose-ink h2 {
+  @apply font-serif text-xl font-semibold mt-6;
+}
+.prose-ink h3 {
+  @apply font-serif text-lg font-semibold mt-5;
+}
+.prose-ink ul {
+  @apply list-disc pl-6;
+}
+.prose-ink ol {
+  @apply list-decimal pl-6;
+}
+.prose-ink blockquote {
+  @apply border-l-2 border-primary/40 pl-4 italic text-muted-foreground;
+}
+.prose-ink a {
+  @apply text-primary underline underline-offset-2;
+}
+.prose-ink code {
+  @apply rounded bg-muted px-1 py-0.5 text-[13px];
+}
+.prose-ink p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply pointer-events-none float-left h-0 text-muted-foreground;
+}

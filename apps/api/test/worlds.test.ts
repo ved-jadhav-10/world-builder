@@ -46,7 +46,11 @@ describe('worlds', () => {
     const res = await api.post('/worlds', { name: 'The Gilded Realm', description: 'Test' });
     expect(res.statusCode).toBe(201);
     const world = res.json<World>();
-    expect(world).toMatchObject({ name: 'The Gilded Realm', slug: 'the-gilded-realm', role: 'owner' });
+    expect(world).toMatchObject({
+      name: 'The Gilded Realm',
+      slug: 'the-gilded-realm',
+      role: 'owner',
+    });
 
     const types = (await api.get(`/worlds/${world.id}/entity-types`)).json<EntityType[]>();
     expect(types.map((t) => t.key)).toEqual([
@@ -61,8 +65,12 @@ describe('worlds', () => {
     ]);
     expect(types.every((t) => t.isBuiltin && t.entityCount === 0)).toBe(true);
 
-    const relTypes = (await api.get(`/worlds/${world.id}/relationship-types`)).json<RelationshipType[]>();
-    expect(relTypes.find((t) => t.key === 'located_in')).toMatchObject({ inverseLabel: 'contains' });
+    const relTypes = (await api.get(`/worlds/${world.id}/relationship-types`)).json<
+      RelationshipType[]
+    >();
+    expect(relTypes.find((t) => t.key === 'located_in')).toMatchObject({
+      inverseLabel: 'contains',
+    });
   });
 
   it('gives worlds with the same name distinct slugs', async () => {

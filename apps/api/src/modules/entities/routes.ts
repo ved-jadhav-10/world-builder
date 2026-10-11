@@ -27,7 +27,12 @@ export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
     '/entities',
     { onRequest: requireRole('editor'), schema: { body: entityCreateSchema } },
     async (request, reply) => {
-      const entity = await createEntity(db, currentWorldId(request), currentUser(request).id, request.body);
+      const entity = await createEntity(
+        db,
+        currentWorldId(request),
+        currentUser(request).id,
+        request.body,
+      );
       return reply.status(201).send(entity);
     },
   );
@@ -38,7 +43,10 @@ export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.patch(
     '/entities/:id',
-    { onRequest: requireRole('editor'), schema: { params: worldItemParamsSchema, body: entityUpdateSchema } },
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: worldItemParamsSchema, body: entityUpdateSchema },
+    },
     async (request) => updateEntity(db, currentWorldId(request), request.params.id, request.body),
   );
 

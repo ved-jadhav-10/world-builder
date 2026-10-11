@@ -9,7 +9,11 @@ import { getEntityRow } from '../entities/service';
 const tagColumns = { id: tags.id, name: tags.name, color: tags.color };
 
 export async function listTags(db: DbOrTx, worldId: string): Promise<Tag[]> {
-  return db.select(tagColumns).from(tags).where(eq(tags.worldId, worldId)).orderBy(sql`lower(${tags.name})`);
+  return db
+    .select(tagColumns)
+    .from(tags)
+    .where(eq(tags.worldId, worldId))
+    .orderBy(sql`lower(${tags.name})`);
 }
 
 async function getTag(db: DbOrTx, worldId: string, tagId: string): Promise<Tag> {
@@ -56,14 +60,26 @@ export async function deleteTag(db: DbOrTx, worldId: string, tagId: string): Pro
   if (!tag) throw notFound('Tag');
 }
 
-export async function attachTag(db: DbOrTx, worldId: string, entityId: string, tagId: string): Promise<Tag> {
+export async function attachTag(
+  db: DbOrTx,
+  worldId: string,
+  entityId: string,
+  tagId: string,
+): Promise<Tag> {
   await getEntityRow(db, worldId, entityId);
   const tag = await getTag(db, worldId, tagId);
   await db.insert(entityTags).values({ entityId, tagId }).onConflictDoNothing();
   return tag;
 }
 
-export async function detachTag(db: DbOrTx, worldId: string, entityId: string, tagId: string): Promise<void> {
+export async function detachTag(
+  db: DbOrTx,
+  worldId: string,
+  entityId: string,
+  tagId: string,
+): Promise<void> {
   await getEntityRow(db, worldId, entityId);
-  await db.delete(entityTags).where(and(eq(entityTags.entityId, entityId), eq(entityTags.tagId, tagId)));
+  await db
+    .delete(entityTags)
+    .where(and(eq(entityTags.entityId, entityId), eq(entityTags.tagId, tagId)));
 }

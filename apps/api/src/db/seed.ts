@@ -45,7 +45,12 @@ async function main() {
   const types = new Map((await listEntityTypes(db, world.id)).map((t) => [t.key, t.id]));
   const relTypes = new Map((await listRelationshipTypes(db, world.id)).map((t) => [t.key, t.id]));
   const add = (type: string, input: Record<string, unknown>) =>
-    createEntity(db, world.id, demo.id, entityCreateSchema.parse({ typeId: types.get(type), ...input }));
+    createEntity(
+      db,
+      world.id,
+      demo.id,
+      entityCreateSchema.parse({ typeId: types.get(type), ...input }),
+    );
   const link = (sourceId: string, key: string, targetId: string) =>
     createRelationship(db, world.id, { sourceId, targetId, typeId: relTypes.get(key)!, notes: '' });
 

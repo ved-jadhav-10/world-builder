@@ -24,7 +24,10 @@ function toRelationshipType(row: RelationshipTypeRow): RelationshipType {
   };
 }
 
-export async function listRelationshipTypes(db: DbOrTx, worldId: string): Promise<RelationshipType[]> {
+export async function listRelationshipTypes(
+  db: DbOrTx,
+  worldId: string,
+): Promise<RelationshipType[]> {
   const rows = await db
     .select()
     .from(relationshipTypes)
@@ -53,13 +56,20 @@ export async function createRelationshipType(
   return toRelationshipType(row!);
 }
 
-export async function deleteRelationshipType(db: DbOrTx, worldId: string, typeId: string): Promise<void> {
+export async function deleteRelationshipType(
+  db: DbOrTx,
+  worldId: string,
+  typeId: string,
+): Promise<void> {
   const [type] = await db
     .select({ id: relationshipTypes.id })
     .from(relationshipTypes)
     .where(and(eq(relationshipTypes.id, typeId), eq(relationshipTypes.worldId, worldId)));
   if (!type) throw notFound('Relationship type');
-  const [used] = await db.select({ n: count() }).from(relationships).where(eq(relationships.typeId, typeId));
+  const [used] = await db
+    .select({ n: count() })
+    .from(relationships)
+    .where(eq(relationships.typeId, typeId));
   if ((used?.n ?? 0) > 0) throw conflict('This relationship type is still in use');
   await db.delete(relationshipTypes).where(eq(relationshipTypes.id, typeId));
 }
@@ -166,7 +176,11 @@ export async function createRelationship(
   };
 }
 
-export async function deleteRelationship(db: DbOrTx, worldId: string, relationshipId: string): Promise<void> {
+export async function deleteRelationship(
+  db: DbOrTx,
+  worldId: string,
+  relationshipId: string,
+): Promise<void> {
   const [row] = await db
     .update(relationships)
     .set({ deletedAt: new Date() })

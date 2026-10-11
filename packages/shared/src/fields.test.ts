@@ -21,7 +21,12 @@ describe('parseFieldValues', () => {
       wiki: 'https://example.com/mira',
       secret: false,
     });
-    expect(result).toEqual({ age: 31, status: 'alive', wiki: 'https://example.com/mira', secret: false });
+    expect(result).toEqual({
+      age: 31,
+      status: 'alive',
+      wiki: 'https://example.com/mira',
+      secret: false,
+    });
   });
 
   it('strips keys that are not in the schema', () => {

@@ -47,7 +47,8 @@ export function parseFieldValues(
   const parsed = buildFieldValuesSchema(fieldSchema).parse(values);
   return Object.fromEntries(
     Object.entries(parsed).filter(
-      ([, value]) => value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0),
+      ([, value]) =>
+        value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0),
     ),
   );
 }

@@ -20,7 +20,9 @@ afterAll(() => app.close());
 async function setup() {
   const ctx = await signUpWithWorld(app);
   const create = async (type: string, name: string, extra: object = {}) =>
-    (await ctx.api.post(`${ctx.w}/entities`, { typeId: ctx.typeId(type), name, ...extra })).json<Entity>();
+    (
+      await ctx.api.post(`${ctx.w}/entities`, { typeId: ctx.typeId(type), name, ...extra })
+    ).json<Entity>();
   const relTypes = (await ctx.api.get(`${ctx.w}/relationship-types`)).json<RelationshipType[]>();
   const relType = (key: string) => relTypes.find((t) => t.key === key)!.id;
   return { ...ctx, create, relType };
@@ -39,10 +41,18 @@ describe('relationships', () => {
     });
     expect(res.statusCode, res.body).toBe(201);
 
-    const fromMira = (await api.get(`${w}/entities/${mira.id}/relationships`)).json<EntityRelationship[]>();
-    expect(fromMira).toMatchObject([{ direction: 'outgoing', label: 'located in', other: { name: 'The Gilded Eel' } }]);
-    const fromEel = (await api.get(`${w}/entities/${eel.id}/relationships`)).json<EntityRelationship[]>();
-    expect(fromEel).toMatchObject([{ direction: 'incoming', label: 'contains', other: { name: 'Mira' } }]);
+    const fromMira = (await api.get(`${w}/entities/${mira.id}/relationships`)).json<
+      EntityRelationship[]
+    >();
+    expect(fromMira).toMatchObject([
+      { direction: 'outgoing', label: 'located in', other: { name: 'The Gilded Eel' } },
+    ]);
+    const fromEel = (await api.get(`${w}/entities/${eel.id}/relationships`)).json<
+      EntityRelationship[]
+    >();
+    expect(fromEel).toMatchObject([
+      { direction: 'incoming', label: 'contains', other: { name: 'Mira' } },
+    ]);
 
     // Duplicates and self-links are refused.
     const dup = await api.post(`${w}/relationships`, {
@@ -69,7 +79,10 @@ describe('relationships', () => {
 
   it('supports custom relationship types', async () => {
     const { api, w, create } = await setup();
-    const res = await api.post(`${w}/relationship-types`, { label: 'mentor of', inverseLabel: 'apprentice of' });
+    const res = await api.post(`${w}/relationship-types`, {
+      label: 'mentor of',
+      inverseLabel: 'apprentice of',
+    });
     expect(res.statusCode).toBe(201);
     const type = res.json<RelationshipType>();
     const a = await create('character', 'Old Hask');
