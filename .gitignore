@@ -8,3 +8,6 @@ coverage/
 .DS_Store
 .vite/
 *.tsbuildinfo
+
+# Uploaded map images and tiles (STORAGE_DIR)
+/storage/

@@ -16,10 +16,15 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
+  FEATURE_KINDS,
+  FEATURE_SIZES,
+  LINE_STYLES,
+  MAP_STATUSES,
   NODE_KINDS,
   ROLES,
   VISIBILITIES,
   type FieldDefinition,
+  type MapPoint,
   type RichTextDoc,
 } from '@atlas/shared';
 import { user } from './auth-schema';
@@ -249,5 +254,74 @@ export const sceneMentions = pgTable(
   (t) => [
     primaryKey({ columns: [t.sceneId, t.entityId] }),
     index('scene_mentions_entity_idx').on(t.entityId),
+  ],
+);
+
+export const mapStatusEnum = pgEnum('map_status', MAP_STATUSES);
+export const featureKindEnum = pgEnum('map_feature_kind', FEATURE_KINDS);
+export const featureSizeEnum = pgEnum('map_feature_size', FEATURE_SIZES);
+export const lineStyleEnum = pgEnum('map_line_style', LINE_STYLES);
+
+/**
+ * An uploaded map image. Maps nest through `parentId` (world > region > city), which gives
+ * the breadcrumbs. The image and its tiles live in file storage, under the map's ID.
+ */
+export const maps = pgTable(
+  'maps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    // Deleting a map lifts its child maps to the top level rather than deleting them.
+    parentId: uuid('parent_id').references((): AnyPgColumn => maps.id, { onDelete: 'set null' }),
+    /** The entry this map shows, such as the Location it covers. */
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    status: mapStatusEnum('status').notNull().default('processing'),
+    error: text('error').notNull().default(''),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('maps_world_idx').on(t.worldId),
+    index('maps_parent_idx').on(t.parentId),
+    index('maps_entity_idx').on(t.entityId),
+  ],
+);
+
+/** Pins, labels, paths and regions drawn on a map. Points are fractions of the map's size. */
+export const mapFeatures = pgTable(
+  'map_features',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    mapId: uuid('map_id')
+      .notNull()
+      .references(() => maps.id, { onDelete: 'cascade' }),
+    kind: featureKindEnum('kind').notNull(),
+    points: jsonb('points').$type<MapPoint[]>().notNull(),
+    label: text('label').notNull().default(''),
+    notes: text('notes').notNull().default(''),
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'set null' }),
+    linkMapId: uuid('link_map_id').references(() => maps.id, { onDelete: 'set null' }),
+    /** Null = take the linked entry's icon and colour. */
+    icon: text('icon'),
+    color: text('color'),
+    size: featureSizeEnum('size').notNull().default('md'),
+    lineStyle: lineStyleEnum('line_style').notNull().default('solid'),
+    minZoom: integer('min_zoom').notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('map_features_map_idx').on(t.mapId),
+    index('map_features_world_idx').on(t.worldId),
+    index('map_features_entity_idx').on(t.entityId),
   ],
 );

@@ -23,6 +23,37 @@ export function apiClient(app: TestApp, cookie: string) {
 }
 export type ApiClient = ReturnType<typeof apiClient>;
 
+/** Builds a multipart/form-data body by hand: text fields plus an optional `image` file. */
+export function multipartForm(
+  fields: Record<string, string>,
+  file?: { name: string; type: string; data: Buffer },
+) {
+  const boundary = `----atlas-test-${randomUUID()}`;
+  const chunks: Buffer[] = [];
+  for (const [name, value] of Object.entries(fields)) {
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`,
+      ),
+    );
+  }
+  if (file) {
+    chunks.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${file.name}"\r\n` +
+          `Content-Type: ${file.type}\r\n\r\n`,
+      ),
+      file.data,
+      Buffer.from('\r\n'),
+    );
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`));
+  return {
+    payload: Buffer.concat(chunks),
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+  };
+}
+
 export async function signUp(app: TestApp, name = 'Test User') {
   const email = `${randomUUID()}@test.local`;
   const res = await app.inject({

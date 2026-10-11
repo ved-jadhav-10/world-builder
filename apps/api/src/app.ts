@@ -6,6 +6,7 @@ import {
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
 import { errorHandler } from './errors';
+import { atlasRoutes } from './modules/atlas/routes';
 import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
@@ -29,6 +30,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(searchRoutes);
   await app.register(exportRoutes);
   await app.register(manuscriptRoutes);
+  await app.register(atlasRoutes);
 };
 
 export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {

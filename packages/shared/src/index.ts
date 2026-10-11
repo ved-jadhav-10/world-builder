@@ -9,4 +9,5 @@ export * from './search';
 export * from './slug';
 export * from './types';
 export * from './schemas/manuscript';
+export * from './schemas/atlas';
 export * from './mentions';

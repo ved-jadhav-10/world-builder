@@ -1,10 +1,12 @@
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 // Local development reads the repo-root .env; deployed environments set real env vars,
 // which take precedence over the file.
-const rootEnvFile = fileURLToPath(new URL('../../../.env', import.meta.url));
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+const rootEnvFile = resolve(repoRoot, '.env');
 if (existsSync(rootEnvFile)) process.loadEnvFile(rootEnvFile);
 
 const isTest = process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
@@ -18,6 +20,8 @@ const schema = z.object({
   WEB_ORIGIN: z.url(),
   API_HOST: z.string().default('localhost'),
   API_PORT: z.coerce.number().int().default(3000),
+  /** Where uploaded map images and their tiles are kept; relative paths start at the repo root. */
+  STORAGE_DIR: z.string().min(1).default('storage'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -35,4 +39,5 @@ export const env = {
   isProduction: parsed.data.NODE_ENV === 'production',
   /** Tests always run against the separate test database. */
   databaseUrl: isTest ? testDatabaseUrl! : parsed.data.DATABASE_URL,
+  storageDir: resolve(repoRoot, parsed.data.STORAGE_DIR),
 };

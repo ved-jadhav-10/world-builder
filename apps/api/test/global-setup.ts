@@ -1,4 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -10,6 +12,9 @@ export async function setup() {
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const url = process.env.TEST_DATABASE_URL;
   if (!url) throw new Error('TEST_DATABASE_URL is required to run tests');
+
+  // The database is emptied below, so uploaded files from earlier runs are orphans.
+  rmSync(join(tmpdir(), 'atlas-ink-test-storage'), { recursive: true, force: true });
 
   const sql = postgres(url, { max: 1, onnotice: () => {} });
   try {

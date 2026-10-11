@@ -1,3 +1,4 @@
+import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
 import type { NodeKind } from './schemas/manuscript';
 import type { Role, Visibility } from './schemas/common';
 import type { FieldDefinition } from './schemas/entity-type';
@@ -105,6 +106,8 @@ export interface WorldExport {
   }[];
   /** Book > part > chapter > scene, flat with parent links; scenes include their text. */
   manuscript: (ManuscriptNode & { body: RichTextDoc | null })[];
+  /** Map details and everything drawn on them. The map images themselves are not included. */
+  atlas: { maps: AtlasMap[]; features: MapFeature[] };
 }
 
 export interface ApiErrorBody {
@@ -152,4 +155,74 @@ export interface Appearance {
   mentions: number;
   asPov: boolean;
   asLocation: boolean;
+}
+
+// ---- Atlas ----------------------------------------------------------------
+
+/** The entry a map or feature points at. Trashed entries read as null. */
+export interface MapEntityRef {
+  id: string;
+  name: string;
+  typeId: string;
+  summary: string;
+}
+
+export interface AtlasMap {
+  id: string;
+  /** The bigger map this one sits inside. */
+  parentId: string | null;
+  name: string;
+  description: string;
+  /** Tiles are cut in the background after an upload; the map opens once this is "ready". */
+  status: MapStatus;
+  /** Why tiling failed, when it did. */
+  error: string;
+  width: number;
+  height: number;
+  /** The entry this map shows, such as the Location it covers. */
+  entityId: string | null;
+  entity: MapEntityRef | null;
+  featureCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MapFeature {
+  id: string;
+  mapId: string;
+  kind: FeatureKind;
+  /** Fractions of the map's width and height, from the top-left corner. */
+  points: MapPoint[];
+  label: string;
+  notes: string;
+  entityId: string | null;
+  entity: MapEntityRef | null;
+  /** Another map this feature opens. */
+  linkMapId: string | null;
+  icon: string | null;
+  color: string | null;
+  size: FeatureSize;
+  lineStyle: LineStyle;
+  /** Zoom levels in from the whole-map view before this feature appears. */
+  minZoom: number;
+  updatedAt: string;
+}
+
+/** Where an entry shows up in the Atlas. */
+export interface EntityMapLink {
+  mapId: string;
+  mapName: string;
+  /** Null when the map itself shows this entry rather than a feature on it. */
+  featureId: string | null;
+  kind: FeatureKind | null;
+}
+
+export interface AtlasSearchResult {
+  /** The map's ID, or the feature's ID. */
+  id: string;
+  mapId: string;
+  mapName: string;
+  featureId: string | null;
+  kind: 'map' | FeatureKind;
+  label: string;
 }

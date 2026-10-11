@@ -12,6 +12,7 @@ import {
   worlds,
 } from '../../db/schema';
 import { notFound } from '../../errors';
+import { exportAtlas } from '../atlas/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
 
 /** Everything in a world as one JSON document. Trashed entities are left out. */
@@ -56,9 +57,10 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       ),
   ]);
 
-  const [manuscript, bodies] = await Promise.all([
+  const [manuscript, bodies, atlas] = await Promise.all([
     listTree(db, worldId),
     getSceneBodies(db, worldId),
+    exportAtlas(db, worldId),
   ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
@@ -118,5 +120,6 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       validToDay: r.validToDay,
     })),
     manuscript: manuscript.map((node) => ({ ...node, body: bodies.get(node.id) ?? null })),
+    atlas,
   };
 }
