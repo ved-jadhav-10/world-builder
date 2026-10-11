@@ -1,0 +1,128 @@
+# Atlas & Ink: Milestone 1 (MVP Foundation)
+
+**Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
+
+**This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
+
+**Env:** Node 22.13, pnpm 9.15, Docker 29.6, gh. The repo has 1 commit, `origin` = github.com/ved-jadhav-10/world-builder, and no code yet. Don't commit or push unless asked.
+
+## Stack
+| Layer | Choice | Alternatives |
+|---|---|---|
+| Lang / runtime / repo | TypeScript strict · Node 22 LTS · pnpm workspaces | JS · Bun · npm workspaces, Turborepo |
+| Web | Vite · React 19 · React Router v7 (all pages and nested layouts; can adopt framework mode later for per-route SSR) · TanStack Query | Next.js, RR7 framework mode · TanStack Router · SWR |
+| UI | Tailwind v4 · shadcn/ui (Radix) · cmdk | CSS Modules · MUI, Mantine |
+| Forms / validation | react-hook-form + zod (shared with API) | TanStack Form · TypeBox, Valibot |
+| Rich text | TipTap (stores ProseMirror JSON) | Lexical, BlockNote, Slate |
+| API | Fastify 5 + fastify-type-provider-zod · tsx for dev | Hono, Express, NestJS, tRPC |
+| DB | PostgreSQL 17 · Drizzle ORM + Kit · postgres.js | MySQL, MongoDB · Prisma, Kysely |
+| Auth | Better Auth (self-hosted, sessions in Postgres) | Clerk, Auth0, Supabase Auth, Auth.js |
+| Search | Postgres full-text, `'simple'` config, prefix matching | Meilisearch / Typesense (later) |
+| Dev / test / CI | Docker Compose · Vitest · ESLint + Prettier · GitHub Actions | native PG · Jest · Biome |
+
+**Rendering:** the logged-in workspace renders in the browser: search engines never see it, and it's heavily interactive. The public wiki, landing and SEO pages get server rendering in v1 via a monorepo `apps/site` (Next.js or Astro), with no rewrite needed.
+
+**Later (per research):** Leaflet/OpenSeadragon + sharp (libvips) tiling, Konva/PixiJS, Yjs + Hocuspocus, Cloudflare R2, Pandoc, Resend/SES, Razorpay + Paddle, Mumbai-region hosting.
+
+## Layout
+```
+package.json  pnpm-workspace.yaml  tsconfig.base.json  eslint.config.js  .prettierrc
+docker-compose.yml   # postgres:17; dev DB + atlas_test
+.env.example         # DATABASE_URL TEST_DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL WEB_ORIGIN
+.gitignore  README.md (setup)  plan.md (this plan)
+apps/api (@atlas/api)   apps/web (@atlas/web)   packages/shared (@atlas/shared)
+.github/workflows/ci.yml   # lint + typecheck + test with Postgres service
+```
+Root scripts: `dev` (api + web) · `db:up` · `db:generate` / `db:migrate` (Drizzle Kit) · `db:seed` · `test` · `lint` · `typecheck`.
+
+## Data model: `apps/api/src/db/schema.ts`
+Everything is world-scoped. Built-in types are seeded per world, so users can edit them.
+- **Better Auth tables** (`user`, `session`, `account`, `verification`): generated with its CLI.
+- **`worlds`**: id uuid, owner_id, name, slug, description, timestamps, deleted_at.
+- **`world_members`**: world_id, user_id, role (owner|editor|commenter|reader|player). The MVP writes the owner row only, so v1 roles need no migration.
+- **`entity_types`**: world_id, key, name, icon, color, `field_schema jsonb` (ordered `{key,label,type,options?}`), is_builtin, sort_order.
+  - Seeds: Character, Location, Faction, Item, Species, Culture, Event, Lore Article.
+  - Users can add their own types (an MVP feature in the research).
+- **`entities`**
+  - world_id, type_id, name, `aliases text[]`, summary, `fields jsonb`, `body jsonb` (TipTap)
+  - `search_text` (derived by the app on write), `search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple', search_text)) STORED`
+  - `visibility` (public|reader|player|gm|hidden, default gm; enforced in v1)
+  - created_by, timestamps, `deleted_at` (Trash)
+  - Indexes: (world_id, type_id), (world_id, deleted_at), GIN(search_vector). `'simple'` avoids stemming fantasy names.
+- **`relationship_types`**: world_id, key, label, inverse_label. Seeds: member of, located in, owns, ally of, enemy of, parent of, sibling of, spouse of, of species, of culture.
+- **`relationships`**: world_id, source_id, target_id, type_id, notes, nullable `valid_from_day` / `valid_to_day` (bigint in-world day; the UI comes with the calendars milestone), timestamps, deleted_at.
+- **`tags`** (world_id, name, color) + **`entity_tags`** (entity_id, tag_id).
+
+Rules:
+- Fields hold scalars only: text, long_text, number, date-as-text, select, multi_select, boolean, url.
+- **Every entity↔entity link is a `relationships` row.** That gives one source for graphs, family trees and "appears in".
+
+## Shared: `packages/shared/src`
+- `schemas/`: zod for world, entity type + field definition, entity create/update, relationship, tag, list/search params.
+- `fields.ts`: `buildFieldValuesSchema(fieldSchema)` validates `fields`; used by the API and the web forms.
+- `search.ts`: `deriveSearchText(entity)` = name + aliases + summary + TipTap plain text + string field values.
+
+## API: `apps/api/src`
+- `env.ts` (zod env) · `app.ts` (`buildApp()`, Fastify 5 + zod provider; tests use `app.inject()`) · `server.ts` (:3000).
+- `auth.ts`: Better Auth email + password with the Drizzle adapter, mounted at `/api/auth/*`.
+  - httpOnly SameSite=Lax cookie; built-in rate limit on.
+  - No email verification yet; reset emails go to the console until an email provider is picked.
+- `plugins/auth-guard.ts`: `requireSession` (`auth.api.getSession`) and `requireWorldRole(minRole)` (via `world_members`). Every world-scoped query also filters by `world_id`.
+- `modules/<name>/{routes,service}.ts`. All routes are under `/api`; world-scoped ones under `/worlds/:worldId`.
+  - `worlds`: list, create (seeds types + owner membership in one transaction), get, update, soft-delete.
+  - `entity-types`: CRUD + field-schema edit; deleting a type that has entities is blocked.
+  - `entities`: list (type/tag filter, sort by name or updated, keyset pagination), create, get, update, soft-delete, restore, trash list.
+  - `relationships`: create and delete. Per-entity list covers both directions, with `inverse_label` for incoming links.
+  - `tags`: CRUD + attach/detach.
+  - `search`: `GET ?q=` runs a ranked prefix search (`to_tsquery(…':*')`) over non-deleted entities.
+  - `export`: `GET` returns the full world as JSON (a trust feature).
+- `db/client.ts` · `db/seed-definitions.ts` (built-in types and relationship types) · `db/seed.ts` (demo world). Migrations go to `apps/api/drizzle/`.
+
+## Web: `apps/web/src`
+The Vite dev proxy sends `/api` to :3000, so cookies are same-origin with no CORS. Uses the Better Auth React client.
+
+Routes:
+- `/sign-in` · `/sign-up`
+- `/`: my worlds + create
+- `/w/:slug`: Codex home with a type sidebar (with counts) and recent entities
+- `/w/:slug/codex/:typeKey`: list with tag filter and sort
+- `/w/:slug/e/:entityId`: name, aliases, field form from `field_schema`, TipTap body, relationships panel + entity picker, tags, visibility
+- `/w/:slug/settings` (+ JSON export) · `/w/:slug/settings/types` (type and field editor) · `/w/:slug/trash`
+
+Ctrl/Cmd+K opens global search (shadcn `Command`). Shell nav: Codex active; Atlas and Manuscript disabled ("coming soon").
+
+Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `components/{FieldRenderer,RelationshipsPanel,EntityPicker,RichTextEditor}.tsx`.
+
+## Build order
+0. Save this plan as `plan.md` in the repo root.
+1. Scaffold: monorepo, tooling, docker-compose, `.env.example`, README.
+2. Shared: schemas + field validation, with unit tests.
+3. API: env → schema/migrations → Better Auth → guards → modules (worlds → types → entities → relationships → tags → search → export), with integration tests per module.
+4. Web: auth → worlds → Codex list + entity page → relationships/tags → search → type editor → trash/export.
+5. Seed script and CI workflow.
+
+## Later milestones (not this plan)
+- **M2 Manuscript:** book › part › chapter › scene, TipTap scene editor, alias-based mention detection, hover cards, "appears in".
+- **M3 Atlas:** upload → `sharp` tiling worker → Leaflet CRS.Simple, entity-linked pins, nested child maps + breadcrumbs.
+- **M4:** custom calendars, progressions ("as of chapter N"), timeline.
+- **M5:** GM basics (view as player, quest log), galleries, Markdown export.
+
+## Verification
+1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
+2. `pnpm typecheck`, `lint` and `test` pass. API tests (DB `atlas_test`) cover:
+   - sign-up and sign-in; world creation seeds types
+   - entity CRUD, with field validation rejecting bad values
+   - soft delete and restore
+   - relationships from both sides, with the inverse label
+   - prefix search on names and aliases
+   - export completeness
+   - **isolation:** user B gets 404/403 on user A's world, entities and export
+3. Browser walkthrough:
+   - Sign up and create a world.
+   - Create the Character "Mira" (aliases, fields, body) and the Location "The Gilded Eel".
+   - Link Mira "located in" the Eel; the Eel shows the inverse.
+   - Ctrl+K "gild" finds the Eel.
+   - Add a custom type "Ship" with fields, and create one.
+   - Delete Mira and restore her from Trash.
+   - Download the JSON export.
+   - A second user in a private window is refused on the first world's URL.
