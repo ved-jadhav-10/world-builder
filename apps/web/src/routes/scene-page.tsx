@@ -30,6 +30,7 @@ import {
   useUpdateNode,
 } from '@/api/manuscript-queries';
 import { CodexPanel } from '@/components/codex-panel';
+import { DateField } from '@/components/date-field';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker } from '@/components/entity-picker';
 import { MentionHoverLayer } from '@/components/mention-hover-layer';
@@ -39,6 +40,7 @@ import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { ancestorTitles, useManuscriptTree } from '@/lib/manuscript-tree';
 import { MentionHighlight, mentionHighlightKey } from '@/lib/mention-highlight';
+import { useDates } from '@/lib/use-dates';
 import { cn } from '@/lib/utils';
 import { useWorld } from '@/lib/world-context';
 
@@ -134,6 +136,7 @@ function EntityField({
 
 function SceneWorkspace({ scene }: { scene: Scene }) {
   const { world, canEdit, base } = useWorld();
+  const dates = useDates();
   const { tree } = useManuscriptTree();
   const { data: index = [] } = useMentionIndex(world.id);
   const saveBody = useSaveSceneBody(world.id, scene.id);
@@ -328,7 +331,9 @@ function SceneWorkspace({ scene }: { scene: Scene }) {
                 scene.locationId && names.get(scene.locationId)
                   ? names.get(scene.locationId)!.name
                   : null,
-                scene.inWorldDate || null,
+                scene.inWorldDay !== null
+                  ? dates.date(scene.inWorldDay)
+                  : scene.inWorldDate || null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -356,14 +361,23 @@ function SceneWorkspace({ scene }: { scene: Scene }) {
                 disabled={!canEdit}
                 onChange={(locationId) => saveMeta({ locationId })}
               />
-              <div className="space-y-1.5">
-                <Label htmlFor="scene-date">In-world date</Label>
+              <div className="space-y-1.5 sm:col-span-3">
+                <Label>In-world date</Label>
+                <DateField
+                  label="In-world date"
+                  value={scene.inWorldDay}
+                  disabled={!canEdit}
+                  onChange={(inWorldDay) => saveMeta({ inWorldDay })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-3">
+                <Label htmlFor="scene-date">Time of day or note</Label>
                 <Input
                   id="scene-date"
                   defaultValue={scene.inWorldDate}
                   disabled={!canEdit}
                   maxLength={100}
-                  placeholder="e.g. 3rd of Frostfall"
+                  placeholder="e.g. the morning after the storm"
                   onBlur={(e) =>
                     e.target.value !== scene.inWorldDate &&
                     saveMeta({ inWorldDate: e.target.value })

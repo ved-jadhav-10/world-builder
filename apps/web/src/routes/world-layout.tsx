@@ -1,4 +1,5 @@
 import {
+  CalendarRange,
   ChevronLeft,
   Library,
   Map as MapIcon,
@@ -13,6 +14,7 @@ import {
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
+import { useCalendar } from '@/api/timeline-queries';
 import { EntityIcon } from '@/components/entity-icon';
 import { SearchPalette } from '@/components/search-palette';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <NavLink to={`${base}/manuscript`} className={navItem}>
           <PenLine /> Manuscript
         </NavLink>
+        <NavLink to={`${base}/timeline`} className={navItem}>
+          <CalendarRange /> Timeline
+        </NavLink>
       </nav>
 
       <nav className="space-y-0.5">
@@ -107,6 +112,7 @@ export function WorldLayout() {
   const { slug = '' } = useParams();
   const worldQuery = useWorldBySlug(slug);
   const typesQuery = useEntityTypes(worldQuery.data?.id);
+  const calendarQuery = useCalendar(worldQuery.data?.id);
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
   // The mobile menu remembers the page it was opened on, so navigating closes it.
@@ -116,10 +122,10 @@ export function WorldLayout() {
 
   const ctx = useMemo(
     () =>
-      worldQuery.data && typesQuery.data
-        ? buildWorldContext(worldQuery.data, typesQuery.data)
+      worldQuery.data && typesQuery.data && calendarQuery.data
+        ? buildWorldContext(worldQuery.data, typesQuery.data, calendarQuery.data.definition)
         : null,
-    [worldQuery.data, typesQuery.data],
+    [worldQuery.data, typesQuery.data, calendarQuery.data],
   );
 
   if (worldQuery.isError) {

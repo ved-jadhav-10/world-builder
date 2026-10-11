@@ -19,6 +19,7 @@ import type {
   RelationshipCreateInput,
   RelationshipType,
   RelationshipTypeCreateInput,
+  RelationshipUpdateInput,
   SearchResult,
   Tag,
   TagCreateInput,
@@ -159,6 +160,7 @@ function invalidateWorldContent(
     keys.trash(worldId),
     ['mention-index', worldId],
     ['appearances', worldId],
+    ['timeline', worldId],
   ]) {
     void qc.invalidateQueries({
       queryKey: key,
@@ -255,6 +257,15 @@ export function useCreateRelationship(worldId: string) {
   return useMutation({
     mutationFn: (input: RelationshipCreateInput) =>
       api<EntityRelationship>('POST', `/worlds/${worldId}/relationships`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.relationships(worldId) }),
+  });
+}
+
+export function useUpdateRelationship(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: RelationshipUpdateInput & { id: string }) =>
+      api<{ id: string }>('PATCH', `/worlds/${worldId}/relationships/${id}`, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.relationships(worldId) }),
   });
 }

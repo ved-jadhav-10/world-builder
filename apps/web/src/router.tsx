@@ -32,11 +32,13 @@ export const router = createBrowserRouter([
               { path: 'codex/:typeKey', element: <EntityListPage /> },
               // The editor-heavy pages load on demand to keep the first load small.
               { path: 'e/:entityId', lazy: () => import('@/routes/entity-page') },
+              { path: 'timeline', lazy: () => import('@/routes/timeline-page') },
               { path: 'atlas', element: <AtlasIndexPage /> },
               { path: 'atlas/:mapId', lazy: () => import('@/routes/map-page') },
               { path: 'trash', element: <TrashPage /> },
               { path: 'settings', element: <WorldSettingsPage /> },
               { path: 'settings/types', lazy: () => import('@/routes/types-settings-page') },
+              { path: 'settings/calendar', lazy: () => import('@/routes/calendar-settings-page') },
               {
                 path: 'manuscript',
                 lazy: () => import('@/routes/manuscript-layout'),

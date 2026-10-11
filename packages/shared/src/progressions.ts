@@ -106,6 +106,15 @@ function compareProgressions(
   return a.createdAt.localeCompare(b.createdAt);
 }
 
+/** Progressions in the order they take effect. Reading order suits a writer following scenes. */
+export function sortProgressions(
+  list: readonly Progression[],
+  scenes: SceneIndex,
+  byReadingOrder: boolean,
+): Progression[] {
+  return [...list].sort((a, b) => compareProgressions(a, b, scenes, byReadingOrder));
+}
+
 export interface ResolvedEntry {
   fields: Record<string, unknown>;
   summary: string;
@@ -132,21 +141,19 @@ export function applyProgressions(
     );
   }
   const byReadingOrder = point.sceneIndex !== null;
-  const order = (a: Progression, b: Progression) =>
-    compareProgressions(a, b, scenes, byReadingOrder);
-  applied.sort(order);
-  later.sort(order);
+  const orderedApplied = sortProgressions(applied, scenes, byReadingOrder);
+  const orderedLater = sortProgressions(later, scenes, byReadingOrder);
 
   const fields = { ...base.fields };
   let summary = base.summary;
-  for (const progression of applied) {
+  for (const progression of orderedApplied) {
     for (const [key, value] of Object.entries(progression.changes.fields ?? {})) {
       if (value === null || value === undefined) delete fields[key];
       else fields[key] = value;
     }
     if (progression.changes.summary !== undefined) summary = progression.changes.summary;
   }
-  return { fields, summary, applied, later, unplaced };
+  return { fields, summary, applied: orderedApplied, later: orderedLater, unplaced };
 }
 
 /** Does a dated link (or life span) hold at `point`? With no day to go by, everything shows. */

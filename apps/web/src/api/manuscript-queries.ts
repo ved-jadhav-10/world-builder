@@ -49,6 +49,7 @@ export const useAppearances = (worldId: string, entityId: string) =>
 function invalidateManuscript(qc: ReturnType<typeof useQueryClient>, worldId: string) {
   void qc.invalidateQueries({ queryKey: manuscriptKeys.tree(worldId), exact: true });
   void qc.invalidateQueries({ queryKey: ['appearances', worldId] });
+  void qc.invalidateQueries({ queryKey: ['timeline', worldId] });
 }
 
 export function useCreateNode(worldId: string) {

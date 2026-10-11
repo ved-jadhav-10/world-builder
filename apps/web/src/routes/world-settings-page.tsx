@@ -1,6 +1,6 @@
-import { Download } from 'lucide-react';
+import { CalendarDays, Download } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
 import { downloadExport, useDeleteWorld, useUpdateWorld } from '@/api/queries';
@@ -10,7 +10,7 @@ import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { useWorld } from '@/lib/world-context';
 
 export function WorldSettingsPage() {
-  const { world } = useWorld();
+  const { world, base } = useWorld();
   const isOwner = world.role === 'owner';
   const updateWorld = useUpdateWorld(world);
   const deleteWorld = useDeleteWorld(world.id);
@@ -79,10 +79,22 @@ export function WorldSettingsPage() {
       </form>
 
       <section className="space-y-3 rounded-xl border bg-card p-5">
+        <h2 className="font-semibold">Calendar</h2>
+        <p className="text-sm text-muted-foreground">
+          Months, weekdays, leap years, eras and moons: how dates work in {world.name}.
+        </p>
+        <Button asChild variant="outline">
+          <Link to={`${base}/settings/calendar`}>
+            <CalendarDays /> Edit the calendar
+          </Link>
+        </Button>
+      </section>
+
+      <section className="space-y-3 rounded-xl border bg-card p-5">
         <h2 className="font-semibold">Export</h2>
         <p className="text-sm text-muted-foreground">
-          Download everything in this world (entries, types, relationships and tags) as one JSON
-          file. Your work is always yours to take with you.
+          Download everything in this world (entries, types, relationships, tags, the manuscript,
+          maps, calendar and timeline) as one JSON file. Your work is always yours to take with you.
         </p>
         <Button variant="outline" onClick={onExport} disabled={exporting}>
           <Download /> Download JSON

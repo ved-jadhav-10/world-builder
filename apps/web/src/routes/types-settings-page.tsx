@@ -96,6 +96,8 @@ function TypeEditor({
   const [icon, setIcon] = useState(type?.icon ?? 'file-text');
   const [color, setColor] = useState(type?.color ?? '#475569');
   const [fields, setFields] = useState<FieldDraft[]>(type?.fieldSchema.map(toDraft) ?? []);
+  const [startLabel, setStartLabel] = useState(type?.startLabel ?? 'Starts');
+  const [endLabel, setEndLabel] = useState(type?.endLabel ?? 'Ends');
   const busy = createType.isPending || updateType.isPending;
 
   const patchField = (index: number, patch: Partial<FieldDraft>) =>
@@ -120,8 +122,23 @@ function TypeEditor({
     }
     try {
       const saved = type
-        ? await updateType.mutateAsync({ id: type.id, name, icon, color, fieldSchema })
-        : await createType.mutateAsync({ name, icon, color, fieldSchema });
+        ? await updateType.mutateAsync({
+            id: type.id,
+            name,
+            icon,
+            color,
+            fieldSchema,
+            startLabel,
+            endLabel,
+          })
+        : await createType.mutateAsync({
+            name,
+            icon,
+            color,
+            fieldSchema,
+            startLabel,
+            endLabel,
+          });
       toast.success(type ? 'Type saved' : `${saved.name} created`);
       onDone(saved.id);
     } catch (error) {
@@ -188,6 +205,29 @@ function TypeEditor({
               <EntityIcon icon={name} color={icon === name ? color : undefined} />
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Dates</Label>
+        <p className="text-xs text-muted-foreground">
+          Every entry can have two in-world dates. Name them for this type, such as Born and Died.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            aria-label="First date label"
+            value={startLabel}
+            onChange={(e) => setStartLabel(e.target.value)}
+            required
+            maxLength={30}
+          />
+          <Input
+            aria-label="Second date label"
+            value={endLabel}
+            onChange={(e) => setEndLabel(e.target.value)}
+            required
+            maxLength={30}
+          />
         </div>
       </div>
 
