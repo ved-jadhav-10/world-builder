@@ -41,7 +41,7 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 ## Where it stands
 
-All six planned milestones are built: Codex, Manuscript, Atlas, Timeline, the GM tools, and invites for players, readers and co-GMs. Invites are links you send by hand, since there is no email service yet. The roadmap and the design decisions are in [plan.md](plan.md), and the market research behind the product is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
+All six planned milestones are built: Codex, Manuscript, Atlas, Timeline, the GM tools, and invites for players, readers and co-GMs. Invites are links you send by hand, since there is no email service yet. The plan and the design decisions are in [plan.md](plan.md), what is left to build is in [checklist.md](checklist.md), and the market research behind the product is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
 
 ## Try it
 
