@@ -2,6 +2,7 @@ import { Globe, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import { ROLE_LABELS } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import { useCreateWorld, useWorlds } from '@/api/queries';
 import { Brand } from '@/components/brand';
@@ -116,7 +117,7 @@ export function WorldsPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h2 className="font-serif text-xl font-semibold">{world.name}</h2>
-                      {world.role !== 'owner' ? <Badge>{world.role}</Badge> : null}
+                      {world.role !== 'owner' ? <Badge>{ROLE_LABELS[world.role]}</Badge> : null}
                     </div>
                     <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">
                       {world.description || 'No description yet.'}

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Role } from './common';
 
 /**
  * Roles that can be handed out. Nobody is invited as an owner, and commenters have no features
@@ -29,17 +30,26 @@ export const inviteTokenSchema = z
   .max(100)
   .regex(/^[A-Za-z0-9_-]+$/);
 
+/** How a role is named to people. The "editor" role is the co-GM. */
+export const ROLE_LABELS: Record<Role, string> = {
+  owner: 'Owner',
+  editor: 'Co-GM',
+  commenter: 'Commenter',
+  reader: 'Reader',
+  player: 'Player',
+};
+
 export const INVITE_ROLE_INFO: Record<InviteRole, { label: string; description: string }> = {
   player: {
-    label: 'Player',
+    label: ROLE_LABELS.player,
     description: 'Sees the entries, maps, pins, quests and pictures you share with players.',
   },
   reader: {
-    label: 'Reader',
+    label: ROLE_LABELS.reader,
     description: 'Sees only what you share with readers, such as lore for beta readers.',
   },
   editor: {
-    label: 'Co-GM',
+    label: ROLE_LABELS.editor,
     description: 'Sees and edits everything, including secrets and the manuscript.',
   },
 };

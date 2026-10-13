@@ -4,6 +4,7 @@ import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/inputs';
 import { signIn, signUp } from '@/lib/auth-client';
+import { safeNext } from '@/lib/utils';
 
 function AuthCard({
   title,
@@ -26,9 +27,9 @@ function AuthCard({
   );
 }
 
-/** Only follow same-site relative paths after sign-in. */
-function safeNext(next: string | null): string {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+/** Carries the page someone was heading to (such as an invite link) across the other form. */
+function withNext(path: string, next: string | null): string {
+  return next ? `${path}?next=${encodeURIComponent(next)}` : path;
 }
 
 export function SignInPage() {
@@ -57,7 +58,10 @@ export function SignInPage() {
       footer={
         <>
           New here?{' '}
-          <Link to="/sign-up" className="font-medium text-primary hover:underline">
+          <Link
+            to={withNext('/sign-up', params.get('next'))}
+            className="font-medium text-primary hover:underline"
+          >
             Create an account
           </Link>
         </>
@@ -94,6 +98,7 @@ export function SignInPage() {
 
 export function SignUpPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
@@ -109,7 +114,7 @@ export function SignUpPage() {
     });
     setBusy(false);
     if (error) return setError(error.message ?? 'Could not create your account');
-    void navigate('/', { replace: true });
+    void navigate(safeNext(params.get('next')), { replace: true });
   }
 
   return (
@@ -118,7 +123,10 @@ export function SignUpPage() {
       footer={
         <>
           Already have an account?{' '}
-          <Link to="/sign-in" className="font-medium text-primary hover:underline">
+          <Link
+            to={withNext('/sign-in', params.get('next'))}
+            className="font-medium text-primary hover:underline"
+          >
             Sign in
           </Link>
         </>

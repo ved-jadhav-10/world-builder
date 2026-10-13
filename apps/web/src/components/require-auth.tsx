@@ -1,6 +1,7 @@
-import { Navigate, Outlet, useLocation } from 'react-router';
+import { Navigate, Outlet, useLocation, useSearchParams } from 'react-router';
 import { PageSpinner } from '@/components/ui/misc';
 import { useSession } from '@/lib/auth-client';
+import { safeNext } from '@/lib/utils';
 
 /** Gates signed-in routes; sends visitors to sign in and back afterwards. */
 export function RequireAuth() {
@@ -14,10 +15,11 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
-/** For sign-in/up pages: already signed-in users go straight to the app. */
+/** For sign-in/up pages: already signed-in users go straight on to where they were headed. */
 export function RedirectIfSignedIn() {
   const { data: session, isPending } = useSession();
+  const [params] = useSearchParams();
   if (isPending) return <PageSpinner />;
-  if (session) return <Navigate to="/" replace />;
+  if (session) return <Navigate to={safeNext(params.get('next'))} replace />;
   return <Outlet />;
 }

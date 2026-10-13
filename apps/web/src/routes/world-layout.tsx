@@ -2,6 +2,7 @@ import {
   CalendarRange,
   ChevronLeft,
   Images,
+  LogOut,
   Library,
   Map as MapIcon,
   Menu,
@@ -14,9 +15,13 @@ import {
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { errorMessage } from '@/api/client';
+import { useLeaveWorld } from '@/api/member-queries';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
 import { useCalendar } from '@/api/timeline-queries';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
 import { SearchPalette } from '@/components/search-palette';
 import { Button } from '@/components/ui/button';
@@ -32,6 +37,37 @@ const navItem = ({ isActive }: { isActive: boolean }) =>
     'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-muted',
     isActive && 'bg-accent font-medium text-accent-foreground hover:bg-accent',
   );
+
+/** For anyone who was invited: step out of the world. The owner can't, since it would have none. */
+function LeaveWorld({ ctx }: { ctx: WorldContextValue }) {
+  const { world } = ctx;
+  const leave = useLeaveWorld(world.id);
+  const navigate = useNavigate();
+  return (
+    <ConfirmDialog
+      title={`Leave ${world.name}?`}
+      description="You will lose access to it. You can come back if someone sends you a new invite link."
+      confirmLabel="Leave world"
+      onConfirm={async () => {
+        try {
+          await leave.mutateAsync();
+          toast.success(`You left ${world.name}`);
+          void navigate('/', { replace: true });
+        } catch (error) {
+          toast.error(errorMessage(error));
+        }
+      }}
+      trigger={
+        <button
+          type="button"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <LogOut /> Leave world
+        </button>
+      }
+    />
+  );
+}
 
 function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => void }) {
   const { world, types, base, canEdit, audience } = ctx;
@@ -116,6 +152,7 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
           </>
         ) : null}
+        {world.role !== 'owner' ? <LeaveWorld ctx={ctx} /> : null}
         <div className="border-t pt-3">
           <UserMenu />
         </div>

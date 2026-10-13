@@ -2,7 +2,9 @@
  * Creates a demo account with a small sample world. Safe to re-run: it does nothing
  * if the demo account already exists.
  *
- *   pnpm db:seed   ->  demo@atlas.local / demo-password
+ *   pnpm db:seed   ->  demo@atlas.local / demo-password   (the GM and owner)
+ *                      player@atlas.local / demo-password (a player in the same world)
+ *                      reader@atlas.local / demo-password (a reader in the same world)
  */
 import { eq } from 'drizzle-orm';
 import {
@@ -26,10 +28,15 @@ import {
 import { attachTag, createTag } from '../modules/tags/service';
 import { createWorld } from '../modules/worlds/service';
 import { db, sql } from './client';
-import { user } from './schema';
+import { user, worldMembers } from './schema';
 
 const DEMO_EMAIL = 'demo@atlas.local';
 const DEMO_PASSWORD = 'demo-password';
+/** Real members of the demo world, to see what an invited player or reader gets. */
+const DEMO_GUESTS = [
+  { email: 'player@atlas.local', name: 'Demo Player', role: 'player' },
+  { email: 'reader@atlas.local', name: 'Demo Reader', role: 'reader' },
+] as const;
 
 /** A day in the default calendar: `month` counts from 0 (Frostmoon). */
 const day = (year: number, month: number, dayOfMonth: number) =>
@@ -255,7 +262,20 @@ async function main() {
     ),
   );
 
-  console.info(`Seeded world "${world.name}". Sign in as ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
+  for (const guest of DEMO_GUESTS) {
+    const { user: member } = await auth.api.signUpEmail({
+      body: { email: guest.email, password: DEMO_PASSWORD, name: guest.name },
+    });
+    await db
+      .insert(worldMembers)
+      .values({ worldId: world.id, userId: member.id, role: guest.role });
+  }
+
+  console.info(
+    `Seeded world "${world.name}". Sign in as ${DEMO_EMAIL} / ${DEMO_PASSWORD} (the GM), or as ` +
+      DEMO_GUESTS.map((g) => g.email).join(' or ') +
+      ' to see it as a player or reader.',
+  );
 }
 
 try {
