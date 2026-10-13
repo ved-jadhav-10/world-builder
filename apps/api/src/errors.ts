@@ -18,6 +18,7 @@ export const forbidden = (message = 'You do not have permission to do that') =>
   new HttpError(403, message);
 export const notFound = (what = 'Resource') => new HttpError(404, `${what} not found`);
 export const conflict = (message: string) => new HttpError(409, message);
+export const gone = (message: string) => new HttpError(410, message);
 
 const STATUS_NAMES: Record<number, string> = {
   400: 'Bad Request',
@@ -25,6 +26,7 @@ const STATUS_NAMES: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  410: 'Gone',
   413: 'Payload Too Large',
   500: 'Internal Server Error',
 };

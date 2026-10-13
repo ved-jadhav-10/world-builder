@@ -12,6 +12,7 @@ import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
 import { galleryRoutes } from './modules/gallery/routes';
+import { inviteRoutes, memberRoutes } from './modules/members/routes';
 import { manuscriptRoutes } from './modules/manuscript/routes';
 import { progressionRoutes } from './modules/progressions/routes';
 import { questRoutes } from './modules/quests/routes';
@@ -41,6 +42,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(timelineRoutes);
   await app.register(galleryRoutes);
   await app.register(questRoutes);
+  await app.register(memberRoutes);
 };
 
 export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {
@@ -60,6 +62,7 @@ export async function buildApp(options: { logger?: FastifyServerOptions['logger'
 
   app.get('/api/health', async () => ({ ok: true }));
   await app.register(authRoutes);
+  await app.register(inviteRoutes, { prefix: '/api/invites' });
   await app.register(worldCollectionRoutes, { prefix: '/api/worlds' });
   await app.register(worldScopedRoutes, { prefix: '/api/worlds/:worldId' });
 
