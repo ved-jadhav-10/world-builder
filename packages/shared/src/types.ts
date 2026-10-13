@@ -5,6 +5,7 @@ import type { ProgressionChanges } from './schemas/progression';
 import type { Role, Visibility } from './schemas/common';
 import type { FieldDefinition } from './schemas/entity-type';
 import type { RichTextDoc } from './schemas/entity';
+import type { InviteRole } from './schemas/member';
 
 /** API response shapes. Dates are ISO strings. */
 
@@ -314,6 +315,50 @@ export interface GalleryImage {
   height: number;
   bytes: number;
   createdAt: string;
+}
+
+// ---- Members and invites ----------------------------------------------------------------------
+
+export interface Member {
+  userId: string;
+  name: string;
+  email: string;
+  role: Role;
+  joinedAt: string;
+}
+
+export type InviteStatus = 'active' | 'expired' | 'used_up';
+
+/** An invite link as the owner sees it. The secret is only ever shown when the link is made. */
+export interface Invite {
+  id: string;
+  role: InviteRole;
+  label: string;
+  uses: number;
+  /** Null = unlimited. */
+  maxUses: number | null;
+  /** Null = never. */
+  expiresAt: string | null;
+  status: InviteStatus;
+  createdAt: string;
+}
+
+export interface CreatedInvite extends Invite {
+  /** The secret part of the link, `/join/<token>`. It cannot be read again. */
+  token: string;
+}
+
+/** What someone sees before deciding to join. Anyone holding the link may read it. */
+export interface InvitePreview {
+  worldName: string;
+  role: InviteRole;
+  invitedBy: string;
+}
+
+export interface JoinResult {
+  world: World;
+  /** False when the person was already a member, which leaves their role alone. */
+  joined: boolean;
 }
 
 export interface QuestSummary {

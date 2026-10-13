@@ -30,6 +30,7 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 **Run it at the table**
 
+- **Invite your group:** send a link and your players, readers or a co-GM join with their own account. Each sees only what you have shared with their role, and you can change a role or remove someone at any time.
 - **View as a player:** preview your world as a player, a reader or the public, and see only what they would. Everything has a visibility (maps, pins, entries, pictures and changes), and new things start private.
 - **Quest log:** a board of quests (not started, ongoing, completed, abandoned), linked to the people and places involved.
 - **Galleries:** portraits and artwork for each entry, tagged to a moment in the story, plus a gallery for the whole world.
@@ -40,7 +41,7 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 ## Where it stands
 
-All five planned milestones are built: Codex, Manuscript, Atlas, Timeline, and the GM tools above. Inviting players and readers to see their own view isn't built yet. For now, "view as" lets you preview what they would see. The roadmap and the design decisions are in [plan.md](plan.md), and the market research behind the product is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
+All six planned milestones are built: Codex, Manuscript, Atlas, Timeline, the GM tools, and invites for players, readers and co-GMs. Invites are links you send by hand, since there is no email service yet. The roadmap and the design decisions are in [plan.md](plan.md), and the market research behind the product is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
 
 ## Try it
 
@@ -55,7 +56,7 @@ pnpm db:seed             # optional: a demo world, sign in as demo@atlas.local /
 pnpm dev                 # open http://localhost:5173
 ```
 
-The demo world, Aerth, has characters, places, a calendar, a timeline, quests, and a mix of public and secret entries, so "view as a player" has something to show. Maps and pictures are uploads, so add your own.
+The demo world, Aerth, has characters, places, a calendar, a timeline, quests, and a mix of public and secret entries, so "view as a player" has something to show. It also has a real player (`player@atlas.local`) and reader (`reader@atlas.local`), both with the password `demo-password`, so you can sign in as them in a private window and compare. Maps and pictures are uploads, so add your own.
 
 ## For developers
 
@@ -69,4 +70,4 @@ A pnpm monorepo: a Fastify + Postgres API (`apps/api`), a React app (`apps/web`)
 | `pnpm build`                                   | Production builds                               |
 | `pnpm db:generate`                             | Create a migration after changing the DB schema |
 
-Uploaded maps and pictures are kept in `storage/` (set `STORAGE_DIR` to move it). Every world route requires a signed-in member of that world; anyone else gets a 404.
+Uploaded maps and pictures are kept in `storage/` (set `STORAGE_DIR` to move it). Every world route requires a signed-in member of that world; anyone else gets a 404. Invite links store only a hash of their secret.

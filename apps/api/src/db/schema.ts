@@ -3,6 +3,7 @@ import {
   type AnyPgColumn,
   bigint,
   boolean,
+  check,
   customType,
   index,
   integer,
@@ -74,6 +75,36 @@ export const worldMembers = pgTable(
   (t) => [
     primaryKey({ columns: [t.worldId, t.userId] }),
     index('world_members_user_idx').on(t.userId),
+  ],
+);
+
+/**
+ * A link that lets whoever holds it join a world with a fixed role. Only a SHA-256 hash of the
+ * secret is kept, so a leaked database does not leak working links. Cancelling deletes the row.
+ */
+export const worldInvites = pgTable(
+  'world_invites',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    role: roleEnum('role').notNull(),
+    label: text('label').notNull().default(''),
+    tokenHash: text('token_hash').notNull().unique(),
+    /** Null = unlimited. */
+    maxUses: integer('max_uses'),
+    uses: integer('uses').notNull().default(0),
+    /** Null = never expires. */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('world_invites_world_idx').on(t.worldId),
+    // Whatever the code does, a link can never make an owner or be used past its limit.
+    check('world_invites_not_owner_chk', sql`${t.role} <> 'owner'`),
+    check('world_invites_uses_chk', sql`${t.maxUses} IS NULL OR ${t.uses} <= ${t.maxUses}`),
   ],
 );
 

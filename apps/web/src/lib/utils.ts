@@ -23,3 +23,11 @@ export function timeAgo(iso: string): string {
   }
   return 'just now';
 }
+
+/** Only follow same-site relative paths after signing in, never a link to another site. */
+export function safeNext(next: string | null): string {
+  // A backslash is read as a slash by browsers, so "/\evil.com" would also leave the site.
+  return next && next.startsWith('/') && !next.startsWith('//') && !next.includes('\\')
+    ? next
+    : '/';
+}

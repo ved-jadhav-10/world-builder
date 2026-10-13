@@ -4,6 +4,7 @@ import { NotFoundScreen, RouteError } from '@/components/route-error';
 import { AtlasIndexPage } from '@/routes/atlas-pages';
 import { SignInPage, SignUpPage } from '@/routes/auth-pages';
 import { CodexHome, EntityListPage } from '@/routes/codex-pages';
+import { JoinPage } from '@/routes/join-page';
 import { TrashPage } from '@/routes/trash-page';
 import { WorldLayout } from '@/routes/world-layout';
 import { WorldSettingsPage } from '@/routes/world-settings-page';
@@ -20,6 +21,8 @@ export const router = createBrowserRouter([
           { path: '/sign-up', element: <SignUpPage /> },
         ],
       },
+      // An invite link works for visitors too: it asks them to sign in or up, then brings them back.
+      { path: '/join/:token', element: <JoinPage /> },
       {
         element: <RequireAuth />,
         children: [
@@ -41,6 +44,7 @@ export const router = createBrowserRouter([
               { path: 'settings', element: <WorldSettingsPage /> },
               { path: 'settings/types', lazy: () => import('@/routes/types-settings-page') },
               { path: 'settings/calendar', lazy: () => import('@/routes/calendar-settings-page') },
+              { path: 'settings/people', lazy: () => import('@/routes/people-page') },
               {
                 path: 'manuscript',
                 lazy: () => import('@/routes/manuscript-layout'),

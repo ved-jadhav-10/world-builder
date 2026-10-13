@@ -15,7 +15,7 @@ import { randomSuffix } from '../../lib/keys';
 
 type WorldRow = typeof worlds.$inferSelect;
 
-function toWorld(row: WorldRow, role: Role): World {
+export function toWorld(row: WorldRow, role: Role): World {
   return {
     id: row.id,
     name: row.name,

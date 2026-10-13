@@ -1,4 +1,4 @@
-import { CalendarDays, Download, FileText } from 'lucide-react';
+import { CalendarDays, Download, FileText, Users } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -82,6 +82,20 @@ export function WorldSettingsPage() {
           </Button>
         ) : null}
       </form>
+
+      {isOwner ? (
+        <section className="space-y-3 rounded-xl border bg-card p-5">
+          <h2 className="font-semibold">People</h2>
+          <p className="text-sm text-muted-foreground">
+            Invite players, readers and co-GMs with a link, and change who can see what.
+          </p>
+          <Button asChild variant="outline">
+            <Link to={`${base}/settings/people`}>
+              <Users /> Manage people
+            </Link>
+          </Button>
+        </section>
+      ) : null}
 
       <section className="space-y-3 rounded-xl border bg-card p-5">
         <h2 className="font-semibold">Calendar</h2>
