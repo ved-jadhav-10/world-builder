@@ -5,6 +5,7 @@ Everything not built yet, in one place to tick off. The overall plan, the milest
 Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "deferred in M3" means that milestone chose to leave it out. Tick an item (`[x]`) when it ships.
 
 ## A. Launch readiness (not feature work; no milestone covers it)
+
 - [ ] **Email provider** (Resend or SES): email verification, password reset (today the link only prints to the API log), invite emails, "someone joined" notices.
 - [ ] **Object storage** (Cloudflare R2) for maps, tiles and pictures, with per-plan quotas. Files live on local disk today, behind `modules/atlas/files.ts` and `modules/gallery/files.ts`, so the move touches those two modules.
 - [ ] **Tiling as a real job queue.** It runs inside the API process, one map at a time.
@@ -20,6 +21,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Search upgrade** to Meilisearch or Typesense if Postgres full-text stops being enough.
 
 ## B. Writing and the Codex
+
 - [ ] **Series codex:** entries shared across books, or scoped per book or per series [MVP].
 - [ ] **To-do lists and mass edit** (bulk tag, move, permission changes) [MVP].
 - [ ] **Saved filters, entry templates and world templates** [MVP].
@@ -37,6 +39,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **More exports:** DOCX [MVP]; EPUB, PDF and a story-bible PDF [v1]; screenplay and comic script formats [v3].
 
 ## C. Atlas, timeline and continuity
+
 - [ ] **Maps:** replace a map's image without deleting it (deferred in M3); pin clustering when zoomed out [MVP; deferred in M3].
 - [ ] **Drill-down transitions** (the child map visually opens from its spot on the parent), a **measure tool** with custom scale and travel times by foot, horse or ship, and **layers** (political, terrain, trade routes) [v1; deferred in M3].
 - [ ] **Time-aware layers** (borders by year) [v2] and as-of views for the Atlas and the manuscript (deferred in M4).
@@ -50,6 +53,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Universal VTT export**, a **token maker** [v2].
 
 ## D. Running the game (GM tools)
+
 - [ ] **GM screen dashboard** with configurable widgets (initiative, pinned NPCs, tables, timers, notes) [v1; deferred in M5].
 - [ ] **Session notes and recaps** linked to the entries involved [v1; deferred in M5], with **live tables** embedded in prep notes [v1].
 - [ ] **Player handouts** and image reveals pushed to players live [v1; deferred in M5].
@@ -61,6 +65,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Homebrew publisher** (Markdown to rulebook-style pages and PDF) with a **licence attribution helper**, and **world variables** (flags such as `war_started = true` for conditional text) [v2].
 
 ## E. Players, readers and membership
+
 - [ ] **Hand over ownership**, and several owners.
 - [ ] **Email invitations** and inviting by name (links are shared by hand until email exists, see A); a notice when someone joins; an audit trail of who joined with which link.
 - [ ] **Comments for the `commenter` role** (the role exists but has no features of its own yet) [v1].
@@ -69,6 +74,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Shared content library** across a party [v3].
 
 ## F. Sharing and publishing
+
 - [ ] **Hidden until chapter N** and **spoiler gating**: pages and fields revealed after a chosen chapter [v1; deferred in M5].
 - [ ] **Field-level and block-level visibility** inside an entry [deferred in M5].
 - [ ] **Public reader wiki** for chosen pages [v1], with **password-protected pages** for beta readers or players [v1]; AI crawlers blocked.
@@ -77,6 +83,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Later publishing:** per-world analytics, white-label, followers and notifications, featured worlds, challenges and prompts [v2]; custom domains, supporter tiers, a reading storefront [v3].
 
 ## G. Collaboration and platform
+
 - [ ] **Real-time co-editing** (Yjs with Hocuspocus), live editing indicators, an activity feed [v2].
 - [ ] **Offline drafting** (y-indexeddb, cached tiles) [v2]; a Tauri **desktop app** [v3].
 - [ ] **Mood boards and a whiteboard** (tldraw, check its licence, or Excalidraw), expanding cards and frames, embedded media; Pinterest and Unsplash import [v1/v2].
@@ -85,6 +92,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] A **commission tracker** for artists [v3].
 
 ## H. Integrations
+
 - [ ] **Importers** [v1], building first whichever the research's interviews say users most want to leave: World Anvil, Kanka, Campfire, Obsidian and Markdown, Scrivener and DOCX, Notion, Homebrewery.
 - [ ] **Discord webhooks** (changes and session recaps) [v1]; a **Discord bot** for lore lookups and table rolls [v2].
 - [ ] **VTT exports:** Foundry journal and actor packs, an Owlbear extension, Roll20 handouts [v2].
@@ -93,6 +101,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Opt-in AI, bring your own key only** [v3]: per-entry context controls, generation prompts, chapter-to-codex summaries, an AI continuity finder, semantic search.
 
 ## I. Validation (not code; the research says to do this before investing much more)
+
 - [ ] Interview 15 to 20 people each from fantasy novelists, GMs and indie narrative designers: what they use, what they pay, what made them switch last time.
 - [ ] Test a clickable prototype of the drill-down map and chapter hover cards and measure sign-up intent.
 - [ ] Test INR and USD price points on a landing page.
