@@ -6,13 +6,14 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## A. Launch readiness (not feature work; no milestone covers it)
 
-- [ ] **Email provider** (Resend or SES): email verification, password reset (today the link only prints to the API log), invite emails, "someone joined" notices.
+- [x] **Email** through Resend: confirmation at sign-up, password reset with forgot and reset pages, and emailed invites (M7). In development the messages print to the API log instead.
+- [ ] **Email go-live:** a Resend account and a verified sending domain (SPF and DKIM), then `EMAIL_PROVIDER`, `RESEND_API_KEY` and `EMAIL_FROM` in production. Also a "someone joined" notice to the owner.
 - [ ] **Object storage** (Cloudflare R2) for maps, tiles and pictures, with per-plan quotas. Files live on local disk today, behind `modules/atlas/files.ts` and `modules/gallery/files.ts`, so the move touches those two modules.
 - [ ] **Tiling as a real job queue.** It runs inside the API process, one map at a time.
 - [ ] **Deployment:** Mumbai-region hosting plus a CDN for tiles, production config, backups, monitoring.
-- [ ] **Rate limits and abuse limits** beyond Better Auth's own: invite joins, uploads, search, exports.
+- [x] **Rate limits and abuse limits** beyond Better Auth's own: invite lookups and joins, invite creation, world creation, uploads, search and exports (M7). Counters are in memory, so several API instances would need a shared store.
 - [ ] **Scale test** with the research's synthetic world (10,000 entries, 500 chapters, 50 maps), then virtualise long lists and cluster pins where it shows.
-- [ ] **Legal and trust:** terms and privacy policy; the AI Charter (no training on user work, AI crawlers blocked on public wikis, AI opt-in with the user's own key); export guaranteed on every plan including lapsed ones; account deletion, correction and breach-notification flows.
+- [ ] **Legal and trust:** terms and privacy policy; the AI Charter (no training on user work, AI crawlers blocked on public wikis, AI opt-in with the user's own key); export guaranteed on every plan including lapsed ones; breach-notification flow. (Account deletion and name and password changes shipped in M7.)
 - [ ] **Age rule:** minimum age 18, or verifiable parental consent (many fanfic writers and players are teenagers).
 - [ ] **India and EU compliance:** DPDP Consent Manager rules start November 13, 2026 and full obligations on May 13, 2027; GDPR basics (lawful basis, processing agreements, transfer clauses, cookie consent). Not legal advice; check with a professional.
 - [ ] **Moderation, if public sharing ships (F):** takedown process, an India grievance officer, NSFW and hate-speech rules, and no public publishing of non-SRD WotC text.
@@ -67,7 +68,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 ## E. Players, readers and membership
 
 - [ ] **Hand over ownership**, and several owners.
-- [ ] **Email invitations** and inviting by name (links are shared by hand until email exists, see A); a notice when someone joins; an audit trail of who joined with which link.
+- [ ] **Inviting by name** (looking up an existing user); a notice when someone joins; an audit trail of who joined with which link. (Emailing an invite link shipped in M7.)
 - [ ] **Comments for the `commenter` role** (the role exists but has no features of its own yet) [v1].
 - [ ] **Player journals and posts**, so players add their own notes to entries [v1]; discussion boards [v2].
 - [ ] **Mobile companion** for character sheets and handouts [v2].

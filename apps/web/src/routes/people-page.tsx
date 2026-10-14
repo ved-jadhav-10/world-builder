@@ -29,6 +29,8 @@ import { Badge, EmptyState, PageSpinner } from '@/components/ui/misc';
 import { useSession } from '@/lib/auth-client';
 import { useWorld } from '@/lib/world-context';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const EXPIRY_OPTIONS = [
   { value: '1', label: 'In 1 day' },
   { value: '7', label: 'In 7 days' },
@@ -142,6 +144,11 @@ function CreatedLink({ invite, onDone }: { invite: CreatedInvite; onDone: () => 
           <Copy /> Copy
         </Button>
       </div>
+      {invite.emailedTo.length ? (
+        <p className="text-sm">
+          We are also emailing it to <strong>{invite.emailedTo.join(', ')}</strong>.
+        </p>
+      ) : null}
       <p className="text-xs text-muted-foreground">
         This is the only time the link is shown. If you lose it, cancel it and make a new one.
       </p>
@@ -174,6 +181,12 @@ function NewInviteDialog() {
     const form = new FormData(event.currentTarget);
     const expires = String(form.get('expires'));
     const uses = String(form.get('uses'));
+    const emails = String(form.get('emails') ?? '')
+      .split(/[\s,;]+/)
+      .filter(Boolean);
+    const bad = emails.find((email) => !EMAIL_PATTERN.test(email));
+    if (bad) return toast.error(`"${bad}" does not look like an email address`);
+    if (emails.length > 10) return toast.error('You can email at most 10 people at once');
     try {
       setCreated(
         await create.mutateAsync({
@@ -181,6 +194,7 @@ function NewInviteDialog() {
           label: String(form.get('label') ?? ''),
           expiresInDays: expires === 'never' ? null : Number(expires),
           maxUses: uses === 'any' ? null : Number(uses),
+          emails,
         }),
       );
     } catch (error) {
@@ -252,6 +266,20 @@ function NewInviteDialog() {
                   ))}
                 </NativeSelect>
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-emails">Email it to (optional)</Label>
+              <Input
+                id="invite-emails"
+                name="emails"
+                type="text"
+                inputMode="email"
+                autoComplete="off"
+                placeholder="ana@example.com, ben@example.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Separate addresses with commas. The link is shown here as well.
+              </p>
             </div>
             <DialogFooter>
               <Button type="submit" disabled={create.isPending}>

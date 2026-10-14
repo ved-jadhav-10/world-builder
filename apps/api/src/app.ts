@@ -1,3 +1,4 @@
+import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import {
   serializerCompiler,
@@ -5,7 +6,8 @@ import {
   type FastifyPluginAsyncZod,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
-import { errorHandler } from './errors';
+import { env } from './env';
+import { errorHandler, HttpError } from './errors';
 import { atlasRoutes } from './modules/atlas/routes';
 import { calendarRoutes } from './modules/calendar/routes';
 import { entityRoutes } from './modules/entities/routes';
@@ -45,11 +47,27 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(memberRoutes);
 };
 
-export async function buildApp(options: { logger?: FastifyServerOptions['logger'] } = {}) {
+export async function buildApp(
+  options: {
+    logger?: FastifyServerOptions['logger'];
+    /** Per-route request limits (lib/rate-limits.ts). Off while tests run, unless a test asks. */
+    rateLimits?: boolean;
+  } = {},
+) {
   const app = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 2 * 1024 * 1024,
+    trustProxy: env.TRUST_PROXY,
   }).withTypeProvider<ZodTypeProvider>();
+
+  // Opt-in per route through `config.rateLimit`; routes that don't ask are not counted.
+  await app.register(rateLimit, {
+    global: false,
+    allowList: () => !(options.rateLimits ?? !env.isTest),
+    keyGenerator: (request) => request.user?.id ?? request.ip,
+    errorResponseBuilder: (_request, context) =>
+      new HttpError(429, `Too many requests. Try again in ${context.after}.`),
+  });
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);

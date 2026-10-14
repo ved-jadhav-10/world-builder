@@ -2,6 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { worldCreateSchema, worldUpdateSchema } from '@atlas/shared';
 import { db } from '../../db/client';
+import { limits } from '../../lib/rate-limits';
 import { currentUser, currentWorldId, requireRole, requireSession } from '../../plugins/auth-guard';
 import {
   createWorld,
@@ -18,10 +19,14 @@ export const worldCollectionRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get('/', async (request) => listWorlds(db, currentUser(request).id));
 
-  app.post('/', { schema: { body: worldCreateSchema } }, async (request, reply) => {
-    const world = await createWorld(db, currentUser(request).id, request.body);
-    return reply.status(201).send(world);
-  });
+  app.post(
+    '/',
+    { config: limits.worldCreate, schema: { body: worldCreateSchema } },
+    async (request, reply) => {
+      const world = await createWorld(db, currentUser(request).id, request.body);
+      return reply.status(201).send(world);
+    },
+  );
 
   app.get(
     '/by-slug/:slug',

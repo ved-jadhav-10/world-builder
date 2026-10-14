@@ -14,6 +14,7 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
+import { limits } from '../../lib/rate-limits';
 import { receiveUpload } from '../../lib/upload';
 import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
@@ -46,24 +47,28 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     listMaps(db, currentWorldId(request), currentAudience(request)),
   );
 
-  app.post('/maps', { onRequest: requireRole('editor') }, async (request, reply) => {
-    const upload = await receiveUpload(request, MAX_MAP_BYTES);
-    try {
-      const input = mapCreateSchema.parse(upload.fields);
-      const size = await inspectImage(upload.imagePath);
-      const map = await createMap(
-        db,
-        currentWorldId(request),
-        input,
-        { path: upload.imagePath, ...size },
-        request.log,
-      );
-      return await reply.status(201).send(map);
-    } finally {
-      // After a successful create the file has moved, so this only cleans up failures.
-      await rm(upload.imagePath, { force: true });
-    }
-  });
+  app.post(
+    '/maps',
+    { onRequest: requireRole('editor'), config: limits.upload },
+    async (request, reply) => {
+      const upload = await receiveUpload(request, MAX_MAP_BYTES);
+      try {
+        const input = mapCreateSchema.parse(upload.fields);
+        const size = await inspectImage(upload.imagePath);
+        const map = await createMap(
+          db,
+          currentWorldId(request),
+          input,
+          { path: upload.imagePath, ...size },
+          request.log,
+        );
+        return await reply.status(201).send(map);
+      } finally {
+        // After a successful create the file has moved, so this only cleans up failures.
+        await rm(upload.imagePath, { force: true });
+      }
+    },
+  );
 
   app.get('/maps/:id', { schema: { params: mapItemParamsSchema } }, async (request) =>
     getMap(db, currentWorldId(request), request.params.id, currentAudience(request)),

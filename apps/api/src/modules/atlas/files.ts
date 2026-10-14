@@ -24,5 +24,14 @@ export const tilePath = (worldId: string, mapId: string, z: number, x: number, y
 // Uploads of every kind land in one temporary folder first.
 export { uploadsDir } from '../../lib/storage';
 
+/** Every map file of a world, for when the world itself is gone. */
+export const removeWorldMapFiles = (worldId: string) =>
+  rm(join(env.storageDir, 'maps', worldId), {
+    recursive: true,
+    force: true,
+    maxRetries: 4,
+    retryDelay: 100,
+  });
+
 export const removeMapFiles = (worldId: string, mapId: string) =>
   rm(mapDir(worldId, mapId), { recursive: true, force: true, maxRetries: 4, retryDelay: 100 });

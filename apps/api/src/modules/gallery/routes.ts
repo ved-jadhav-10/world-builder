@@ -9,6 +9,7 @@ import {
   MAX_IMAGE_BYTES,
 } from '@atlas/shared';
 import { db } from '../../db/client';
+import { limits } from '../../lib/rate-limits';
 import { receiveUpload } from '../../lib/upload';
 import {
   currentAudience,
@@ -30,23 +31,27 @@ export const galleryRoutes: FastifyPluginAsyncZod = async (app) => {
     listImages(db, currentWorldId(request), request.query, currentAudience(request)),
   );
 
-  app.post('/images', { onRequest: requireRole('editor') }, async (request, reply) => {
-    const upload = await receiveUpload(request, MAX_IMAGE_BYTES);
-    try {
-      const input = imageCreateSchema.parse(upload.fields);
-      const image = await createImage(
-        db,
-        currentWorldId(request),
-        currentUser(request).id,
-        input,
-        upload.imagePath,
-      );
-      return await reply.status(201).send(image);
-    } finally {
-      // The upload is only a temporary copy; the stored image is a new file.
-      await rm(upload.imagePath, { force: true });
-    }
-  });
+  app.post(
+    '/images',
+    { onRequest: requireRole('editor'), config: limits.upload },
+    async (request, reply) => {
+      const upload = await receiveUpload(request, MAX_IMAGE_BYTES);
+      try {
+        const input = imageCreateSchema.parse(upload.fields);
+        const image = await createImage(
+          db,
+          currentWorldId(request),
+          currentUser(request).id,
+          input,
+          upload.imagePath,
+        );
+        return await reply.status(201).send(image);
+      } finally {
+        // The upload is only a temporary copy; the stored image is a new file.
+        await rm(upload.imagePath, { force: true });
+      }
+    },
+  );
 
   app.get('/images/:id', { schema: { params: imageParamsSchema } }, async (request) =>
     getImage(db, currentWorldId(request), request.params.id, currentAudience(request)),

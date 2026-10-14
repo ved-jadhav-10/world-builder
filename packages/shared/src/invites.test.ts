@@ -43,10 +43,19 @@ describe('invite input', () => {
       label: '',
       maxUses: null,
       expiresInDays: 7,
+      emails: [],
     });
     expect(inviteCreateSchema.parse({ role: 'reader', expiresInDays: null }).expiresInDays).toBe(
       null,
     );
+  });
+
+  it('tidies emailed addresses and caps how many can be sent at once', () => {
+    const parsed = inviteCreateSchema.parse({ role: 'player', emails: ['  Ana@Example.COM '] });
+    expect(parsed.emails).toEqual(['ana@example.com']);
+    expect(inviteCreateSchema.safeParse({ role: 'player', emails: ['nope'] }).success).toBe(false);
+    const eleven = Array.from({ length: 11 }, (_, i) => `p${i}@example.com`);
+    expect(inviteCreateSchema.safeParse({ role: 'player', emails: eleven }).success).toBe(false);
   });
 
   it('never offers the owner role, and rejects silly limits', () => {

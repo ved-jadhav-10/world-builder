@@ -22,6 +22,21 @@ const schema = z.object({
   API_PORT: z.coerce.number().int().default(3000),
   /** Where uploaded map images and their tiles are kept; relative paths start at the repo root. */
   STORAGE_DIR: z.string().min(1).default('storage'),
+  /** `console` prints each email to the API log (development); `resend` sends it for real. */
+  EMAIL_PROVIDER: z.enum(['console', 'resend']).default('console'),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** Sender address, such as `Atlas & Ink <hello@your-domain.com>`; must be a verified domain on Resend. */
+  EMAIL_FROM: z.string().min(3).default('Atlas & Ink <onboarding@resend.dev>'),
+  /** Sign-in is refused until the email address is confirmed. Defaults to on whenever email is real. */
+  REQUIRE_EMAIL_VERIFICATION: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
+  /** Set when the API sits behind a proxy or load balancer, so rate limits see real client IPs. */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -32,6 +47,9 @@ if (!parsed.success) {
 
 const testDatabaseUrl = parsed.data.TEST_DATABASE_URL;
 if (isTest && !testDatabaseUrl) throw new Error('TEST_DATABASE_URL is required to run tests');
+if (parsed.data.EMAIL_PROVIDER === 'resend' && !parsed.data.RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY is required when EMAIL_PROVIDER=resend');
+}
 
 export const env = {
   ...parsed.data,
@@ -40,4 +58,6 @@ export const env = {
   /** Tests always run against the separate test database. */
   databaseUrl: isTest ? testDatabaseUrl! : parsed.data.DATABASE_URL,
   storageDir: resolve(repoRoot, parsed.data.STORAGE_DIR),
+  requireEmailVerification:
+    parsed.data.REQUIRE_EMAIL_VERIFICATION ?? parsed.data.EMAIL_PROVIDER !== 'console',
 };

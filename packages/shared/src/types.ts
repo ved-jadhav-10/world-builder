@@ -346,6 +346,8 @@ export interface Invite {
 export interface CreatedInvite extends Invite {
   /** The secret part of the link, `/join/<token>`. It cannot be read again. */
   token: string;
+  /** The addresses the link was sent to (sending happens in the background). */
+  emailedTo: string[];
 }
 
 /** What someone sees before deciding to join. Anyone holding the link may read it. */

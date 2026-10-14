@@ -12,5 +12,14 @@ export const fullPath = (worldId: string, imageId: string) =>
 export const thumbPath = (worldId: string, imageId: string) =>
   join(imageDir(worldId, imageId), 'thumb.webp');
 
+/** Every picture of a world, for when the world itself is gone. */
+export const removeWorldImageFiles = (worldId: string) =>
+  rm(join(env.storageDir, 'images', worldId), {
+    recursive: true,
+    force: true,
+    maxRetries: 4,
+    retryDelay: 100,
+  });
+
 export const removeImageFiles = (worldId: string, imageId: string) =>
   rm(imageDir(worldId, imageId), { recursive: true, force: true, maxRetries: 4, retryDelay: 100 });

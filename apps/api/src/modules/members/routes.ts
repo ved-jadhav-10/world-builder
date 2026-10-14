@@ -1,8 +1,20 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { idSchema, inviteCreateSchema, inviteTokenSchema, memberUpdateSchema } from '@atlas/shared';
+import {
+  idSchema,
+  inviteCreateSchema,
+  inviteTokenSchema,
+  memberUpdateSchema,
+  ROLE_LABELS,
+} from '@atlas/shared';
 import { db } from '../../db/client';
+import { worlds } from '../../db/schema';
+import { env } from '../../env';
 import { badRequest } from '../../errors';
+import { inviteEmail } from '../../lib/email-templates';
+import { sendMailSoon } from '../../lib/mailer';
+import { limits } from '../../lib/rate-limits';
 import { currentUser, currentWorldId, requireRole, requireSession } from '../../plugins/auth-guard';
 import {
   acceptInvite,
@@ -60,15 +72,39 @@ export const memberRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.post(
     '/invites',
-    { onRequest: ownerOnly, schema: { body: inviteCreateSchema } },
+    {
+      onRequest: ownerOnly,
+      config: limits.inviteCreate,
+      schema: { body: inviteCreateSchema },
+    },
     async (request, reply) => {
-      const invite = await createInvite(
-        db,
-        currentWorldId(request),
-        currentUser(request).id,
-        request.body,
-      );
-      return reply.status(201).header('cache-control', 'no-store').send(invite);
+      const worldId = currentWorldId(request);
+      const owner = currentUser(request);
+      const invite = await createInvite(db, worldId, owner.id, request.body);
+
+      // The secret exists only now, so this is the one chance to put it in an email. A failed
+      // send is logged; the link is still shown to the owner, who can pass it on by hand.
+      const emailedTo = [...new Set(request.body.emails)];
+      if (emailedTo.length) {
+        const [world] = await db
+          .select({ name: worlds.name })
+          .from(worlds)
+          .where(eq(worlds.id, worldId));
+        for (const to of emailedTo) {
+          sendMailSoon(
+            inviteEmail(to, {
+              inviterName: owner.name,
+              worldName: world?.name ?? 'a world',
+              roleLabel: ROLE_LABELS[invite.role],
+              url: `${env.WEB_ORIGIN}/join/${invite.token}`,
+            }),
+          );
+        }
+      }
+      return reply
+        .status(201)
+        .header('cache-control', 'no-store')
+        .send({ ...invite, emailedTo });
     },
   );
 
@@ -86,14 +122,14 @@ export const memberRoutes: FastifyPluginAsyncZod = async (app) => {
 export const inviteRoutes: FastifyPluginAsyncZod = async (app) => {
   const params = z.object({ token: inviteTokenSchema });
 
-  app.get('/:token', { schema: { params } }, async (request, reply) => {
+  app.get('/:token', { config: limits.inviteUse, schema: { params } }, async (request, reply) => {
     const preview = await previewInvite(db, request.params.token);
     return reply.header('cache-control', 'no-store').send(preview);
   });
 
   app.post(
     '/:token/accept',
-    { onRequest: requireSession, schema: { params } },
+    { onRequest: requireSession, config: limits.inviteUse, schema: { params } },
     async (request, reply) => {
       const result = await acceptInvite(db, request.params.token, currentUser(request).id);
       return reply.header('cache-control', 'no-store').send(result);

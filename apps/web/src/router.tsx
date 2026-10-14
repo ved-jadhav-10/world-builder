@@ -2,7 +2,13 @@ import { createBrowserRouter } from 'react-router';
 import { RedirectIfSignedIn, RequireAuth } from '@/components/require-auth';
 import { NotFoundScreen, RouteError } from '@/components/route-error';
 import { AtlasIndexPage } from '@/routes/atlas-pages';
-import { SignInPage, SignUpPage } from '@/routes/auth-pages';
+import {
+  CheckEmailPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  SignInPage,
+  SignUpPage,
+} from '@/routes/auth-pages';
 import { CodexHome, EntityListPage } from '@/routes/codex-pages';
 import { JoinPage } from '@/routes/join-page';
 import { TrashPage } from '@/routes/trash-page';
@@ -21,12 +27,17 @@ export const router = createBrowserRouter([
           { path: '/sign-up', element: <SignUpPage /> },
         ],
       },
+      // Reached from an email link, so they work whether or not someone is signed in.
+      { path: '/check-email', element: <CheckEmailPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
       // An invite link works for visitors too: it asks them to sign in or up, then brings them back.
       { path: '/join/:token', element: <JoinPage /> },
       {
         element: <RequireAuth />,
         children: [
           { path: '/', element: <WorldsPage /> },
+          { path: '/account', lazy: () => import('@/routes/account-page') },
           {
             path: '/w/:slug',
             element: <WorldLayout />,

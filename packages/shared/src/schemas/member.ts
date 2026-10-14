@@ -17,6 +17,11 @@ export const inviteCreateSchema = z.object({
   maxUses: z.number().int().min(1).max(500).nullable().default(null),
   /** Null = the link never expires. */
   expiresInDays: z.number().int().min(1).max(365).nullable().default(7),
+  /** People to email the link to. The link itself works for anyone who holds it, not just them. */
+  emails: z
+    .array(z.string().trim().toLowerCase().pipe(z.email().max(254)))
+    .max(10)
+    .default([]),
 });
 export type InviteCreateInput = z.input<typeof inviteCreateSchema>;
 

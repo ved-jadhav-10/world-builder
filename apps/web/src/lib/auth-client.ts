@@ -6,3 +6,5 @@ export const authClient = createAuthClient({
 });
 
 export const { useSession, signIn, signUp, signOut } = authClient;
+// Also used straight from the client: requestPasswordReset, resetPassword, changePassword,
+// updateUser and deleteUser.

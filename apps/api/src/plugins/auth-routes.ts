@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
-import { auth } from '../auth';
+import { auth, CLIENT_IP_HEADER } from '../auth';
 import { env } from '../env';
 
 /** Forwards /api/auth/* to Better Auth's fetch-style handler. */
@@ -11,10 +11,14 @@ export async function authRoutes(app: FastifyInstance) {
     async handler(request, reply) {
       const url = new URL(request.url, env.BETTER_AUTH_URL);
       const hasBody = request.method !== 'GET' && request.body !== undefined;
+      // Better Auth counts sign-in attempts per client address. Fastify knows the real address
+      // (it honours TRUST_PROXY), so hand it over in a header that overwrites anything sent.
+      const headers = fromNodeHeaders(request.headers);
+      headers.set(CLIENT_IP_HEADER, request.ip);
       const response = await auth.handler(
         new Request(url, {
           method: request.method,
-          headers: fromNodeHeaders(request.headers),
+          headers,
           body: hasBody ? JSON.stringify(request.body) : undefined,
         }),
       );

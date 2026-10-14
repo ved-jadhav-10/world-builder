@@ -28,6 +28,7 @@ const STATUS_NAMES: Record<number, string> = {
   409: 'Conflict',
   410: 'Gone',
   413: 'Payload Too Large',
+  429: 'Too Many Requests',
   500: 'Internal Server Error',
 };
 

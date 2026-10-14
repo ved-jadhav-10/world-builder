@@ -204,12 +204,27 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - a notice to the GM when someone joins, and an audit trail of who joined with which link
   - the rest of the player portal from the research: player journals and notes on entries, "hidden until chapter N", handouts pushed live, and exporting only what players can see
 
+## Milestone 7 (Accounts, email and abuse limits): done
+
+- **Email:** `lib/mailer.ts` sends through Resend over plain HTTPS (no SDK), or prints the message to the API log when `EMAIL_PROVIDER=console` (the default, for development). Tests collect messages in an in-memory outbox. Templates are in `lib/email-templates.ts` and escape every name.
+  - Sending is in the background, so a slow or failing provider never holds up a request, and password-reset answers take the same time whether or not an account exists.
+- **Sign-up and sign-in:** `REQUIRE_EMAIL_VERIFICATION` (on by default whenever the provider is real) refuses sign-in until the address is confirmed. Sign-up then leads to a "Check your email" page, and trying to sign in again sends a fresh link. Following the link confirms the address and signs the person in. A used or expired link explains itself.
+- **Password reset:** forgot-password and reset-password pages. The reset ends every other session, and the answer is identical for unknown addresses (tested).
+- **Account page** (`/account`, from the name in the sidebar or the worlds list): rename, change password (signs out other devices) and delete the account. Deleting asks for the password, lists the worlds that will go, removes the person and every world they own (the database cascades the rows) and then their map and picture files from disk. Worlds someone only joined are left alone.
+- **Emailed invites:** the invite dialog takes up to 10 addresses. The link is emailed once, when it is made, since the secret is never stored; the owner still sees the link as before.
+- **Rate limits:** `@fastify/rate-limit` with per-route allowances in `lib/rate-limits.ts`, counted per signed-in person or client address: invite lookup and join, invite creation, world creation, uploads, search and exports. Over the limit is a 429 with a readable message. Better Auth's own limits (sign-in, sign-up, reset and confirmation emails) now see the real client address, handed over in a header the auth route sets from Fastify's `request.ip`; before this they all shared one bucket. `TRUST_PROXY=true` makes that address the one a proxy forwards.
+- **Verified in Chrome** (scripted, 17 steps, with email confirmation switched on): sign-up and the check-email page, an unconfirmed sign-in, the confirmation link, renaming, a wrong and a right password change, a bad address in the invite dialog, an emailed invite, forgot and reset password, the old password failing, a bad reset link, account deletion with a wrong and a right password, and phone width. It caught a real bug: the sign-up form was replaced by a spinner while the session was re-read, wiping the "check your email" message, so that message is now a page of its own.
+- **Deferred:**
+  - a verified sending domain and the real provider keys (launch work, see the checklist), and a notice to the owner when someone joins
+  - changing the email address, and downloading all of an account's data in one file (each world still exports on its own)
+  - sharing rate-limit counters between API instances
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
-1. **Launch readiness (section A).** Nothing else matters until strangers can safely use it.
+1. **Launch readiness (section A).** Nothing else matters until strangers can safely use it. Email, account deletion and rate limits are done (M7); object storage, deployment, the legal pages and age rule, and billing are not.
 2. **Public reader wiki with spoiler gating (F).** The research ranks it as the strongest reason to switch, and the audience rules, progressions and invites it needs now exist.
 3. **GM screen, session notes and rollable tables (D).** Finishes the game-master half.
 4. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
@@ -220,6 +235,7 @@ A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automa
 
 ### Known limits to revisit
 - Tiling runs in the API process, one map at a time; uploads and tiles are on local disk.
+- Rate-limit counters (ours and Better Auth's) live in each API process's memory, so they are per instance.
 - libvips caching is off (`sharp.cache(false)`) because it broke file deletes on Windows; a Linux deployment could turn it back on after testing.
 - The manuscript is the author's own workspace, GM-only; readers cannot see chapters yet (section F of the checklist).
 - "View as" previews and invited members share one audience engine; new content types must go through `visibleTo()` and the audience rules, with a test in `audience.test.ts`.

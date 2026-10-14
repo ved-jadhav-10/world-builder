@@ -117,7 +117,7 @@ export async function createInvite(
   worldId: string,
   userId: string,
   input: z.output<typeof inviteCreateSchema>,
-): Promise<CreatedInvite> {
+): Promise<Omit<CreatedInvite, 'emailedTo'>> {
   const token = randomBytes(32).toString('base64url');
   const expiresAt =
     input.expiresInDays === null ? null : new Date(Date.now() + input.expiresInDays * 86_400_000);
