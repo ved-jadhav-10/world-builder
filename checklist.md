@@ -7,13 +7,14 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 ## A. Launch readiness (not feature work; no milestone covers it)
 
 - [x] **Email** through Resend: confirmation at sign-up, password reset with forgot and reset pages, and emailed invites (M7). In development the messages print to the API log instead.
-- [ ] **Email go-live:** a Resend account and a verified sending domain (SPF and DKIM), then `EMAIL_PROVIDER`, `RESEND_API_KEY` and `EMAIL_FROM` in production. Also a "someone joined" notice to the owner.
+- [ ] **Email go-live:** a Resend account and a verified sending domain (SPF and DKIM), then `EMAIL_PROVIDER`, `RESEND_API_KEY` and `EMAIL_FROM` in production. (The "someone joined" notice is in E.)
 - [ ] **Object storage** (Cloudflare R2) for maps, tiles and pictures, with per-plan quotas. Files live on local disk today, behind `modules/atlas/files.ts` and `modules/gallery/files.ts`, so the move touches those two modules.
 - [ ] **Tiling as a real job queue.** It runs inside the API process, one map at a time.
 - [ ] **Deployment:** Mumbai-region hosting plus a CDN for tiles, production config, backups, monitoring.
 - [x] **Rate limits and abuse limits** beyond Better Auth's own: invite lookups and joins, invite creation, world creation, uploads, search and exports (M7). Counters are in memory, so several API instances would need a shared store.
 - [ ] **Scale test** with the research's synthetic world (10,000 entries, 500 chapters, 50 maps), then virtualise long lists and cluster pins where it shows.
 - [ ] **Legal and trust:** terms and privacy policy; the AI Charter (no training on user work, AI crawlers blocked on public wikis, AI opt-in with the user's own key); export guaranteed on every plan including lapsed ones; breach-notification flow. (Account deletion and name and password changes shipped in M7.)
+- [ ] **Account extras** (deferred in M7): changing the email address, and downloading all of an account's data in one file (each world still exports on its own).
 - [ ] **Age rule:** minimum age 18, or verifiable parental consent (many fanfic writers and players are teenagers).
 - [ ] **India and EU compliance:** DPDP Consent Manager rules start November 13, 2026 and full obligations on May 13, 2027; GDPR basics (lawful basis, processing agreements, transfer clauses, cookie consent). Not legal advice; check with a professional.
 - [ ] **Moderation, if public sharing ships (F):** takedown process, an India grievance officer, NSFW and hate-speech rules, and no public publishing of non-SRD WotC text.

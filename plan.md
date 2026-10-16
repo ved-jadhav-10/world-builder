@@ -1,12 +1,12 @@
-# Atlas & Ink: Milestone 1 (MVP Foundation)
+# Atlas & Ink: plan
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 6 are built, tested and on `main`; M2 to M6 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. The rest of this first section is the original M1 plan, kept as written.
+**Status:** Milestones 1 to 7 are built, tested and on `main`; M2 to M7 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
-**Env:** Node 22.13, pnpm 9.15, Docker 29.6, gh. The repo has 1 commit, `origin` = github.com/ved-jadhav-10/world-builder, and no code yet. Don't commit or push unless asked.
+**Env (at the start):** Node 22.13, pnpm 9.15, Docker 29.6, gh; `origin` = github.com/ved-jadhav-10/world-builder.
 
 ## Stack
 | Layer | Choice | Alternatives |
@@ -24,35 +24,36 @@
 
 **Rendering:** the logged-in workspace renders in the browser: search engines never see it, and it's heavily interactive. The public wiki, landing and SEO pages get server rendering in v1 via a monorepo `apps/site` (Next.js or Astro), with no rewrite needed.
 
-**Later (per research):** Leaflet/OpenSeadragon + sharp (libvips) tiling, Konva/PixiJS, Yjs + Hocuspocus, Cloudflare R2, Pandoc, Resend/SES, Razorpay + Paddle, Mumbai-region hosting.
+**Later (per research):** Leaflet/OpenSeadragon + sharp (libvips) tiling, Konva/PixiJS, Yjs + Hocuspocus, Cloudflare R2, Pandoc, Resend/SES, Razorpay + Paddle, Mumbai-region hosting. [Leaflet and sharp arrived in M3 and Resend in M7; the rest is still ahead.]
 
 ## Layout
 ```
 package.json  pnpm-workspace.yaml  tsconfig.base.json  eslint.config.js  .prettierrc
 docker-compose.yml   # postgres:17; dev DB + atlas_test
 .env.example         # DATABASE_URL TEST_DATABASE_URL BETTER_AUTH_SECRET BETTER_AUTH_URL WEB_ORIGIN
+                     # [later: API_PORT, STORAGE_DIR, EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM, REQUIRE_EMAIL_VERIFICATION, TRUST_PROXY]
 .gitignore  README.md (setup)  plan.md (this plan)
 apps/api (@atlas/api)   apps/web (@atlas/web)   packages/shared (@atlas/shared)
 .github/workflows/ci.yml   # lint + typecheck + test with Postgres service
 ```
-Root scripts: `dev` (api + web) · `db:up` · `db:generate` / `db:migrate` (Drizzle Kit) · `db:seed` · `test` · `lint` · `typecheck`.
+Root scripts: `dev` (api + web) · `db:up` / `db:down` · `db:generate` / `db:migrate` (Drizzle Kit) · `db:seed` · `test` · `lint` · `typecheck` · `format` · `build`.
 
 ## Data model: `apps/api/src/db/schema.ts`
 Everything is world-scoped. Built-in types are seeded per world, so users can edit them.
 - **Better Auth tables** (`user`, `session`, `account`, `verification`): generated with its CLI.
 - **`worlds`**: id uuid, owner_id, name, slug, description, timestamps, deleted_at.
-- **`world_members`**: world_id, user_id, role (owner|editor|commenter|reader|player). The MVP writes the owner row only, so v1 roles need no migration.
+- **`world_members`**: world_id, user_id, role (owner|editor|commenter|reader|player). The MVP writes the owner row only, so v1 roles need no migration. [M6 added invites for player, reader and co-GM (`editor`).]
 - **`entity_types`**: world_id, key, name, icon, color, `field_schema jsonb` (ordered `{key,label,type,options?}`), is_builtin, sort_order.
   - Seeds: Character, Location, Faction, Item, Species, Culture, Event, Lore Article.
   - Users can add their own types (an MVP feature in the research).
 - **`entities`**
   - world_id, type_id, name, `aliases text[]`, summary, `fields jsonb`, `body jsonb` (TipTap)
   - `search_text` (derived by the app on write), `search_vector tsvector GENERATED ALWAYS AS (to_tsvector('simple', search_text)) STORED`
-  - `visibility` (public|reader|player|gm|hidden, default gm; enforced in v1)
+  - `visibility` (public|reader|player|gm|hidden, default gm) [enforced on every read since M5]
   - created_by, timestamps, `deleted_at` (Trash)
   - Indexes: (world_id, type_id), (world_id, deleted_at), GIN(search_vector). `'simple'` avoids stemming fantasy names.
 - **`relationship_types`**: world_id, key, label, inverse_label. Seeds: member of, located in, owns, ally of, enemy of, parent of, sibling of, spouse of, of species, of culture.
-- **`relationships`**: world_id, source_id, target_id, type_id, notes, nullable `valid_from_day` / `valid_to_day` (bigint in-world day; the UI comes with the calendars milestone), timestamps, deleted_at.
+- **`relationships`**: world_id, source_id, target_id, type_id, notes, nullable `valid_from_day` / `valid_to_day` (bigint in-world day) [editable since M4], timestamps, deleted_at.
 - **`tags`** (world_id, name, color) + **`entity_tags`** (entity_id, tag_id).
 
 Rules:
@@ -68,7 +69,7 @@ Rules:
 - `env.ts` (zod env) · `app.ts` (`buildApp()`, Fastify 5 + zod provider; tests use `app.inject()`) · `server.ts` (:3000).
 - `auth.ts`: Better Auth email + password with the Drizzle adapter, mounted at `/api/auth/*`.
   - httpOnly SameSite=Lax cookie; built-in rate limit on.
-  - No email verification yet; reset emails go to the console until an email provider is picked.
+  - No email verification yet; reset emails go to the console until an email provider is picked. [M7 added both, through Resend, plus our own request limits.]
 - `plugins/auth-guard.ts`: `requireSession` (`auth.api.getSession`) and `requireWorldRole(minRole)` (via `world_members`). Every world-scoped query also filters by `world_id`.
 - `modules/<name>/{routes,service}.ts`. All routes are under `/api`; world-scoped ones under `/worlds/:worldId`.
   - `worlds`: list, create (seeds types + owner membership in one transaction), get, update, soft-delete.
@@ -91,7 +92,7 @@ Routes:
 - `/w/:slug/e/:entityId`: name, aliases, field form from `field_schema`, TipTap body, relationships panel + entity picker, tags, visibility
 - `/w/:slug/settings` (+ JSON export) · `/w/:slug/settings/types` (type and field editor) · `/w/:slug/trash`
 
-Ctrl/Cmd+K opens global search (shadcn `Command`). Shell nav: Codex active; Atlas and Manuscript disabled ("coming soon").
+Ctrl/Cmd+K opens global search (shadcn `Command`). Shell nav: Codex active; Atlas and Manuscript disabled ("coming soon"). [All views are live now, plus Timeline, Quests, Gallery, People and `/account`.]
 
 Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `components/{FieldRenderer,RelationshipsPanel,EntityPicker,RichTextEditor}.tsx`.
 
@@ -104,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -184,7 +185,7 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Fixed on the way:** libvips keeps files open in a cache, and on Windows that broke deleting a map or picture (`EBUSY`). The cache is off and file removal retries.
 - **Verified in Chrome** (scripted, 19 steps), including a **real player** in a second session: gallery upload, lightbox edits and portrait swap, the as-of picture, the quest board with drag and drop, the preview banner, and what a player cannot see or do.
 - **Deferred:**
-  - inviting players and readers (the roles and enforcement exist; there is no invite flow or portal yet), and "hidden until chapter N" reveals
+  - inviting players and readers (the roles and enforcement exist; there is no invite flow or portal yet) [done in M6], and "hidden until chapter N" reveals
   - visibility per field or per block inside an entry
   - the GM screen dashboard, session notes, handouts pushed live, fog of war, and exporting only what players can see
 
@@ -200,7 +201,7 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified in Chrome** (scripted, 14 steps, with separate browser sessions for the GM, a new player and a co-GM): link creation and the once-only secret, the signed-out join page, sign-up and sign-in round trips through the link, what a real player sees and cannot do, a role change taking effect, invalid and expired links, an existing member keeping their role, cancelling, leaving, removing, and phone width. This caught a real bug (the role toast read the select after it had reverted).
 - **Deferred:**
   - handing ownership to someone else, and several owners
-  - email invitations (there is no email provider yet, so links are shared by hand), and an "invite by name" lookup
+  - email invitations (there is no email provider yet, so links are shared by hand) [done in M7], and an "invite by name" lookup
   - a notice to the GM when someone joins, and an audit trail of who joined with which link
   - the rest of the player portal from the research: player journals and notes on entries, "hidden until chapter N", handouts pushed live, and exporting only what players can see
 
