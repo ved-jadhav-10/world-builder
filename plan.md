@@ -225,11 +225,12 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
-1. **Launch readiness (section A).** Nothing else matters until strangers can safely use it. Email, account deletion and rate limits are done (M7); object storage, deployment, the legal pages and age rule, and billing are not.
-2. **Public reader wiki with spoiler gating (F).** The research ranks it as the strongest reason to switch, and the audience rules, progressions and invites it needs now exist.
-3. **GM screen, session notes and rollable tables (D).** Finishes the game-master half.
-4. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
-5. Then the rest of B to F, importers (H) for whichever tool users most want to leave, and v2 and v3 items as demand shows.
+Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
+1. **GM screen, session notes and rollable tables (D).** Finishes the game-master half.
+2. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
+3. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
+4. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
+5. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
 ### Deliberately not building (integrate or skip)
 A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automation; character builders for licensed game systems; hosting audio files; a paid-GM marketplace; random dungeon generation (import instead); streaming audio to Discord (use Kenku FM).
