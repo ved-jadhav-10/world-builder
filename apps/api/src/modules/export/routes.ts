@@ -1,9 +1,10 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { manuscriptExportQuerySchema } from '@atlas/shared';
+import { epubExportQuerySchema, manuscriptExportQuerySchema } from '@atlas/shared';
 import { db } from '../../db/client';
 import { limits } from '../../lib/rate-limits';
 import { currentUser, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import { buildManuscriptDocx } from './docx';
+import { buildManuscriptEpub } from './epub';
 import { buildMarkdownZip } from './markdown';
 import { exportWorld } from './service';
 
@@ -56,6 +57,30 @@ export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
           `attachment; filename="manuscript.docx"; filename*=UTF-8''${encodeURIComponent(filename)}`,
         )
         .send(data);
+    },
+  );
+
+  // The manuscript as an EPUB, for e-readers. Like the Word export it holds every scene.
+  app.get(
+    '/export/manuscript.epub',
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: epubExportQuerySchema },
+    },
+    async (request, reply) => {
+      const { filename, data } = await buildManuscriptEpub(db, currentWorldId(request), {
+        bookId: request.query.bookId,
+        author: request.query.author ?? currentUser(request).name,
+      });
+      return reply
+        .header('content-type', 'application/epub+zip')
+        .header(
+          'content-disposition',
+          'attachment; filename="manuscript.epub"; filename*=UTF-8\'\'' +
+            encodeURIComponent(filename),
+        )
+        .send(Buffer.from(data));
     },
   );
 };

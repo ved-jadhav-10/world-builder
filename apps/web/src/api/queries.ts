@@ -383,6 +383,20 @@ export const downloadManuscriptDocx = (
   );
 };
 
+/** Downloads the manuscript as an EPUB for e-readers. */
+export const downloadManuscriptEpub = (
+  world: World,
+  options: { bookId?: string; author?: string },
+) => {
+  const query = new URLSearchParams();
+  if (options.bookId) query.set('bookId', options.bookId);
+  if (options.author) query.set('author', options.author);
+  return download(
+    `/worlds/${world.id}/export/manuscript.epub?${query}`,
+    `${world.slug}-manuscript-${today()}.epub`,
+  );
+};
+
 /** Downloads the world as a zip of Markdown notes, pictures and JSON. */
 export const downloadMarkdownExport = (world: World) =>
   download(`/worlds/${world.id}/export/markdown`, `${world.slug}-markdown-${today()}.zip`);

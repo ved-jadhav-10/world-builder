@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 17 are built, tested and on `main`; M2 to M17 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 18 are built, tested and on `main`; M2 to M18 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -366,6 +366,18 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - EPUB and PDF (the blocks above are the shared first step), a story-bible PDF, and screenplay or comic formats
   - front and back matter (dedication, acknowledgements), a table of contents, and footnotes
   - per-scene or per-chapter selection, and printing scene titles or notes
+
+## Milestone 18 (EPUB export): done
+
+- **What it makes:** `GET /export/manuscript.epub` builds an EPUB 3 by hand with `fflate` (no new dependency): the `mimetype` entry first and stored uncompressed, `container.xml`, a package file (title, author, language, an identifier derived from the book's id so re-exports are the same book, a modified date), a navigation document, a style sheet, a title page and one XHTML page per chapter, with a heading page for each part (and for each book when exporting several). Scenes are separated by a centred "* * *"; the first paragraph after a heading or break has no indent.
+- **Shared first step with Word:** the same `richTextToBlocks` feeds `blocksToXhtml` (`packages/shared/src/manuscript-html.ts`, pure and tested): marks, links, line breaks, headings (shifted down to h3 so they sit under the chapter title), quotes, code, rules and nested lists, all escaped so the output is well-formed XML.
+- **Same rules as the Word export:** editors only (it holds every scene), one book or all, the author defaults to the signed-in name, and the API says when there is nothing or no text to export.
+- **Web:** the export dialog now has a File type (Word or E-book); the Word-only layout and paper choices hide for an e-book.
+- **Verified:** API tests check the zip's structure (mimetype first and stored, every manifest entry present, navigation, per-chapter pages, escaping) and run a tag-balance check over every XML file; the Chrome check downloads an EPUB through the dialog and **parses every file with the browser's real XML parser**, which accepted them all. It was not opened in an e-reader app and not run through EPUBCheck.
+- **Deferred:**
+  - a cover image, and running the output through EPUBCheck
+  - PDF and a story-bible export, front and back matter, footnotes
+  - choosing the language of the book (it is always `en`)
 
 ## Roadmap: what's left
 

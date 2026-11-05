@@ -70,3 +70,9 @@ export const manuscriptExportQuerySchema = z.object({
   author: z.string().trim().max(100).optional(),
 });
 export type ManuscriptExportQuery = z.output<typeof manuscriptExportQuerySchema>;
+
+/** The EPUB export takes the book and the author name; layout and paper are Word's concerns. */
+export const epubExportQuerySchema = manuscriptExportQuerySchema.pick({
+  bookId: true,
+  author: true,
+});
