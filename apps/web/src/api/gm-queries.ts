@@ -5,12 +5,15 @@ import type {
   ImageListQuery,
   ImageUpdateInput,
   QuestSummary,
+  SessionCreateInput,
+  SessionSummary,
   Visibility,
 } from '@atlas/shared';
 import { api, apiUpload } from './client';
 
 export const gmKeys = {
   quests: (worldId: string) => ['quests', worldId] as const,
+  sessions: (worldId: string) => ['sessions', worldId] as const,
   images: (worldId: string, filter: ImageListQuery = {}) => ['images', worldId, filter] as const,
 };
 
@@ -47,6 +50,27 @@ export function useSetQuestStatus(worldId: string) {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: key });
       void qc.invalidateQueries({ queryKey: ['entities', worldId] });
+    },
+  });
+}
+
+// ---- Sessions -------------------------------------------------------------------------------
+
+export const useSessions = (worldId: string) =>
+  useQuery({
+    queryKey: gmKeys.sessions(worldId),
+    queryFn: () => api<SessionSummary[]>('GET', `/worlds/${worldId}/sessions`),
+  });
+
+export function useCreateSession(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SessionCreateInput) =>
+      api<Entity>('POST', `/worlds/${worldId}/sessions`, input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: gmKeys.sessions(worldId) });
+      void qc.invalidateQueries({ queryKey: ['entities', worldId] });
+      void qc.invalidateQueries({ queryKey: ['entity-types', worldId] });
     },
   });
 }

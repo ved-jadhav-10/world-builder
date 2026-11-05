@@ -367,6 +367,28 @@ export interface JoinResult {
   joined: boolean;
 }
 
+/** An entry that another entry is linked to, with the link's label read from that entry's side. */
+export interface EntryLink {
+  label: string;
+  other: { id: string; name: string; typeId: string };
+}
+
+export interface SessionSummary {
+  id: string;
+  name: string;
+  summary: string;
+  /** The session's number; null if it was cleared. */
+  number: number | null;
+  /** One of SESSION_STATUSES; anything else counts as "Planned". */
+  status: string;
+  /** When it was played in the real world, as written. */
+  playedOn: string;
+  visibility: Visibility;
+  updatedAt: string;
+  /** What is in the session: the characters, places and quests it features. */
+  links: EntryLink[];
+}
+
 export interface QuestSummary {
   id: string;
   name: string;
@@ -376,7 +398,7 @@ export interface QuestSummary {
   visibility: Visibility;
   updatedAt: string;
   /** What the quest is linked to: where it happens, who gave it, who it involves. */
-  links: { label: string; other: { id: string; name: string; typeId: string } }[];
+  links: EntryLink[];
 }
 
 // ---- Dice, tables and the roll log --------------------------------------------------------------

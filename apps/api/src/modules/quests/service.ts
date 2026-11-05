@@ -1,5 +1,4 @@
-import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import {
   QUEST_STATUS_FIELD,
   QUEST_TYPE_KEY,
@@ -8,8 +7,9 @@ import {
   type QuestSummary,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities, entityTypes, relationships, relationshipTypes } from '../../db/schema';
+import { entities, entityTypes } from '../../db/schema';
 import { badRequest, notFound } from '../../errors';
+import { loadEntryLinks } from '../../lib/entry-links';
 import { visibleTo } from '../../lib/visibility';
 import { getEntityRow, updateEntity } from '../entities/service';
 
@@ -53,51 +53,12 @@ export async function listQuests(
     .orderBy(asc(entities.name));
   if (quests.length === 0) return [];
 
-  // One query for every link, in both directions, to entries the audience can see.
-  const ids = quests.map((q) => q.id);
-  const other = alias(entities, 'other');
-  const links = await db
-    .select({
-      id: relationships.id,
-      sourceId: relationships.sourceId,
-      targetId: relationships.targetId,
-      label: relationshipTypes.label,
-      inverseLabel: relationshipTypes.inverseLabel,
-      otherId: other.id,
-      otherName: other.name,
-      otherTypeId: other.typeId,
-    })
-    .from(relationships)
-    .innerJoin(relationshipTypes, eq(relationshipTypes.id, relationships.typeId))
-    .innerJoin(
-      other,
-      or(
-        and(inArray(relationships.sourceId, ids), eq(other.id, relationships.targetId)),
-        and(inArray(relationships.targetId, ids), eq(other.id, relationships.sourceId)),
-      ),
-    )
-    .where(
-      and(
-        eq(relationships.worldId, worldId),
-        isNull(relationships.deletedAt),
-        isNull(other.deletedAt),
-        visibleTo(other.visibility, audience),
-      ),
-    )
-    .orderBy(asc(other.name));
-
-  const byQuest = new Map<string, QuestSummary['links']>();
-  for (const link of links) {
-    const outgoing = ids.includes(link.sourceId);
-    const questId = outgoing ? link.sourceId : link.targetId;
-    byQuest.set(questId, [
-      ...(byQuest.get(questId) ?? []),
-      {
-        label: outgoing ? link.label : link.inverseLabel,
-        other: { id: link.otherId, name: link.otherName, typeId: link.otherTypeId },
-      },
-    ]);
-  }
+  const byQuest = await loadEntryLinks(
+    db,
+    worldId,
+    quests.map((quest) => quest.id),
+    audience,
+  );
 
   return quests.map((quest) => {
     const status = quest.fields[QUEST_STATUS_FIELD];

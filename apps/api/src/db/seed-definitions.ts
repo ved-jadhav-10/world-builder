@@ -1,4 +1,12 @@
-import { QUEST_STATUSES, type FieldDefinition } from '@atlas/shared';
+import {
+  QUEST_STATUSES,
+  SESSION_LINK_KEY,
+  SESSION_NUMBER_FIELD,
+  SESSION_PLAYED_ON_FIELD,
+  SESSION_STATUS_FIELD,
+  SESSION_STATUSES,
+  type FieldDefinition,
+} from '@atlas/shared';
 
 interface BuiltinEntityType {
   key: string;
@@ -155,6 +163,26 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
     ],
   },
   {
+    key: 'session',
+    startLabel: 'Story starts',
+    endLabel: 'Story ends',
+    name: 'Session',
+    icon: 'notebook-pen',
+    color: '#7c3aed',
+    fieldSchema: [
+      { key: SESSION_NUMBER_FIELD, label: 'Number', type: 'number' },
+      {
+        key: SESSION_STATUS_FIELD,
+        label: 'Status',
+        type: 'select',
+        options: [...SESSION_STATUSES],
+      },
+      { key: SESSION_PLAYED_ON_FIELD, label: 'Played on', type: 'text' },
+      { key: 'recap', label: 'Recap', type: 'long_text' },
+      { key: 'next_up', label: 'Threads for next time', type: 'long_text' },
+    ],
+  },
+  {
     key: 'lore_article',
     startLabel: 'Starts',
     endLabel: 'Ends',
@@ -185,4 +213,5 @@ export const BUILTIN_RELATIONSHIP_TYPES = [
   { key: 'of_culture', label: 'of culture', inverseLabel: 'culture of' },
   { key: 'took_part_in', label: 'took part in', inverseLabel: 'had participant' },
   { key: 'given_by', label: 'given by', inverseLabel: 'gave quest' },
+  { key: SESSION_LINK_KEY, label: 'features', inverseLabel: 'featured in' },
 ] as const;
