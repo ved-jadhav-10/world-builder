@@ -11,7 +11,7 @@ import type { ProgressionChanges } from './schemas/progression';
 import type { Role, Visibility } from './schemas/common';
 import type { RevisionKind } from './schemas/revisions';
 import type { FieldDefinition } from './schemas/entity-type';
-import type { RichTextDoc } from './schemas/entity';
+import type { EntitySort, RichTextDoc } from './schemas/entity';
 import type { InviteRole } from './schemas/member';
 
 /** API response shapes. Dates are ISO strings. */
@@ -140,6 +140,8 @@ export interface WorldExport {
   handouts: Handout[];
   /** The to-do list, open tasks first. */
   todos: Todo[];
+  /** Entry templates; saved filters are personal and stay out. */
+  entryTemplates: EntryTemplate[];
 }
 
 export interface ApiErrorBody {
@@ -643,4 +645,26 @@ export interface Todo {
   entity: { id: string; name: string; typeId: string } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** A reusable starting point for new entries of one type, made from an entry the writer liked. */
+export interface EntryTemplate {
+  id: string;
+  typeId: string;
+  name: string;
+  summary: string;
+  fields: Record<string, unknown>;
+  body: RichTextDoc | null;
+  visibility: Visibility;
+  createdAt: string;
+}
+
+/** One person's saved combination of list filters for a type. */
+export interface SavedFilter {
+  id: string;
+  name: string;
+  typeId: string;
+  tagId: string | null;
+  visibility: Visibility | null;
+  sort: EntitySort;
 }

@@ -241,6 +241,7 @@ function world(): WorldExport {
         updatedAt: '',
       },
     ],
+    entryTemplates: [],
     todos: [
       {
         id: 't1',
@@ -576,6 +577,7 @@ describe('worldToMarkdown', () => {
       plotBoards: [],
       handouts: [],
       todos: [],
+      entryTemplates: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)

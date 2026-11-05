@@ -43,3 +43,4 @@ export * from './manuscript-text';
 export * from './manuscript-html';
 export * from './schemas/handouts';
 export * from './schemas/todos';
+export * from './schemas/templates';

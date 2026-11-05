@@ -787,3 +787,49 @@ export const todos = pgTable(
   },
   (t) => [index('todos_world_idx').on(t.worldId, t.done, t.createdAt)],
 );
+
+/** A reusable starting point for new entries of one type, made from an existing entry. */
+export const entryTemplates = pgTable(
+  'entry_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    typeId: uuid('type_id')
+      .notNull()
+      .references(() => entityTypes.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    summary: text('summary').notNull().default(''),
+    fields: jsonb('fields').$type<Record<string, unknown>>().notNull().default({}),
+    body: jsonb('body').$type<RichTextDoc>(),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('entry_templates_world_idx').on(t.worldId, t.typeId)],
+);
+
+/** One person's saved filters for a type's list, per world. */
+export const savedFilters = pgTable(
+  'saved_filters',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    typeId: uuid('type_id')
+      .notNull()
+      .references(() => entityTypes.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // A filter on a tag goes away with the tag, since it would otherwise show everything.
+    tagId: uuid('tag_id').references(() => tags.id, { onDelete: 'cascade' }),
+    visibility: visibilityEnum('visibility'),
+    sort: text('sort').notNull().default('name'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('saved_filters_user_idx').on(t.worldId, t.userId, t.typeId)],
+);

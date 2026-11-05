@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 21 are built, tested and on `main`; M2 to M21 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 22 are built, tested and on `main`; M2 to M22 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -408,6 +408,17 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Web:** a To-do page in the sidebar (GM only) with a quick-add row, an optional "About an entry" picker, open and finished sections, an entry chip that opens the entry, an edit dialog (title, notes, entry) and delete.
 - **Verified in Chrome** (scripted, 9 steps): empty state, adding with and without an entry, ticking and unticking, editing and unlinking, opening the entry from its chip, clearing finished and deleting, the player having no link and a 403, and a phone-sized page.
 - **Deferred:** due dates and priorities, manual ordering, to-dos shown on an entry's own page, to-dos tied to a scene or map pin, and recurring tasks.
+
+## Milestone 22 (Entry templates and saved filters): done
+
+- **Entry templates:** `entry_templates` table. "Save as template" on an entry page copies the entry's saved summary, fields, text and visibility into a named template for its type (unsaved edits are not included, and later changes to the entry do not change the template). The new-entry dialog offers "Start from a template" for the chosen type and creates the entry with that content; a delete button sits beside the choice. A world keeps up to 50 templates; they go with their type. Templates can hold GM-only secrets, so they are for the GM and editors only (403 for others) and are in the JSON export as `entryTemplates`.
+- **List filter by visibility:** `GET /entities` takes `visibility`, shown as a select for the GM. It only narrows: a player asking for GM-only entries gets an empty list.
+- **Saved filters:** `saved_filters` table, per person per world, for a type's list: tag, visibility and sort. Chips above the list apply a filter in one click (click again to clear) and an x deletes it; "Save this view" appears when the current filters differ from the defaults and are not saved yet. Every member can keep up to 30; one person's filters are invisible to others; a filter on a tag is removed with the tag. Saved filters are personal, so they are not in the world export.
+- **Verified in Chrome** (scripted, 9 steps): saving a template, creating from it (summary and visibility carried over) and blank by default, saving, reloading, applying and deleting a filter, the visibility filter, a player keeping filters but seeing no visibility filter, templates or Save as template (and a 403 from the templates API), deleting a template, and a phone-sized list.
+- **Deferred:**
+  - **world templates** (starting a new world from a ready-made or saved world)
+  - renaming a template or a filter, replacing a template's content from an entry, tag copying and starter relationships in templates
+  - filters across all types, text filters and sharing a saved filter with the world
 
 ## Roadmap: what's left
 

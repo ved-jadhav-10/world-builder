@@ -1,15 +1,17 @@
 import { CheckSquare, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import type { EntitySort } from '@atlas/shared';
+import { VISIBILITIES, type EntitySort, type Visibility } from '@atlas/shared';
 import { useEntityList, useTags } from '@/api/queries';
 import { BulkBar } from '@/components/bulk-bar';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityRow } from '@/components/entity-row';
+import { SavedFiltersBar } from '@/components/saved-filters-bar';
 import { NewEntityDialog } from '@/components/new-entity-dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner, Spinner } from '@/components/ui/misc';
+import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
 
 export function CodexHome() {
@@ -88,15 +90,21 @@ export function CodexHome() {
 
 export function EntityListPage() {
   const { typeKey = '' } = useParams();
-  const { world, typeByKey, canEdit } = useWorld();
+  const { world, typeByKey, canEdit, audience } = useWorld();
   const type = typeByKey.get(typeKey);
   const [sort, setSort] = useState<EntitySort>('name');
   const [tagId, setTagId] = useState('');
+  const [visibility, setVisibility] = useState<Visibility | ''>('');
   // Bulk edit: pick rows, then change them all at once.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const { data: tags = [] } = useTags(world.id);
-  const list = useEntityList(world.id, { typeId: type?.id, sort, tagId: tagId || undefined });
+  const list = useEntityList(world.id, {
+    typeId: type?.id,
+    sort,
+    tagId: tagId || undefined,
+    visibility: visibility || undefined,
+  });
 
   if (!type)
     return (
@@ -171,6 +179,21 @@ export function EntityListPage() {
             ))}
           </NativeSelect>
         ) : null}
+        {audience === 'gm' ? (
+          <NativeSelect
+            aria-label="Filter by visibility"
+            className="w-auto"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value as Visibility | '')}
+          >
+            <option value="">Any visibility</option>
+            {VISIBILITIES.map((v) => (
+              <option key={v} value={v}>
+                {VISIBILITY_LABELS[v]}
+              </option>
+            ))}
+          </NativeSelect>
+        ) : null}
         {canEdit && items.length > 0 ? (
           <Button
             variant={selecting ? 'default' : 'outline'}
@@ -182,6 +205,16 @@ export function EntityListPage() {
           </Button>
         ) : null}
       </div>
+
+      <SavedFiltersBar
+        typeId={type.id}
+        current={{ tagId, visibility, sort }}
+        onApply={(filters) => {
+          setTagId(filters.tagId);
+          setVisibility(filters.visibility);
+          setSort(filters.sort);
+        }}
+      />
 
       {selecting ? (
         <div className="mt-4 space-y-2">
@@ -209,7 +242,9 @@ export function EntityListPage() {
             icon={<EntityIcon icon={type.icon} />}
             title={`No ${type.name.toLowerCase()} entries yet`}
           >
-            {tagId ? 'Nothing here has that tag.' : 'Create the first one with the button above.'}
+            {tagId || visibility
+              ? 'Nothing matches these filters.'
+              : 'Create the first one with the button above.'}
           </EmptyState>
         ) : (
           <>

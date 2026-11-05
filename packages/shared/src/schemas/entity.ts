@@ -53,6 +53,8 @@ export type EntitySort = (typeof ENTITY_SORTS)[number];
 export const entityListQuerySchema = z.object({
   typeId: idSchema.optional(),
   tagId: idSchema.optional(),
+  /** Only entries with exactly this visibility; people who cannot see it get nothing. */
+  visibility: visibilitySchema.optional(),
   sort: z.enum(ENTITY_SORTS).default('name'),
   cursor: z.string().max(500).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),

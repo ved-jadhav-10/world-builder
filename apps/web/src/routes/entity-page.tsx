@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { History, Save, Trash2 } from 'lucide-react';
+import { BookCopy, History, Save, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -28,6 +28,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityMaps } from '@/components/entity-maps';
 import { FieldRenderer } from '@/components/field-renderer';
+import { SaveTemplateDialog } from '@/components/save-template-dialog';
 import { RelationshipsPanel } from '@/components/relationships-panel';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { TagsEditor } from '@/components/tags-editor';
@@ -119,7 +120,7 @@ function EntityEditor({
   asOf: AsOf | null;
   onAsOfChange: (value: AsOf | null) => void;
 }) {
-  const { world, typeById, base, canEdit } = useWorld();
+  const { world, typeById, base, canEdit, audience } = useWorld();
   const type = typeById.get(entity.typeId) ?? FALLBACK_TYPE;
   const updateEntity = useUpdateEntity(world.id, entity.id);
   const deleteEntity = useDeleteEntity(world.id);
@@ -257,6 +258,20 @@ function EntityEditor({
               form.reset(toFormValues(restored as Entity, type));
               setEditorKey((key) => key + 1);
             }}
+          />
+        ) : null}
+        {canEdit && audience === 'gm' ? (
+          <SaveTemplateDialog
+            entityId={entity.id}
+            defaultName={entity.name}
+            trigger={
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 hover:text-foreground"
+              >
+                <BookCopy className="size-3.5" /> Save as template
+              </button>
+            }
           />
         ) : null}
         <span className="ml-auto">

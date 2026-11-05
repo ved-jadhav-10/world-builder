@@ -29,6 +29,7 @@ import type {
   World,
   WorldCreateInput,
   WorldUpdateInput,
+  Visibility,
 } from '@atlas/shared';
 import { api } from './client';
 
@@ -122,7 +123,13 @@ export function useDeleteEntityType(worldId: string) {
 
 export function useEntityList(
   worldId: string,
-  params: { typeId?: string; tagId?: string; sort?: EntitySort; limit?: number },
+  params: {
+    typeId?: string;
+    tagId?: string;
+    visibility?: Visibility;
+    sort?: EntitySort;
+    limit?: number;
+  },
 ) {
   return useInfiniteQuery({
     queryKey: [...keys.entities(worldId), 'list', params],

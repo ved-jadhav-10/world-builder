@@ -271,6 +271,7 @@ export async function listEntities(
   const visible = visibleTo(entities.visibility, audience);
   if (visible) conditions.push(visible);
   if (query.typeId) conditions.push(eq(entities.typeId, query.typeId));
+  if (query.visibility) conditions.push(eq(entities.visibility, query.visibility));
   if (query.tagId) {
     conditions.push(
       exists(
