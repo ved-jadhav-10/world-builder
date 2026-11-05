@@ -28,3 +28,4 @@ export * from './schemas/sessions';
 export * from './schemas/gm-screen';
 export * from './graph-layout';
 export * from './family';
+export * from './schemas/graph';

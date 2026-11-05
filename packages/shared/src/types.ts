@@ -438,3 +438,41 @@ export interface GmScreen {
   /** The entries the pinned-entries widgets point to, still existing; trashed ones are left out. */
   entries: EntitySummary[];
 }
+
+// ---- The relationship graph and family trees ------------------------------------------------------
+
+export interface GraphNode {
+  id: string;
+  name: string;
+  typeId: string;
+  /** How many of the links shown touch this entry. */
+  degree: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  typeId: string;
+  /** Read from the source: "parent of". The target sees `inverseLabel`: "child of". */
+  label: string;
+  inverseLabel: string;
+  validFromDay: number | null;
+  validToDay: number | null;
+}
+
+export interface GraphData {
+  focusId: string | null;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  /** True when more entries were connected than fit, so the picture is partial. */
+  truncated: boolean;
+}
+
+export interface FamilyData {
+  focusId: string;
+  people: { id: string; name: string; typeId: string }[];
+  parentOf: { parentId: string; childId: string }[];
+  spouses: [string, string][];
+  siblings: [string, string][];
+}

@@ -14,6 +14,7 @@ import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
 import { exportRoutes } from './modules/export/routes';
 import { galleryRoutes } from './modules/gallery/routes';
+import { graphRoutes } from './modules/graph/routes';
 import { gmScreenRoutes } from './modules/gm-screen/routes';
 import { inviteRoutes, memberRoutes } from './modules/members/routes';
 import { manuscriptRoutes } from './modules/manuscript/routes';
@@ -48,6 +49,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(galleryRoutes);
   await app.register(questRoutes);
   await app.register(sessionRoutes);
+  await app.register(graphRoutes);
   await app.register(gmScreenRoutes);
   await app.register(tableRoutes);
   await app.register(memberRoutes);
