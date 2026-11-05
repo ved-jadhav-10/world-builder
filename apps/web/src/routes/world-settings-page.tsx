@@ -10,6 +10,7 @@ import {
   useUpdateWorld,
 } from '@/api/queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { ManuscriptExportDialog } from '@/components/manuscript-export-dialog';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { useWorld } from '@/lib/world-context';
@@ -126,6 +127,13 @@ export function WorldSettingsPage() {
           >
             <FileText /> Download Markdown (zip)
           </Button>
+          <ManuscriptExportDialog
+            trigger={
+              <Button variant="outline">
+                <FileText /> Manuscript as Word (.docx)
+              </Button>
+            }
+          />
         </div>
         <p className="text-xs text-muted-foreground">
           The Markdown zip is one note per entry with links between them, ready to open in Obsidian,

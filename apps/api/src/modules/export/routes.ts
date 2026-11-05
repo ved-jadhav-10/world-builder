@@ -1,7 +1,9 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { manuscriptExportQuerySchema } from '@atlas/shared';
 import { db } from '../../db/client';
 import { limits } from '../../lib/rate-limits';
-import { currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { currentUser, currentWorldId, requireRole } from '../../plugins/auth-guard';
+import { buildManuscriptDocx } from './docx';
 import { buildMarkdownZip } from './markdown';
 import { exportWorld } from './service';
 
@@ -29,6 +31,31 @@ export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
         .header('content-type', 'application/zip')
         .header('content-disposition', `attachment; filename="${filename}"`)
         .send(Buffer.from(data));
+    },
+  );
+  // The manuscript as a Word document. It holds every scene, GM-only ones included.
+  app.get(
+    '/export/manuscript.docx',
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: manuscriptExportQuerySchema },
+    },
+    async (request, reply) => {
+      const { filename, data } = await buildManuscriptDocx(db, currentWorldId(request), {
+        ...request.query,
+        author: request.query.author ?? currentUser(request).name,
+      });
+      return reply
+        .header(
+          'content-type',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        )
+        .header(
+          'content-disposition',
+          `attachment; filename="manuscript.docx"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        )
+        .send(data);
     },
   );
 };

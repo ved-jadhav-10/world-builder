@@ -39,3 +39,4 @@ export * from './text-diff';
 export * from './schemas/revisions';
 export * from './writing-stats';
 export * from './schemas/writing';
+export * from './manuscript-text';

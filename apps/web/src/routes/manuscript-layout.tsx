@@ -1,9 +1,10 @@
-import { BookMarked, Plus } from 'lucide-react';
+import { BookMarked, Download, Plus } from 'lucide-react';
 import { Link, Outlet, useMatch } from 'react-router';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
 import { useCreateNode } from '@/api/manuscript-queries';
 import { Binder } from '@/components/binder';
+import { ManuscriptExportDialog } from '@/components/manuscript-export-dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { formatWords, KIND_ICONS, useManuscriptTree } from '@/lib/manuscript-tree';
@@ -69,13 +70,24 @@ export function ManuscriptHome() {
 
   return (
     <div className="space-y-10">
-      <div>
-        <p className="text-sm font-medium text-muted-foreground">Manuscript</p>
-        <h1 className="font-serif text-3xl font-semibold">{world.name}</h1>
-        <p className="mt-1 text-muted-foreground">
-          {totalWords.toLocaleString()} words across {scenes.length}{' '}
-          {scenes.length === 1 ? 'scene' : 'scenes'}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Manuscript</p>
+          <h1 className="font-serif text-3xl font-semibold">{world.name}</h1>
+          <p className="mt-1 text-muted-foreground">
+            {totalWords.toLocaleString()} words across {scenes.length}{' '}
+            {scenes.length === 1 ? 'scene' : 'scenes'}
+          </p>
+        </div>
+        {canEdit && scenes.length > 0 ? (
+          <ManuscriptExportDialog
+            trigger={
+              <Button variant="outline">
+                <Download /> Export as Word
+              </Button>
+            }
+          />
+        ) : null}
       </div>
 
       <ul className="grid gap-3 sm:grid-cols-2">

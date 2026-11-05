@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 16 are built, tested and on `main`; M2 to M16 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 17 are built, tested and on `main`; M2 to M17 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -352,6 +352,20 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - bulk edit from search results and the all-entries list, and moving entries between types
   - bulk edits of dates or fields, and an undo for a bulk visibility change
   - to-do lists (the other half of that checklist item)
+
+## Milestone 17 (Manuscript export to Word): done
+
+- **What it makes:** `GET /export/manuscript.docx` builds a `.docx` with the `docx` library (MIT) from the manuscript tree: a title page (author and approximate length at the top, the title and "by" in the middle), then parts, chapters (each on a new page) and scenes in reading order, with the writer's formatting kept (bold, italic, underline, strike, code, line breaks, headings, block quotes, bullet and numbered lists, code blocks, rules) and web or mail links kept as real links. Empty scenes are skipped; a scene break goes between scenes.
+- **Two layouts:** `manuscript` is the usual way to submit fiction (12 pt Times New Roman, double spaced, first-line indents except after a heading or break, chapters starting a third of the way down, "#" scene breaks, a running header "Surname / Title / page"); `clean` is a single-spaced reading layout (Cambria, spaced paragraphs, real Word heading styles, "* * *" breaks). US Letter or A4. One book or all of them. The author name defaults to the signed-in name.
+- **Rich text to blocks** (`packages/shared/src/manuscript-text.ts`, pure and tested): a TipTap document becomes a flat list of blocks of styled runs, independent of any file format, so EPUB or PDF can reuse it later. Links to anything but http(s) or mailto are dropped rather than written into a file.
+- **Editors only,** because the file holds every scene; refused to players, readers and previews. The API says what is wrong when there is nothing to export ("no manuscript yet", "no text yet") and the page shows that message.
+- **Web:** "Export as Word" on the Manuscript page and "Manuscript as Word (.docx)" in World settings open one dialog (book, layout, paper, author name).
+- **Verified:** API tests read the generated file's XML (title page, order, bold, links, scene breaks, paper size, escaping of `& < >`, other worlds); a scripted Chrome check downloads the file from the page; and the downloaded file was **opened in Microsoft Word** through COM (2 pages, the title page, heading and both paragraphs as expected). Pages and styles were not compared by eye against Word's own rendering.
+- **Fixed on the way:** the export helper threw a bare "Export failed"; it now shows the API's message. Adding the `docx` package with `pnpm add` left the web package's links dangling (a missing `vite/client` types error): `pnpm install` repaired it.
+- **Deferred:**
+  - EPUB and PDF (the blocks above are the shared first step), a story-bible PDF, and screenplay or comic formats
+  - front and back matter (dedication, acknowledgements), a table of contents, and footnotes
+  - per-scene or per-chapter selection, and printing scene titles or notes
 
 ## Roadmap: what's left
 

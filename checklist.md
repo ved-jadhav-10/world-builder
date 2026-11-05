@@ -41,7 +41,8 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Character extras:** abilities with charges, voice and dialogue sheet, interview questionnaire, species trait inheritance, colour palette field [v1]; turnaround sheet [v2]; stat blocks, system-agnostic or 5e [v2].
 - [ ] **Content tree** of all articles, **pop-out windows**, **keyboard shortcuts** for common actions [v1].
 - [ ] **Lore wiki extras:** secret blocks inside an article, embedded maps and timelines [MVP/v1 in the research; see also field-level secrets in F].
-- [ ] **More exports:** DOCX [MVP]; EPUB, PDF and a story-bible PDF [v1]; screenplay and comic script formats [v3].
+- [x] **Manuscript export to Word (.docx)**, in a standard submission layout or a clean one (M17).
+- [ ] **More exports:** EPUB, PDF and a story-bible PDF [v1]; screenplay and comic script formats [v3].
 
 ## C. Atlas, timeline and continuity
 

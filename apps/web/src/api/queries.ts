@@ -347,7 +347,11 @@ export const useSearch = (worldId: string, q: string) =>
 /** Saves a file the API sends, through the browser's download. */
 async function download(path: string, filename: string) {
   const response = await fetch(`/api${path}`, { credentials: 'same-origin' });
-  if (!response.ok) throw new Error('Export failed');
+  if (!response.ok) {
+    // The API says what is wrong ("the manuscript has no text yet"); show that when it does.
+    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(body?.message ?? 'Export failed');
+  }
   const url = URL.createObjectURL(await response.blob());
   const link = Object.assign(document.createElement('a'), { href: url, download: filename });
   link.click();
@@ -359,6 +363,25 @@ const today = () => new Date().toISOString().slice(0, 10);
 /** Downloads the world's JSON export via the browser. */
 export const downloadExport = (world: World) =>
   download(`/worlds/${world.id}/export`, `${world.slug}-${today()}.json`);
+
+/** Downloads the manuscript as a Word document. */
+export const downloadManuscriptDocx = (
+  world: World,
+  options: {
+    bookId?: string;
+    format: 'manuscript' | 'clean';
+    paper: 'letter' | 'a4';
+    author?: string;
+  },
+) => {
+  const query = new URLSearchParams({ format: options.format, paper: options.paper });
+  if (options.bookId) query.set('bookId', options.bookId);
+  if (options.author) query.set('author', options.author);
+  return download(
+    `/worlds/${world.id}/export/manuscript.docx?${query}`,
+    `${world.slug}-manuscript-${today()}.docx`,
+  );
+};
 
 /** Downloads the world as a zip of Markdown notes, pictures and JSON. */
 export const downloadMarkdownExport = (world: World) =>

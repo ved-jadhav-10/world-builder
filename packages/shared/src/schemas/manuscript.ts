@@ -55,3 +55,18 @@ export const sceneBodySchema = z.object({
   body: richTextDocSchema.nullable(),
 });
 export type SceneBodyInput = z.input<typeof sceneBodySchema>;
+
+/** What to put in a Word export of the manuscript. */
+export const MANUSCRIPT_FORMATS = ['manuscript', 'clean'] as const;
+export const MANUSCRIPT_PAPERS = ['letter', 'a4'] as const;
+
+export const manuscriptExportQuerySchema = z.object({
+  /** One book; every book when left out. */
+  bookId: idSchema.optional(),
+  /** `manuscript` is the standard submission format; `clean` is a comfortable reading layout. */
+  format: z.enum(MANUSCRIPT_FORMATS).default('manuscript'),
+  paper: z.enum(MANUSCRIPT_PAPERS).default('letter'),
+  /** Printed on the title page and in the header; the signed-in name when left out. */
+  author: z.string().trim().max(100).optional(),
+});
+export type ManuscriptExportQuery = z.output<typeof manuscriptExportQuerySchema>;
