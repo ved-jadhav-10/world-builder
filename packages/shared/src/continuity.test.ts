@@ -387,7 +387,7 @@ describe('ordering, determinism and wording', () => {
 
     expect(text(messy())[0]).toEqual({
       title: 'Mira appears after their end',
-      detail: 'Their end date is day 100, but 1 scene set later mention them.',
+      detail: 'Their end date is day 100, but 1 scene set later mentions them.',
     });
     expect(text(messy())[1]).toEqual({
       title: 'Dad is a parent of Kid, but was born after them',

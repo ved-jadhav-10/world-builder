@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 11 are built, tested and on `main`; M2 to M11 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 12 are built, tested and on `main`; M2 to M12 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -105,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen, **M10** the relationship graph and family trees, **M11** the plot board and structure templates. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen, **M10** the relationship graph and family trees, **M11** the plot board and structure templates, **M12** the continuity checker. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -271,6 +271,26 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - the multi-thread timeline view (a row per storyline over in-world time), and showing a card's scene word count and status
   - drag to reorder beats and storylines (buttons for now), and cards that span several beats
   - a board's use as a checklist against the manuscript (which scenes lack a card), and structure templates a user saves themselves
+
+## Milestone 12 (Continuity checker): done
+
+- **The rules** (`packages/shared/src/continuity.ts`, a pure function of plain data, so the server only loads rows and the tests can set up any story):
+  - **Appears after the end / before the start:** an entry with an end (or start) date is mentioned in a scene dated after (or before) it. Scenes where the entry is the point of view are left to the next rule, so a narrator is reported once.
+  - **Narrates outside their life:** a scene told from the point of view of someone whose dates exclude the scene's date.
+  - **Parent born after child**, and **child born more than a year after the parent ended** (a year is the length of year 0 in the world's own calendar).
+  - **Link outside someone's life:** a link whose period starts before one of its entries began or after it ended, such as a marriage that starts after a death.
+  - **Two owners at once:** two "owns" links to one item, by different owners, whose periods overlap (an open end counts as always); handing an item on, with an end date on the first, is accepted.
+  - **In two places at once:** one narrator's scenes on one day set in different locations (a notice: travel may be possible; the checker knows nothing of distances).
+- **Warnings and notices:** a problem with a character is a warning; the same with a place or a thing (a city that fell and is later ridden through) is only a notice.
+- **Dismissing:** a flashback, a ghost or a ruin can all be on purpose, so a finding can be marked "it's intended". Each finding has a key built from the rule, the entries and a short hash of the scenes behind it. A dismissal therefore holds until the facts change: add another offending scene and the finding comes back, with its own key. Dismissals are per world and shared by co-GMs, and can be brought back.
+- **API:** `GET /continuity` runs the rules (mentions come from the scene text, the same matcher as everywhere else) and returns the findings, the dismissed ones, names for everything mentioned and how much was checked; `POST` and `DELETE /continuity/dismissals`. It reads the manuscript and GM-only entries, so it is GM-only: players, readers and a GM previewing another view get 403.
+- **Web:** Continuity in the sidebar (GM only). Findings in plain language, with dates in the world's calendar ("Their end date is 11 Rimewane, 2 AF, but 1 scene set later mentions them"), links to the entries and scenes involved, a filter by kind, "Check again", and the dismissed ones tucked away with "Bring back". An empty world says what to add (dates on entries and scenes) to get checks.
+- **Verified in Chrome** (scripted, 10 steps, with a real player): the empty explanation, three findings with calendar dates and links, the kind filter, dismissing and surviving a reload, bringing back, a new scene reviving a dismissed finding, fixing a date making a finding go away, the player's refusal on the page and the API, and phone width.
+- **Deferred:**
+  - travel feasibility ("can they get from Vesh to the docks in a day?"), which needs distances on the Atlas and travel speeds
+  - ages that clash with a species' lifespan, item ownership by someone who is dead, and progressions that contradict each other
+  - findings on the entry page itself, and a count in the sidebar
+  - rules a world can switch off or tune
 
 ## Roadmap: what's left
 

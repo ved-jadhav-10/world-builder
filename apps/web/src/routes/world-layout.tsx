@@ -15,6 +15,7 @@ import {
   ScrollText,
   Search,
   Settings,
+  ShieldCheck,
   SlidersHorizontal,
   Trash2,
   X,
@@ -117,6 +118,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards
+            </NavLink>
+            <NavLink to={`${base}/continuity`} className={navItem}>
+              <ShieldCheck /> Continuity
             </NavLink>
           </>
         ) : null}

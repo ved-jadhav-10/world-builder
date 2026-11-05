@@ -344,16 +344,17 @@ export function describeFinding(
   const [d1, d2] = finding.days;
   const scenes = (n: number) => `${n} ${n === 1 ? 'scene' : 'scenes'}`;
   const n = finding.sceneIds.length;
+  const mention = n === 1 ? 'mentions' : 'mention';
   switch (finding.rule) {
     case 'after_end':
       return {
         title: `${first} appears after their end`,
-        detail: `Their end date is ${formatDay(d1!)}, but ${scenes(n)} set later mention them.`,
+        detail: `Their end date is ${formatDay(d1!)}, but ${scenes(n)} set later ${mention} them.`,
       };
     case 'before_start':
       return {
         title: `${first} appears before they begin`,
-        detail: `Their start date is ${formatDay(d1!)}, but ${scenes(n)} set earlier mention them.`,
+        detail: `Their start date is ${formatDay(d1!)}, but ${scenes(n)} set earlier ${mention} them.`,
       };
     case 'pov_outside_life': {
       const span =

@@ -60,6 +60,7 @@ export const router = createBrowserRouter([
                   Component: (await import('@/routes/plot-pages')).PlotBoardPage,
                 }),
               },
+              { path: 'continuity', lazy: () => import('@/routes/continuity-page') },
               { path: 'graph', lazy: () => import('@/routes/graph-page') },
               { path: 'family/:entityId', lazy: () => import('@/routes/family-page') },
               { path: 'screen', lazy: () => import('@/routes/screen-page') },

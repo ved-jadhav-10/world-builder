@@ -51,7 +51,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Calendars:** several calendars per world and parallel timeline tracks beyond lanes by type (deferred in M4); **calendar reminders** on entries [v1].
 - [ ] **Progressions** for relationships, names and aliases (deferred in M4).
 - [ ] **Timeline playback** and **chronicles playback** (animating events in place on the map) [v2].
-- [ ] **Continuity checker:** warns when a dead character reappears, travel is impossible, ages clash or an item has two owners [v2; the research found no competitor that offers it].
+- [x] **Continuity checker:** warns when a dead character reappears, a narrator is outside their life, a parent is younger than a child, a link starts outside someone's life, an item has two owners or a narrator is in two places at once (M12). Still to do: travel feasibility from map distances, and age against species lifespan [v2].
 - [ ] **Universal VTT export**, a **token maker** [v2].
 
 ## D. Running the game (GM tools)
