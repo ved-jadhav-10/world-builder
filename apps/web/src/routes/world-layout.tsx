@@ -8,6 +8,7 @@ import {
   Library,
   Map as MapIcon,
   Menu,
+  Network,
   NotebookPen,
   PenLine,
   ScrollText,
@@ -115,6 +116,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         ) : null}
         <NavLink to={`${base}/timeline`} className={navItem}>
           <CalendarRange /> Timeline
+        </NavLink>
+        <NavLink to={`${base}/graph`} className={navItem}>
+          <Network /> Graph
         </NavLink>
         <NavLink to={`${base}/quests`} className={navItem}>
           <ScrollText /> Quests

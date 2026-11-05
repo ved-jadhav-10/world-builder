@@ -218,6 +218,13 @@ function EntityEditor({
         </Link>
         <span>·</span>
         <span>Updated {timeAgo(entity.updatedAt)}</span>
+        <span>·</span>
+        <Link to={`${base}/graph?focus=${entity.id}`} className="hover:text-foreground">
+          Graph
+        </Link>
+        <Link to={`${base}/family/${entity.id}`} className="hover:text-foreground">
+          Family tree
+        </Link>
         <span className="ml-auto">
           <AsOfControl value={asOf} onChange={onAsOfChange} />
         </span>

@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 9 are built, tested and on `main`; M2 to M9 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 10 are built, tested and on `main`; M2 to M10 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -105,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen, **M10** the relationship graph and family trees. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -247,13 +247,26 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - live tables embedded inside prep notes
   - player handouts pushed live
 
+## Milestone 10 (Relationship graph and family trees): done
+
+- **Graph:** `GET /graph` returns the neighbourhood of one entry (`focus`, `depth` 1 to 3, `limit` up to 300) or, with no focus, the most connected entries of the world. Links are followed one step at a time from the focus, only links among the entries returned come back, and `truncated` says when more was connected than fit. `day` keeps only the links that hold on that in-world day (their periods come from M4). Nodes carry the number of links drawn, not the number in the database.
+- **Family:** `GET /family/:id` walks "parent of" up and down a number of generations (0 to 5 each way, at most 250 people), then adds the spouses and siblings of everyone found without following their own lines. Aunts and uncles appear only when linked as siblings of someone in the tree.
+- **Audiences:** both are filtered like everything else. A link to an entry the audience cannot see is dropped before degrees are counted, so a player's picture does not show that anything hidden is there. A hidden entry cannot be the centre of a graph or tree; it answers 404 like a missing one.
+- **Layouts (`packages/shared`, no new dependency):** `graph-layout.ts` is a deterministic force-directed layout (nodes start on a circle in the order given, so the same data always draws the same picture); `family.ts` puts each generation on a row, keeps couples side by side (several spouses in a row are allowed), centres children under their parents and orders each row by where the parents ended up. A person is placed in the generation the first path from the focus reaches, and loops, self-links and links to strangers are survived rather than hung on. Both are covered by unit tests, including a 250-node timing guard.
+- **Web:** a Graph page (pan by dragging, zoom with the wheel or buttons, hover to spotlight an entry's neighbours, click for a panel with its links, double-click or "Centre here" to refocus, filters by entry type and by link type, "Label every link", dashed lines for links that hold only for a time) and a Family tree page (click a person to centre on them, double-click to open, ancestors and descendants selectors, zoom buttons, an explanation when no family is linked). Entry pages link to both, and Graph is in the sidebar for everyone.
+- **Verified in Chrome** (scripted, 14 steps, with a real player): the world graph, focus and depth, the details panel and Centre here, the type and link filters and labels, wheel zoom, drag pan and reset, the family tree's rows, centring and generation limits, opening an entry, the empty family state, what a player cannot see in either page, a hidden entry as a focus, and phone width. It caught two real bugs: capturing the pointer on press sent the click to the background instead of to the entry, and the wheel listener was never attached because the SVG is not mounted yet when the page first renders.
+- **Deferred:**
+  - dragging nodes, saving a hand-arranged layout, and an in-world date control on the graph page (the API takes `day`)
+  - aunts, uncles and cousins in the tree (the whole lineage of the ancestors), and marking divorces or deaths on it
+  - faction diplomacy scores and the arc tracker, which build on this data
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
-1. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
+1. **Plot board and structure templates (B).** Finishes the writer half; the relationship graph and family trees are done (M10).
 2. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
 3. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
 4. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
