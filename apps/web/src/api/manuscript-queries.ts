@@ -100,6 +100,8 @@ export function useSaveSceneBody(worldId: string, sceneId: string) {
     onSuccess: (scene) => {
       qc.setQueryData(manuscriptKeys.scene(worldId, sceneId), scene);
       invalidateManuscript(qc, worldId);
+      // Today's word count, for the goal and sprint shown while writing.
+      void qc.invalidateQueries({ queryKey: ['writing', worldId] });
     },
   });
 }

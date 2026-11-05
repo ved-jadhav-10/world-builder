@@ -17,10 +17,12 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Target,
   Trash2,
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { SprintRunner } from '@/components/sprint-runner';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
@@ -115,6 +117,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
           <>
             <NavLink to={`${base}/manuscript`} className={navItem}>
               <PenLine /> Manuscript
+            </NavLink>
+            <NavLink to={`${base}/writing`} className={navItem}>
+              <Target /> Writing goals
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards
@@ -286,6 +291,7 @@ export function WorldLayout() {
         </div>
       </div>
       <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      {ctx.audience === 'gm' && ctx.canEdit ? <SprintRunner /> : null}
       {ctx.previewing && viewAs ? <PreviewBanner audience={viewAs} /> : null}
     </WorldContext.Provider>
   );

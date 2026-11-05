@@ -45,12 +45,17 @@ const toGoals = (row: GoalsRow): WritingGoals => ({
   deadline: row.deadline,
 });
 
-/** Today's date in a time zone, as the database sees it. */
-async function todayIn(db: DbOrTx, timezone: string): Promise<string> {
-  const rows = await db.execute<{ today: string }>(
-    sql`select ((now() at time zone ${timezone})::date)::text as today`,
-  );
-  return rows[0]!.today;
+/**
+ * Today's date in a time zone, "YYYY-MM-DD". Worked out here rather than in Postgres: browsers
+ * and Node accept the same zone names (aliases such as Asia/Calcutta included), while a database
+ * built with a newer or older zone list may not.
+ */
+function todayIn(timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 /** A scene's word count as saved, so a save can tell how many words it added or removed. */
@@ -75,7 +80,7 @@ export async function recordWords(
 ): Promise<void> {
   if (delta === 0) return;
   const goals = await ensureGoalsRow(db, worldId, userId, 'UTC');
-  const day = await todayIn(db, goals.timezone);
+  const day = todayIn(goals.timezone);
   await db
     .insert(writingDays)
     .values({ worldId, userId, day, words: delta })
@@ -94,7 +99,7 @@ export async function getWritingStats(
   // The zone is fixed the first time someone opens this page (or writes), then only changes
   // when they say so, so travelling does not shuffle the days already counted.
   const goalsRow = await ensureGoalsRow(db, worldId, userId, options.timezone ?? 'UTC');
-  const today = await todayIn(db, goalsRow.timezone);
+  const today = todayIn(goalsRow.timezone);
   const since = addDays(today, -(HISTORY_DAYS - 1));
 
   const [dayRows, [manuscript], sprintRows] = await Promise.all([

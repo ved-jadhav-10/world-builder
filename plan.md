@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 14 are built, tested and on `main`; M2 to M14 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 15 are built, tested and on `main`; M2 to M15 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -324,6 +324,24 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - history for chapters, books and other kinds of record (map items, relationships, tags, entry types)
   - comparing two old versions with each other, and restoring only part of a version (just the text, or just one field)
   - showing who changed what in a shared entry as a live change feed, and comments (the next feature, which will use the same GM-only footing)
+
+## Milestone 15 (Writing goals, streaks and sprints): done
+
+- **Counting words** (`modules/writing`): every manuscript save works out how many words the scene gained or lost (new word count minus the saved one) and adds it to that person's total for the day in `writing_days`. Net words, so cutting a scene counts against the day; restoring an old version is not counted as writing. Counting is wrapped so that a failure can never get in the way of saving the text.
+  - Days are calendar dates in the writer's own time zone, stored per person per world in `writing_goals`. It is fixed the first time the page is opened (from the browser) and changes only when the person says so, so travelling does not shuffle days already counted. "Today" is worked out in Node with `Intl`, not in Postgres: a browser reported `Asia/Calcutta`, which the Docker Postgres did not know, and the first version of the query returned a 500 for it (caught by the Chrome check, then covered by a test).
+- **Goals:** a daily word goal, a manuscript target and a deadline, each optional and clearable; goals and words are personal, so a co-GM's do not change the owner's.
+- **The numbers** (`packages/shared/src/writing-stats.ts`, pure and tested, including month, year and leap-day boundaries):
+  - streaks: a day counts when it reaches the daily goal (any words at all with no goal); today does not break a streak until it has ended; the longest streak comes from the last year
+  - manuscript progress as a percentage, and the words a day still needed to meet the deadline (today counts as a day; none once the target is met or the deadline has passed)
+  - a Monday-to-Sunday heatmap, shaded by how close each day came to the goal (500 words stands in when there is no goal)
+- **Sprints:** a timed sprint (10, 15, 25 or 45 minutes) records the day's words when it starts and, when time is up, how many were added since. It lives in `localStorage` outside React, so it keeps running while moving around the world; a runner mounted for the GM finishes it (and finishes one whose tab was closed, the next time the world opens). Finished sprints are saved and listed.
+- **Web:** a "Writing goals" page (today against the goal, streak, manuscript progress, a six-month heatmap, a goals form, the sprint card with recent sprints) and a small chip in the scene toolbar: the sprint clock and words so far, or today's words against the goal.
+- **GM only,** like the manuscript: players, readers and previews get 403.
+- **Verified in Chrome** (scripted, 8 steps, with a real player): the empty page, saving goals, writing in a scene (the chip, the streak, a full heatmap cell), a sprint running across pages and being stopped, a sprint finishing with the right word count, a player refused, and a phone-sized screen.
+- **Deferred:**
+  - overused-word tracking and style or genre guide entries (the rest of that checklist item)
+  - per-book or per-chapter targets, goals shared across a team, and a streak "freeze"
+  - email or push reminders (an integration, so it waits with launch work)
 
 ## Roadmap: what's left
 

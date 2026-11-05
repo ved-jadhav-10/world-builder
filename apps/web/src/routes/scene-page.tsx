@@ -45,6 +45,7 @@ import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker } from '@/components/entity-picker';
 import { HistoryDialog } from '@/components/history-dialog';
 import { MentionHoverLayer } from '@/components/mention-hover-layer';
+import { WritingChip } from '@/components/writing-chip';
 import { Toolbar } from '@/components/rich-text-editor';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea } from '@/components/ui/inputs';
@@ -310,6 +311,7 @@ function SceneWorkspace({ scene, onRestored }: { scene: Scene; onRestored: () =>
             <span className="mr-2 text-xs tabular-nums text-muted-foreground">
               {words.toLocaleString()} {words === 1 ? 'word' : 'words'}
             </span>
+            {canEdit ? <WritingChip /> : null}
             {canEdit ? <SaveIndicator status={status} /> : null}
             <Button
               variant={codexOpen ? 'outline' : 'ghost'}

@@ -234,3 +234,14 @@ describe('who can use it', () => {
     expect((await other.api.get(`${w}/writing`)).statusCode).toBe(404);
   });
 });
+
+describe('time zone names', () => {
+  it('accepts the aliases browsers report, such as Asia/Calcutta', async () => {
+    const ctx = await signUpWithWorld(app);
+    const res = await ctx.api.get(
+      `${ctx.w}/writing?timezone=${encodeURIComponent('Asia/Calcutta')}`,
+    );
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json<WritingStats>().timezone).toBe('Asia/Calcutta');
+  });
+});

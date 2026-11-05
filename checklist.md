@@ -34,7 +34,8 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
 - [x] **Version history** per entry and per scene with a word-level comparison, named versions and restore (M14). Still to do: history for chapters and other records, and partial restore [v1].
 - [ ] **Comments** on entries and scenes [v1].
-- [ ] **Goals, streaks and timed sprints**, **overused-word tracking**, **style and genre guide entries** [v1; goals and streaks deferred in M2].
+- [x] **Goals, streaks and timed sprints:** a daily goal, a manuscript target and deadline, streaks, a heatmap and a sprint timer (M15).
+- [ ] **Overused-word tracking** and **style and genre guide entries** [v1].
 - [ ] **Manuscript drag-and-drop reordering** (moves are menu-based today; deferred in M2).
 - [ ] **Character extras:** abilities with charges, voice and dialogue sheet, interview questionnaire, species trait inheritance, colour palette field [v1]; turnaround sheet [v2]; stat blocks, system-agnostic or 5e [v2].
 - [ ] **Content tree** of all articles, **pop-out windows**, **keyboard shortcuts** for common actions [v1].

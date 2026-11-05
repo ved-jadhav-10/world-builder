@@ -61,6 +61,7 @@ export const router = createBrowserRouter([
                 }),
               },
               { path: 'continuity', lazy: () => import('@/routes/continuity-page') },
+              { path: 'writing', lazy: () => import('@/routes/writing-page') },
               { path: 'graph', lazy: () => import('@/routes/graph-page') },
               { path: 'family/:entityId', lazy: () => import('@/routes/family-page') },
               { path: 'screen', lazy: () => import('@/routes/screen-page') },
