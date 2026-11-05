@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 13 are built, tested and on `main`; M2 to M13 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 14 are built, tested and on `main`; M2 to M14 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -307,6 +307,23 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - layer ordering by drag, per-layer colour or opacity, and time-aware layers (borders by year)
   - travel feasibility in the continuity checker (the scale makes it possible now)
   - moving tiles to object storage, and keeping the old image until a replacement has tiled
+
+## Milestone 14 (Version history): done
+
+- **What is kept:** a `revisions` table holds snapshots of an entry (name, aliases, summary, fields, notes, start and end dates) or a scene (title, summary, text). Visibility is deliberately not part of a snapshot, so restoring can never expose something that was later hidden. Exactly one of `entity_id` and `node_id` is set (a check constraint); deleting the entry or scene deletes its history, trashing does not.
+- **When versions are made** (`modules/revisions/service.ts`, hooked into the entry PATCH and the scene body and title/summary routes):
+  - before the first edit of something with no history, its current text is kept as the earliest version, so even the first edit can be undone
+  - after each edit, saves by the same person within 10 minutes of a version's start are folded into it, so writing makes a version every ten minutes or so rather than one per autosave; a save that changes nothing kept (a visibility change, a scene's date) adds nothing
+  - past 60 automatic versions the oldest are dropped; people can also keep named versions (up to 100, deleted by hand)
+- **Restoring** keeps the present text first if it is not already the newest version ("Before restoring an older version"), applies the old one through the normal update code (search text, mentions and word counts follow), then records a "Restored an older version" marker. The marker is its own kind of version, so the next edit starts a version of its own instead of being folded into, and overwriting, the one before. If a field the entry's type no longer has blocks the restore of its fields, the text is restored and the fields left as they are.
+- **GM only:** every history route needs the editor role and the GM audience, so players, readers and "view as" previews get 403, and other worlds get 404. A co-GM's edits are recorded under their own name.
+- **Text comparison** (`packages/shared/src/text-diff.ts`, pure): paragraphs are matched by longest common subsequence; a removed paragraph beside an added one is compared word by word (full stops and commas count as their own tokens, so "fisher." against "fisher" is not a change to the word), and two paragraphs with little in common show as a removal and an addition. Played back, a diff always gives exactly both sides; very long paragraphs fall back to replaced rather than freezing.
+- **Web:** a History button on the entry page header and in the scene toolbar opens one dialog: the list of versions (who, when, how many words), a comparison with what is there now (green comes back, struck through goes away, long unchanged runs folded), naming a version, deleting one, and Restore with a confirmation. A scene's pending text is saved before the list loads, so it is in it; after a restore the notes editor or scene editor reloads the restored text. The entry page's header row now wraps on a phone.
+- **Verified in Chrome** (scripted, 9 steps, with a real player): an edit and save listing two versions, the word-level comparison, naming a version, restoring (and that nothing is left unsaved), the replaced text staying in the history, a scene's version restored into a reloaded editor, a player seeing no History control and getting 403, and a phone-sized dialog.
+- **Deferred:**
+  - history for chapters, books and other kinds of record (map items, relationships, tags, entry types)
+  - comparing two old versions with each other, and restoring only part of a version (just the text, or just one field)
+  - showing who changed what in a shared entry as a live change feed, and comments (the next feature, which will use the same GM-only footing)
 
 ## Roadmap: what's left
 

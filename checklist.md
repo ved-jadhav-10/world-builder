@@ -32,7 +32,8 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Arc tracker** showing how traits and relationships change across chapters, powered by progressions [v1].
 - [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
 - [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
-- [ ] **Comments**, and **version history** per entry and per chapter with restore; **revision snapshots** in the manuscript [v1; the snapshots were deferred in M2].
+- [x] **Version history** per entry and per scene with a word-level comparison, named versions and restore (M14). Still to do: history for chapters and other records, and partial restore [v1].
+- [ ] **Comments** on entries and scenes [v1].
 - [ ] **Goals, streaks and timed sprints**, **overused-word tracking**, **style and genre guide entries** [v1; goals and streaks deferred in M2].
 - [ ] **Manuscript drag-and-drop reordering** (moves are menu-based today; deferred in M2).
 - [ ] **Character extras:** abilities with charges, voice and dialogue sheet, interview questionnaire, species trait inheritance, colour palette field [v1]; turnaround sheet [v2]; stat blocks, system-agnostic or 5e [v2].

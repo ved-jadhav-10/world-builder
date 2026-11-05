@@ -67,7 +67,10 @@ function commonPairs<T>(a: readonly T[], b: readonly T[]): [number, number][] {
 /** Past this many words on one side of a paragraph, the paragraph is shown replaced instead. */
 const MAX_WORD_DIFF_TOKENS = 1500;
 
-const tokens = (text: string) => text.match(/\s+|[^\s]+/g) ?? [];
+// Whitespace, words (with inner apostrophes and hyphens) and single punctuation marks, so a
+// full stop after a word does not make the word look changed.
+const tokens = (text: string) =>
+  text.match(/\s+|[\p{L}\p{N}_]+(?:['’-][\p{L}\p{N}_]+)*|[^\s\p{L}\p{N}_]/gu) ?? [];
 
 /** A word-by-word comparison of two strings; neighbouring parts of the same kind are merged. */
 export function diffWords(before: string, after: string): DiffPart[] {

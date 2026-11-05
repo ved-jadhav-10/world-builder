@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Trash2 } from 'lucide-react';
-import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
+import { History, Save, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import {
   buildFieldValuesSchema,
   visibilitySchema,
   type Entity,
+  type EntityRevisionContent,
   type EntityType,
   type EntityUpdateInput,
   type RichTextDoc,
@@ -21,6 +22,7 @@ import { AsOfControl } from '@/components/as-of-control';
 import { DateField } from '@/components/date-field';
 import { EntityAsOfView } from '@/components/entity-as-of';
 import { EntityGallery, EntityPortrait } from '@/components/entity-gallery';
+import { HistoryDialog } from '@/components/history-dialog';
 import { ProgressionsPanel } from '@/components/progressions-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
@@ -34,6 +36,7 @@ import { Button } from '@/components/ui/button';
 import { FieldError, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { formatAsOf, parseAsOf, type AsOf } from '@/lib/as-of';
+import { entityBlocks } from '@/lib/revision-text';
 import { timeAgo } from '@/lib/utils';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
@@ -148,6 +151,12 @@ function EntityEditor({
     resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
   });
   const { isDirty, isSubmitting, errors } = form.formState;
+  // Bumped after a restore, so the notes editor reloads its text.
+  const [editorKey, setEditorKey] = useState(0);
+  const historyBlocks = useCallback(
+    (content: unknown) => entityBlocks(content as EntityRevisionContent, type),
+    [type],
+  );
 
   const save = form.handleSubmit(async (values) => {
     try {
@@ -208,7 +217,7 @@ function EntityEditor({
 
   return (
     <form onSubmit={save}>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         <Link
           to={type.key ? `${base}/codex/${type.key}` : base}
           className="inline-flex items-center gap-1.5 hover:text-foreground"
@@ -225,6 +234,31 @@ function EntityEditor({
         <Link to={`${base}/family/${entity.id}`} className="hover:text-foreground">
           Family tree
         </Link>
+        {canEdit ? (
+          <HistoryDialog
+            subject="entity"
+            id={entity.id}
+            trigger={
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 hover:text-foreground"
+              >
+                <History className="size-3.5" /> History
+              </button>
+            }
+            currentBlocks={() => entityBlocks(entity, type)}
+            blocksOf={historyBlocks}
+            note={
+              isDirty
+                ? 'You have unsaved edits. They are not part of this comparison, and restoring a version replaces them.'
+                : undefined
+            }
+            onRestored={(restored) => {
+              form.reset(toFormValues(restored as Entity, type));
+              setEditorKey((key) => key + 1);
+            }}
+          />
+        ) : null}
         <span className="ml-auto">
           <AsOfControl value={asOf} onChange={onAsOfChange} />
         </span>
@@ -305,6 +339,7 @@ function EntityEditor({
                 name="body"
                 render={({ field }) => (
                   <RichTextEditor
+                    key={editorKey}
                     value={field.value}
                     onChange={field.onChange}
                     editable={canEdit}

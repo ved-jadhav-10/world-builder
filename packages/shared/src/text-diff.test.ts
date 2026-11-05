@@ -31,6 +31,14 @@ describe('diffWords', () => {
     ]);
   });
 
+  it('does not count a full stop after a word as a change to the word', () => {
+    expect(diffWords('A fisher.', 'A fisher turned smuggler.')).toEqual([
+      { op: 'same', text: 'A fisher' },
+      { op: 'add', text: ' turned smuggler' },
+      { op: 'same', text: '.' },
+    ]);
+  });
+
   it('handles pure additions and pure removals', () => {
     expect(diffWords('', 'new words')).toEqual([{ op: 'add', text: 'new words' }]);
     expect(diffWords('old words', '')).toEqual([{ op: 'del', text: 'old words' }]);

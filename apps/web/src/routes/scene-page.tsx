@@ -6,13 +6,22 @@ import {
   CircleAlert,
   Cloud,
   CloudCheck,
+  History,
   LoaderCircle,
   Maximize2,
   Minimize2,
   PanelRight,
   X,
 } from 'lucide-react';
-import { useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import {
@@ -21,6 +30,7 @@ import {
   type NodeUpdateInput,
   type RichTextDoc,
   type Scene,
+  type SceneRevisionContent,
 } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import {
@@ -33,6 +43,7 @@ import { CodexPanel } from '@/components/codex-panel';
 import { DateField } from '@/components/date-field';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker } from '@/components/entity-picker';
+import { HistoryDialog } from '@/components/history-dialog';
 import { MentionHoverLayer } from '@/components/mention-hover-layer';
 import { Toolbar } from '@/components/rich-text-editor';
 import { Button } from '@/components/ui/button';
@@ -40,6 +51,7 @@ import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { ancestorTitles, useManuscriptTree } from '@/lib/manuscript-tree';
 import { MentionHighlight, mentionHighlightKey } from '@/lib/mention-highlight';
+import { sceneBlocks } from '@/lib/revision-text';
 import { useDates } from '@/lib/use-dates';
 import { cn } from '@/lib/utils';
 import { useWorld } from '@/lib/world-context';
@@ -49,6 +61,8 @@ type SaveStatus = 'saved' | 'pending' | 'saving' | 'error';
 
 export function ScenePage() {
   const { sceneId = '' } = useParams();
+  // Bumped after a version is restored, so the editor starts again from the restored text.
+  const [restored, setRestored] = useState(0);
   const { world } = useWorld();
   const query = useScene(world.id, sceneId);
 
@@ -56,7 +70,13 @@ export function ScenePage() {
   if (query.isError) {
     return <EmptyState title="Scene not found">It may have been deleted.</EmptyState>;
   }
-  return <SceneWorkspace key={query.data.id} scene={query.data} />;
+  return (
+    <SceneWorkspace
+      key={`${query.data.id}:${restored}`}
+      scene={query.data}
+      onRestored={() => setRestored((n) => n + 1)}
+    />
+  );
 }
 
 function SaveIndicator({ status }: { status: SaveStatus }) {
@@ -134,7 +154,7 @@ function EntityField({
   );
 }
 
-function SceneWorkspace({ scene }: { scene: Scene }) {
+function SceneWorkspace({ scene, onRestored }: { scene: Scene; onRestored: () => void }) {
   const { world, canEdit, base } = useWorld();
   const dates = useDates();
   const { tree } = useManuscriptTree();
@@ -149,6 +169,10 @@ function SceneWorkspace({ scene }: { scene: Scene }) {
   const [codexEntityId, setCodexEntityId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [title, setTitle] = useState(scene.title);
+  const historyBlocks = useCallback(
+    (content: unknown) => sceneBlocks(content as SceneRevisionContent),
+    [],
+  );
 
   // ---- Mention highlighting -------------------------------------------------
   const indexById = useMemo(() => new Map(index.map((e) => [e.id, e])), [index]);
@@ -178,6 +202,12 @@ function SceneWorkspace({ scene }: { scene: Scene }) {
       }
     });
     return queue.current;
+  });
+
+  // The history dialog is opened from an event handler, which can't use the effect event itself.
+  const flushRef = useRef<() => Promise<void> | void>(() => undefined);
+  useEffect(() => {
+    flushRef.current = () => flush();
   });
 
   const onDocChange = useEffectEvent((editor: Editor) => {
@@ -292,6 +322,28 @@ function SceneWorkspace({ scene }: { scene: Scene }) {
               <PanelRight />
               <span className="sr-only">Toggle Codex panel</span>
             </Button>
+            {canEdit ? (
+              <HistoryDialog
+                subject="scene"
+                id={scene.id}
+                trigger={
+                  <Button variant="ghost" size="icon-sm" title="Version history">
+                    <History />
+                    <span className="sr-only">Version history</span>
+                  </Button>
+                }
+                prepare={() => flushRef.current()}
+                currentBlocks={() =>
+                  sceneBlocks({
+                    title: title.trim() || scene.title,
+                    summary: scene.summary,
+                    body: latestDoc.current,
+                  })
+                }
+                blocksOf={historyBlocks}
+                onRestored={onRestored}
+              />
+            ) : null}
             <Button
               variant="ghost"
               size="icon-sm"
