@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ClipboardList,
   Dices,
+  FileImage,
   Images,
   LogOut,
   LayoutDashboard,
@@ -22,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { HandoutAlert } from '@/components/handout-alert';
 import { SprintRunner } from '@/components/sprint-runner';
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -145,6 +147,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         ) : null}
         {audience === 'gm' || audience === 'player' ? (
           <>
+            <NavLink to={`${base}/handouts`} className={navItem}>
+              <FileImage /> Handouts
+            </NavLink>
             <NavLink to={`${base}/sessions`} className={navItem}>
               <NotebookPen /> Sessions
             </NavLink>
@@ -292,6 +297,7 @@ export function WorldLayout() {
       </div>
       <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
       {ctx.audience === 'gm' && ctx.canEdit ? <SprintRunner /> : null}
+      {ctx.audience === 'player' && !ctx.previewing ? <HandoutAlert /> : null}
       {ctx.previewing && viewAs ? <PreviewBanner audience={viewAs} /> : null}
     </WorldContext.Provider>
   );

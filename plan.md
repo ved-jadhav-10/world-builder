@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 19 are built, tested and on `main`; M2 to M19 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 20 are built, tested and on `main`; M2 to M20 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -386,6 +386,19 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Web:** two more icons (`languages`, `book-a`) are offered for types. Everything else, from the sidebar to the entry page, follows from a type being data.
 - **Tests:** a new world starts with the types in a fixed order; entries of each type take and validate their fields; one world's edits to a type don't touch another's. Two tests that counted the built-in types were updated. Chrome: the sidebar lists them and a Religion entry opens with its fields and saves.
 - **Deferred:** a world's own "template" of types to copy into new worlds, and entry templates (both in the saved filters and templates item).
+
+## Milestone 20 (Player handouts): done
+
+- **Data:** a `handouts` table (title, plain text up to 10,000 characters, a visibility that starts as the GM's, `revealed_at`, and the picture's size and version). A handout's picture is stored with the gallery's own pipeline (checked by content, re-encoded as WebP, metadata stripped, thumbnail) under the handout's id, with no gallery row, so it never shows up in the Gallery. Deleting a handout deletes its files; deleting the world already clears the folder.
+- **Revealing:** `revealed_at` is set the first time a handout is shown to anyone besides the GM, cleared when it is hidden, and set again when it is shown again, so a second reveal counts as new. Edits to the text do not move it. Lists are ordered by most recently revealed.
+- **Access:** every read is filtered by audience like everything else: a player sees only handouts shared with players (a reader, none of those), a hidden handout is 404 for them, and its picture and thumbnail answer 404 as well. Creating, editing, deleting and changing pictures are editor-only and refused in a "view as" preview. Handouts are in the JSON export (not the pictures) and in the Markdown export as `Handouts.md`.
+- **"Live" without new infrastructure:** a player's page asks for the handout list every 8 seconds while the tab is open (and when the list page is open). When one appears or is shown again, a message appears wherever they are in the world, with an Open button that shows it. The first visit marks what is already there as seen, so nobody gets a pile of old handouts; what has been seen is remembered per world in the browser. A GM previewing as a player is not interrupted. This costs a request every few seconds per open player tab; server-sent events would remove that and are the next step if it matters.
+- **Web:** a Handouts page for the GM (cards with Hidden or Shown, Show to players or Hide, edit with a picture and a remove-picture button, delete with confirmation, a "show straight away" box on creation) and for players (the shared handouts, opened in a viewer with the picture and text).
+- **Verified in Chrome** (scripted, 8 steps, with a real player in a second session): create with a picture, the player seeing nothing and the picture refused, the reveal popping up on the player's page while they were on another page and the picture loading in the viewer, no repeat of the message after a reload, hide then show again telling the player again, edit and delete, and a phone-sized page.
+- **Deferred:**
+  - instant delivery by server-sent events or websockets instead of polling
+  - revealing in the middle of a session from the Sessions page or GM screen, handouts tied to a scene, entry or map pin, and a "show on the table" full-screen view
+  - several pictures or rich text per handout, and per-player handouts
 
 ## Roadmap: what's left
 
