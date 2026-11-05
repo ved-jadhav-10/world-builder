@@ -13,7 +13,7 @@ function Thumbnail({ map, worldId }: { map: AtlasMap; worldId: string }) {
   if (map.status === 'ready') {
     return (
       <img
-        src={thumbnailUrl(worldId, map.id)}
+        src={thumbnailUrl(worldId, map.id, map.imageVersion)}
         alt=""
         loading="lazy"
         className="aspect-8/5 w-full object-cover"

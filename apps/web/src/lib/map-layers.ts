@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import {
+  clusterPins,
   FEATURE_POINT_LIMITS,
   type EntityType,
   type MapFeature,
@@ -55,7 +56,13 @@ export interface MapView {
   featureLayer: L.LayerGroup;
   handleLayer: L.LayerGroup;
   draftLayer: L.LayerGroup;
+  /** The round "5 places" markers that stand in for pins too close together. */
+  clusterLayer: L.LayerGroup;
   entries: FeatureEntry[];
+  /** Layers switched off; what is on them is not drawn. */
+  hiddenLayers: Set<string>;
+  /** Whether clusters take clicks (off while a drawing tool is active). */
+  interactive: boolean;
   /** The line from the last point drawn to the cursor. */
   rubber: L.Polyline | null;
 }
@@ -260,13 +267,78 @@ export function buildHandles(
   });
 }
 
-/** Shows each feature only once the map is zoomed in far enough; the selected one always shows. */
+/** Pins closer than this many screen pixels are shown as one numbered marker. */
+const CLUSTER_RADIUS_PX = 34;
+
+const clusterName = (feature: MapFeature) => feature.label || feature.entity?.name || 'Unnamed pin';
+
+function clusterMarker(view: MapView, members: FeatureEntry[], point: MapPoint): L.Marker {
+  const count = members.length;
+  const marker = L.marker(project(point, view.size), {
+    interactive: view.interactive,
+    keyboard: false,
+    bubblingMouseEvents: false,
+    zIndexOffset: 500,
+    icon: L.divIcon({
+      className: 'atlas-cluster-wrap',
+      html: `<div class="atlas-cluster" role="img" aria-label="${count} places close together">${count}</div>`,
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+    }),
+  });
+  const names = members.map((m) => clusterName(m.feature));
+  const shown = names.slice(0, 6).map((n) => n.replace(/[<>&]/g, ''));
+  const more = names.length > shown.length ? `, and ${names.length - shown.length} more` : '';
+  marker.bindTooltip(shown.join(', ') + more, { direction: 'top', offset: [0, -14] });
+  marker.on('click', () => {
+    const bounds = L.latLngBounds(members.map((m) => (m.layer as L.Marker).getLatLng()));
+    // Pins on nearly the same spot only part at the deepest zoom, where nothing clusters.
+    view.map.fitBounds(bounds, { padding: [90, 90], maxZoom: view.map.getMaxZoom() });
+  });
+  return marker;
+}
+
+/**
+ * Decides what is drawn: each feature only once the map is zoomed in far enough, and not when
+ * its layer is off; the selected one always shows. Pins that would overlap become one cluster.
+ */
 export function syncVisibility(view: MapView, selectedId: string | null) {
   const zoom = view.map.getZoom();
-  for (const { feature, layer } of view.entries) {
-    const show = feature.id === selectedId || zoom >= view.fitZoom + feature.minZoom - 0.01;
+  const wanted = new Set<L.Layer>();
+  const pins: FeatureEntry[] = [];
+  for (const entry of view.entries) {
+    const { feature } = entry;
+    const layerOff = feature.layerId !== null && view.hiddenLayers.has(feature.layerId);
+    const show =
+      feature.id === selectedId || (!layerOff && zoom >= view.fitZoom + feature.minZoom - 0.01);
+    if (!show) continue;
+    if (feature.kind === 'pin') pins.push(entry);
+    else wanted.add(entry.layer);
+  }
+
+  view.clusterLayer.clearLayers();
+  // At the deepest zoom nothing separates further, so every pin is shown as itself.
+  const canCluster = zoom < view.map.getMaxZoom() - 0.01;
+  const scale = 2 ** zoom;
+  const clusters = canCluster
+    ? clusterPins(
+        pins.map((entry) => ({ id: entry.feature.id, point: entry.feature.points[0]! })),
+        { width: view.size.width * scale, height: view.size.height * scale },
+        CLUSTER_RADIUS_PX,
+        new Set(selectedId ? [selectedId] : []),
+      )
+    : pins.map((entry) => ({ ids: [entry.feature.id], point: entry.feature.points[0]! }));
+  const byId = new Map(pins.map((entry) => [entry.feature.id, entry]));
+  for (const cluster of clusters) {
+    const members = cluster.ids.map((id) => byId.get(id)!);
+    if (members.length === 1) wanted.add(members[0]!.layer);
+    else view.clusterLayer.addLayer(clusterMarker(view, members, cluster.point));
+  }
+
+  for (const { layer } of view.entries) {
     const shown = view.featureLayer.hasLayer(layer);
-    if (show && !shown) view.featureLayer.addLayer(layer);
-    else if (!show && shown) view.featureLayer.removeLayer(layer);
+    const want = wanted.has(layer);
+    if (want && !shown) view.featureLayer.addLayer(layer);
+    else if (!want && shown) view.featureLayer.removeLayer(layer);
   }
 }

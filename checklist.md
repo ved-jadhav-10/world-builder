@@ -42,10 +42,11 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## C. Atlas, timeline and continuity
 
-- [ ] **Maps:** replace a map's image without deleting it (deferred in M3); pin clustering when zoomed out [MVP; deferred in M3].
-- [ ] **Drill-down transitions** (the child map visually opens from its spot on the parent), a **measure tool** with custom scale and travel times by foot, horse or ship, and **layers** (political, terrain, trade routes) [v1; deferred in M3].
+- [x] **Maps:** replace a map's image without deleting it; pin clustering when zoomed out (M13).
+- [x] A **measure tool** with custom scale and travel times by foot, horse or ship, and **layers** (political, terrain, trade routes) (M13). Still to do: **drill-down transitions** (the child map visually opens from its spot on the parent) [v1].
 - [ ] **Time-aware layers** (borders by year) [v2] and as-of views for the Atlas and the manuscript (deferred in M4).
-- [ ] **Journey lines** (the route taken, by date), **pointcrawl or node maps**, **map prep notes on pins** (GM-only notes shown while running a session) [v1].
+- [x] **Map prep notes on pins** (GM-only notes, never sent to players) (M13).
+- [ ] **Journey lines** (the route taken, by date) and **pointcrawl or node maps** [v1].
 - [ ] **Fog of war** and reveals for players [v2]; light annotation tools beyond the current pins, labels, paths and regions [v1].
 - [ ] **Map art importers** for Azgaar and Watabou output [MVP import is plain upload today]; hex and grid overlays and a vector map editor [v3].
 - [ ] **Calendars:** several calendars per world and parallel timeline tracks beyond lanes by type (deferred in M4); **calendar reminders** on entries [v1].

@@ -5,7 +5,10 @@ import type {
   EntityMapLink,
   FeatureCreateInput,
   FeatureUpdateInput,
+  LayerCreateInput,
+  LayerUpdateInput,
   MapFeature,
+  MapLayer,
   MapUpdateInput,
   Visibility,
 } from '@atlas/shared';
@@ -15,15 +18,18 @@ export const atlasKeys = {
   maps: (worldId: string) => ['maps', worldId] as const,
   map: (worldId: string, id: string) => ['maps', worldId, 'one', id] as const,
   features: (worldId: string, mapId: string) => ['map-features', worldId, mapId] as const,
+  layers: (worldId: string, mapId: string) => ['map-layers', worldId, mapId] as const,
   entityMaps: (worldId: string, entityId: string) => ['entity-maps', worldId, entityId] as const,
   search: (worldId: string, q: string) => ['atlas-search', worldId, q] as const,
 };
 
 /** URL template Leaflet fills in for each tile. */
-export const tileUrlTemplate = (worldId: string, mapId: string) =>
-  `/api/worlds/${worldId}/maps/${mapId}/tiles/{z}/{x}/{y}`;
-export const thumbnailUrl = (worldId: string, mapId: string) =>
-  `/api/worlds/${worldId}/maps/${mapId}/thumbnail`;
+// Tiles are cached for a year, so the image version in the address is what makes a replaced
+// image show up.
+export const tileUrlTemplate = (worldId: string, mapId: string, version = 1) =>
+  `/api/worlds/${worldId}/maps/${mapId}/tiles/{z}/{x}/{y}?v=${version}`;
+export const thumbnailUrl = (worldId: string, mapId: string, version = 1) =>
+  `/api/worlds/${worldId}/maps/${mapId}/thumbnail?v=${version}`;
 
 /** Maps are cut into tiles in the background, so poll while any are still being prepared. */
 const POLL_MS = 2500;
@@ -47,6 +53,13 @@ export const useMapFeatures = (worldId: string, mapId: string, enabled = true) =
   useQuery({
     queryKey: atlasKeys.features(worldId, mapId),
     queryFn: () => api<MapFeature[]>('GET', `/worlds/${worldId}/maps/${mapId}/features`),
+    enabled,
+  });
+
+export const useMapLayers = (worldId: string, mapId: string, enabled = true) =>
+  useQuery({
+    queryKey: atlasKeys.layers(worldId, mapId),
+    queryFn: () => api<MapLayer[]>('GET', `/worlds/${worldId}/maps/${mapId}/layers`),
     enabled,
   });
 
@@ -189,6 +202,52 @@ export function useDeleteFeature(worldId: string, mapId: string) {
         list?.filter((f) => f.id !== id),
       );
       invalidateAtlas(qc, worldId);
+    },
+  });
+}
+
+export function useReplaceMapImage(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, image }: { id: string; image: File }) => {
+      const form = new FormData();
+      form.set('image', image);
+      return apiUpload<AtlasMap>(`/worlds/${worldId}/maps/${id}/image`, form);
+    },
+    onSuccess: (map) => {
+      qc.setQueryData(atlasKeys.map(worldId, map.id), map);
+      invalidateAtlas(qc, worldId);
+    },
+  });
+}
+
+export function useCreateLayer(worldId: string, mapId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: LayerCreateInput) =>
+      api<MapLayer>('POST', `/worlds/${worldId}/maps/${mapId}/layers`, input),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: atlasKeys.layers(worldId, mapId) }),
+  });
+}
+
+export function useUpdateLayer(worldId: string, mapId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: LayerUpdateInput & { id: string }) =>
+      api<MapLayer>('PATCH', `/worlds/${worldId}/maps/${mapId}/layers/${id}`, input),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: atlasKeys.layers(worldId, mapId) }),
+  });
+}
+
+export function useDeleteLayer(worldId: string, mapId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<void>('DELETE', `/worlds/${worldId}/maps/${mapId}/layers/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: atlasKeys.layers(worldId, mapId) });
+      // What was on the layer is back on the base map.
+      void qc.invalidateQueries({ queryKey: atlasKeys.features(worldId, mapId) });
     },
   });
 }

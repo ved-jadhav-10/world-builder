@@ -116,6 +116,12 @@ export function worldToMarkdown(
   const entityById = new Map(data.entities.map((e) => [e.id, e]));
   const sceneById = new Map(data.manuscript.map((n) => [n.id, n]));
   const mapById = new Map(data.atlas.maps.map((m) => [m.id, m]));
+  const scaleModes = (scale: NonNullable<(typeof data.atlas.maps)[number]['scale']>) =>
+    scale.modes.length
+      ? ` Travel per day: ${scale.modes.map((m) => `${m.name} ${m.perDay} ${scale.unit}`).join(', ')}.`
+      : '';
+  const oneLine = (text: string) => text.split(/\s*\r?\n\s*/).join(' ');
+  const layerNames = new Map(data.atlas.layers.map((l) => [l.id, l.name]));
 
   // Decide every file's path first, so notes can link to each other.
   const entityPath = new Map<string, string>(); // vault-relative, without ".md"
@@ -315,6 +321,9 @@ export function worldToMarkdown(
       note += `Inside: ${link(mapPath.get(map.parentId), mapById.get(map.parentId)!.name)}\n\n`;
     if (map.entityId && entityPath.has(map.entityId))
       note += `Shows: ${entityLink(map.entityId)}\n\n`;
+    if (map.scale) {
+      note += `The map is ${map.scale.width} ${map.scale.unit} wide.${scaleModes(map.scale)}\n\n`;
+    }
     if (features.length) {
       note += `## On this map\n\n${features
         .map((f) => {
@@ -332,7 +341,8 @@ export function worldToMarkdown(
               ? `opens ${link(mapPath.get(f.linkMapId), mapById.get(f.linkMapId)!.name)}`
               : '',
           ].filter(Boolean);
-          return `- **${name}** (${f.kind})${where}${targets.length ? `, ${targets.join(', ')}` : ''}${f.notes ? ` — ${f.notes}` : ''}`;
+          const layer = f.layerId ? layerNames.get(f.layerId) : '';
+          return `- **${name}** (${f.kind}${layer ? `, layer: ${layer}` : ''})${where}${targets.length ? `, ${targets.join(', ')}` : ''}${f.notes ? ` — ${f.notes}` : ''}${f.gmNotes ? ` (GM notes: ${oneLine(f.gmNotes)})` : ''}`;
         })
         .join('\n')}\n`;
     }

@@ -5,10 +5,15 @@ import {
   FEATURE_KIND_LABELS,
   FEATURE_SIZES,
   LINE_STYLES,
+  formatDistance,
+  formatTravel,
   MAX_FEATURE_ZOOM,
+  pathLength,
+  travelDays,
   type AtlasMap,
   type FeatureUpdateInput,
   type MapFeature,
+  type MapLayer,
 } from '@atlas/shared';
 import { UploadMapDialog } from '@/components/atlas/upload-map-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -75,6 +80,7 @@ export function FeaturePanel({
   feature,
   map,
   maps,
+  layers,
   canEdit,
   autoFocusLabel,
   onChange,
@@ -84,6 +90,7 @@ export function FeaturePanel({
   feature: MapFeature;
   map: AtlasMap;
   maps: AtlasMap[];
+  layers: MapLayer[];
   canEdit: boolean;
   autoFocusLabel: boolean;
   onChange: (patch: FeatureUpdateInput) => void;
@@ -93,6 +100,7 @@ export function FeaturePanel({
   const { base, typeById } = useWorld();
   const [label, setLabel] = useState(feature.label);
   const [notes, setNotes] = useState(feature.notes);
+  const [gmNotes, setGmNotes] = useState(feature.gmNotes);
   const style = resolveStyle(feature, typeById);
   const entityType = feature.entity ? typeById.get(feature.entity.typeId) : undefined;
   const Icon = FEATURE_KIND_ICONS[feature.kind];
@@ -109,6 +117,12 @@ export function FeaturePanel({
   const commitNotes = () => {
     if (notes.trim() !== feature.notes) onChange({ notes: notes.trim() });
   };
+  const commitGmNotes = () => {
+    if (gmNotes.trim() !== feature.gmNotes) onChange({ gmNotes: gmNotes.trim() });
+  };
+  // A path on a map with a scale says how long it is and how long it takes.
+  const length =
+    feature.kind === 'path' && map.scale ? pathLength(feature.points, map, map.scale) : null;
 
   return (
     <div className="space-y-5 p-4">
@@ -127,6 +141,23 @@ export function FeaturePanel({
           <span className="sr-only">Close</span>
         </Button>
       </div>
+
+      {length !== null && map.scale ? (
+        <p className="rounded-md border bg-card px-3 py-2 text-sm">
+          <span className="font-medium">{formatDistance(length, map.scale.unit)}</span>
+          {map.scale.modes.length > 0 ? (
+            <span className="text-muted-foreground">
+              {' · '}
+              {map.scale.modes
+                .map(
+                  (mode) =>
+                    `${mode.name.toLowerCase()} ${formatTravel(travelDays(length, mode.perDay))}`,
+                )
+                .join(' · ')}
+            </span>
+          ) : null}
+        </p>
+      ) : null}
 
       {feature.entity ? (
         <div className="rounded-lg border bg-card p-3">
@@ -333,12 +364,38 @@ export function FeaturePanel({
             />
           </Field>
 
+          {layers.length > 0 ? (
+            <Field label="Layer">
+              <NativeSelect
+                value={feature.layerId ?? ''}
+                onChange={(event) => onChange({ layerId: event.target.value || null })}
+              >
+                <option value="">Base map (always shown)</option>
+                {layers.map((layer) => (
+                  <option key={layer.id} value={layer.id}>
+                    {layer.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          ) : null}
+
           <Field label="Notes">
             <Textarea
               value={notes}
               maxLength={5000}
               onChange={(event) => setNotes(event.target.value)}
               onBlur={commitNotes}
+            />
+          </Field>
+
+          <Field label="GM prep notes">
+            <Textarea
+              value={gmNotes}
+              maxLength={5000}
+              placeholder="Secrets, traps, who is here… only you and co-GMs ever see this."
+              onChange={(event) => setGmNotes(event.target.value)}
+              onBlur={commitGmNotes}
             />
           </Field>
 

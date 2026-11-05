@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 12 are built, tested and on `main`; M2 to M12 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 13 are built, tested and on `main`; M2 to M13 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -291,6 +291,22 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - ages that clash with a species' lifespan, item ownership by someone who is dead, and progressions that contradict each other
   - findings on the entry page itself, and a count in the sidebar
   - rules a world can switch off or tune
+
+## Milestone 13 (Atlas upgrades): done
+
+- **Replace a map's image:** `POST /maps/:id/image` re-tiles the map from a new file and keeps every pin, label, path and region, since positions are fractions of the map. The map's `image_version` goes up and the tile and thumbnail addresses carry `?v=`, so a browser that cached the old tiles for a year fetches the new ones. Refused while the map is still being prepared (409); fixes a map whose tiling failed. A different-shaped image stretches the pins' positions, and the page says so after the upload.
+- **Pin clustering:** pins that would sit within 34 screen pixels of each other become one numbered marker. Hovering names what is inside; clicking zooms to fit them. `clusterPins` in `packages/shared/src/map-tools.ts` is a pure, deterministic grid-hashed function (no flicker, every pin in exactly one group, the selected pin never absorbed); nothing clusters at the deepest zoom, so pins on the same spot still part.
+- **Measure tool and travel times:** a map has an optional **scale** (`maps.scale`, jsonb: how many units the whole width spans, a unit name, and up to eight travel paces such as on foot 24 mi/day, horse, ship). The Measure tool (anyone can use it) shows the distance of a clicked route and how long each pace takes ("2 days 4 hours"; a day counts as 8 hours when a trip is under a day). The GM can set the scale from a line of known length ("this line is 120 mi") or in the map settings, with typical paces for miles, kilometres and leagues; a measured line can be saved as a path, and a path's panel shows its own length and times. Pixels are assumed square.
+- **Layers:** named groups of features per map (`map_layers`, up to 20, `layer_id` on features, deleting a layer returns its items to the base map). Anyone can switch layers on and off for their own view, remembered per map in the browser; the GM chooses which start on. Other audiences only get layers that hold something they can see, so a secret layer's name does not leak.
+- **GM prep notes on pins:** `gm_notes` on every map item, sent only to the GM and co-GMs (empty for players and in a "view as" preview), editable in the item's panel.
+- **Exports:** the JSON export has layers, scales and prep notes; the Markdown export lists a map's scale, each item's layer and its GM notes (it is editor-only, like the rest of that export).
+- **Fixed on the way:** dialogs taller than the screen could not be scrolled (the new settings made one taller); they now scroll.
+- **Verified in Chrome** (scripted, 13 steps, with a real player): clustering and zooming apart, layer toggling and persistence, adding and deleting a layer, a pin's layer and prep notes, scale from a known line, distances and paces, undo, settings, a measured path, replacing the image (new tile addresses, pins kept), what a player can and cannot do, and a phone-sized screen.
+- **Deferred:**
+  - drill-down transitions (the child map visually opening from its spot on the parent)
+  - layer ordering by drag, per-layer colour or opacity, and time-aware layers (borders by year)
+  - travel feasibility in the continuity checker (the scale makes it possible now)
+  - moving tiles to object storage, and keeping the old image until a replacement has tiled
 
 ## Roadmap: what's left
 

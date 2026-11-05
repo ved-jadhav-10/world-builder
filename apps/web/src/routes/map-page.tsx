@@ -7,21 +7,25 @@ import {
   Pentagon,
   RotateCcw,
   Route,
+  Ruler,
   Settings,
   Type,
   Undo2,
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useEffectEvent, useState, type FormEvent } from 'react';
+import { useEffect, useEffectEvent, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import {
   FEATURE_POINT_LIMITS,
   FEATURE_KIND_LABELS,
+  formatDistance,
+  pathLength,
   type AtlasMap,
   type FeatureKind,
   type FeatureUpdateInput,
+  type MapLayer,
   type MapPoint,
 } from '@atlas/shared';
 import {
@@ -29,15 +33,18 @@ import {
   useDeleteFeature,
   useMap,
   useMapFeatures,
+  useMapLayers,
   useMaps,
   useRetryMap,
   useUpdateFeature,
 } from '@/api/atlas-queries';
 import { errorMessage } from '@/api/client';
 import { FeaturePanel } from '@/components/atlas/feature-panel';
+import { LayersMenu } from '@/components/atlas/layers-menu';
 import { MapCanvas, type FocusRequest, type MapTool } from '@/components/atlas/map-canvas';
 import { MapInfoPanel } from '@/components/atlas/map-info-panel';
 import { MapSettingsDialog } from '@/components/atlas/map-settings-dialog';
+import { MeasurePanel } from '@/components/atlas/measure-panel';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/inputs';
@@ -62,6 +69,18 @@ function dedupe(points: MapPoint[]): MapPoint[] {
     const previous = points[i - 1];
     return !previous || Math.hypot(p[0] - previous[0], p[1] - previous[1]) > 0.0005;
   });
+}
+
+const EMPTY_LAYERS: MapLayer[] = [];
+
+/** Which layers this viewer switched on or off, remembered per map in this browser. */
+function readLayerChoices(mapId: string): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(`atlas.layers.${mapId}`);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
 }
 
 function Breadcrumbs({ map, maps }: { map: AtlasMap; maps: AtlasMap[] }) {
@@ -107,6 +126,13 @@ function MapWorkspace({
   const navigate = useNavigate();
   const featuresQuery = useMapFeatures(world.id, map.id);
   const features = featuresQuery.data ?? [];
+  const layers = useMapLayers(world.id, map.id).data ?? EMPTY_LAYERS;
+  const [layerChoices, setLayerChoices] = useState(() => readLayerChoices(map.id));
+  const hiddenLayers = useMemo(
+    () =>
+      new Set(layers.filter((l) => !(layerChoices[l.id] ?? l.visibleByDefault)).map((l) => l.id)),
+    [layers, layerChoices],
+  );
   const createFeature = useCreateFeature(world.id, map.id);
   const updateFeature = useUpdateFeature(world.id, map.id);
   const deleteFeature = useDeleteFeature(world.id, map.id);
@@ -125,6 +151,22 @@ function MapWorkspace({
 
   const selected = features.find((f) => f.id === selectedId);
   const drawing = isDrawing(tool);
+  const measuring = tool === 'measure';
+  const measured = measuring && map.scale ? pathLength(draft, map, map.scale) : null;
+  const measureLabel =
+    measured !== null && map.scale && draft.length >= 2
+      ? formatDistance(measured, map.scale.unit)
+      : null;
+
+  function toggleLayer(layerId: string) {
+    const next = { ...layerChoices, [layerId]: hiddenLayers.has(layerId) };
+    setLayerChoices(next);
+    try {
+      localStorage.setItem(`atlas.layers.${map.id}`, JSON.stringify(next));
+    } catch {
+      // Private windows can refuse storage; the choice then lasts until the page closes.
+    }
+  }
 
   function chooseTool(next: MapTool) {
     setTool(next);
@@ -183,7 +225,7 @@ function MapWorkspace({
       if (draft.length > 0) setDraft([]);
       else if (tool !== 'select') setTool('select');
       else setPicked(null);
-    } else if (event.key === 'Backspace' && drawing && draft.length > 0) {
+    } else if (event.key === 'Backspace' && (drawing || measuring) && draft.length > 0) {
       event.preventDefault();
       setDraft((points) => points.slice(0, -1));
     }
@@ -199,11 +241,13 @@ function MapWorkspace({
       ? 'Click the map to drop a pin.'
       : tool === 'label'
         ? 'Click the map where the text should go.'
-        : drawing
-          ? draft.length === 0
-            ? `Click to start the ${FEATURE_KIND_LABELS[tool].toLowerCase()}.`
-            : 'Keep clicking to add points. Double-click or press Enter to finish.'
-          : null;
+        : measuring
+          ? 'Click along your route to measure it.'
+          : drawing
+            ? draft.length === 0
+              ? `Click to start the ${FEATURE_KIND_LABELS[tool].toLowerCase()}.`
+              : 'Keep clicking to add points. Double-click or press Enter to finish.'
+            : null;
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col lg:h-dvh lg:flex-row">
@@ -230,6 +274,24 @@ function MapWorkspace({
             </div>
           ) : null}
           <div className="flex items-center gap-0.5">
+            <Button
+              variant={measuring ? 'default' : 'ghost'}
+              size="sm"
+              aria-pressed={measuring}
+              title="Measure distances"
+              aria-label="Measure"
+              onClick={() => chooseTool(measuring ? 'select' : 'measure')}
+            >
+              <Ruler />
+              <span className="hidden sm:inline">Measure</span>
+            </Button>
+            <LayersMenu
+              mapId={map.id}
+              layers={layers}
+              hidden={hiddenLayers}
+              canEdit={canEdit}
+              onToggle={toggleLayer}
+            />
             <Button variant="ghost" size="icon-sm" onClick={() => setFitRequest((n) => n + 1)}>
               <Maximize />
               <span className="sr-only">Show the whole map</span>
@@ -260,6 +322,8 @@ function MapWorkspace({
             selectedId={selectedId ?? null}
             focus={focus}
             draft={draft}
+            hiddenLayers={hiddenLayers}
+            measureLabel={measureLabel}
             fitRequest={fitRequest}
             onSelect={setPicked}
             onPlace={(kind, point) =>
@@ -310,12 +374,22 @@ function MapWorkspace({
       </div>
 
       <aside className="max-h-[42dvh] shrink-0 overflow-y-auto border-t bg-sidebar lg:max-h-none lg:w-[340px] lg:border-l lg:border-t-0">
-        {selected ? (
+        {measuring ? (
+          <MeasurePanel
+            map={map}
+            points={draft}
+            canEdit={canEdit}
+            onUndo={() => setDraft((points) => points.slice(0, -1))}
+            onClear={() => setDraft([])}
+            onSaveAsPath={() => void create('path', dedupe(draft))}
+          />
+        ) : selected ? (
           <FeaturePanel
             key={selected.id}
             feature={selected}
             map={map}
             maps={maps}
+            layers={layers}
             canEdit={canEdit}
             autoFocusLabel={newlyCreated === selected.id}
             onChange={change}

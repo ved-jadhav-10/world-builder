@@ -24,7 +24,7 @@ import {
 import { DEFAULT_COLORS } from '@/lib/map-style';
 import { cn } from '@/lib/utils';
 
-export type MapTool = 'select' | FeatureKind;
+export type MapTool = 'select' | 'measure' | FeatureKind;
 
 /** Asks the map to pan to a feature. A new nonce asks again, even for the same feature. */
 export interface FocusRequest {
@@ -41,8 +41,12 @@ export interface MapCanvasProps {
   canEdit: boolean;
   selectedId: string | null;
   focus: FocusRequest | null;
-  /** Corners of the path or region being drawn. */
+  /** Corners of the path or region being drawn, or the line being measured. */
   draft: MapPoint[];
+  /** Layers switched off, whose features are not drawn. */
+  hiddenLayers: Set<string>;
+  /** The running length shown at the end of a measured line. */
+  measureLabel: string | null;
   /** Bump to return to the whole-map view. */
   fitRequest: number;
   onSelect: (id: string | null) => void;
@@ -63,6 +67,9 @@ function useLatest<T>(value: T) {
 }
 
 const isDrawingTool = (tool: MapTool) => tool === 'path' || tool === 'region';
+/** Tools that build up a line one click at a time. */
+const isLineTool = (tool: MapTool) => isDrawingTool(tool) || tool === 'measure';
+const MEASURE_COLOR = '#e11d48';
 
 /**
  * The zoomable map. Leaflet owns the DOM inside; React tells it what to show. Positions are
@@ -70,9 +77,10 @@ const isDrawingTool = (tool: MapTool) => tool === 'path' || tool === 'region';
  */
 export function MapCanvas(props: MapCanvasProps) {
   const { worldId, map: atlasMap, features, typeById, tool, canEdit, selectedId, draft } = props;
+  const { hiddenLayers, measureLabel } = props;
   const { focus, fitRequest } = props;
-  const { id: mapId, width, height } = atlasMap;
-  const sceneKey = `${mapId}:${width}x${height}`;
+  const { id: mapId, width, height, imageVersion } = atlasMap;
+  const sceneKey = `${mapId}:${width}x${height}:${imageVersion}`;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<MapView | null>(null);
@@ -102,7 +110,7 @@ export function MapCanvas(props: MapCanvasProps) {
       minZoom: shallowest,
       maxZoom: deepest,
     });
-    L.tileLayer(tileUrlTemplate(worldId, mapId), {
+    L.tileLayer(tileUrlTemplate(worldId, mapId, imageVersion), {
       tileSize: TILE_SIZE,
       // The server numbers tile levels from 0 (whole map) to nativeDepth (full size).
       zoomOffset: nativeDepth,
@@ -126,9 +134,12 @@ export function MapCanvas(props: MapCanvasProps) {
       size,
       fitZoom: fitZoom(),
       featureLayer: L.layerGroup().addTo(map),
+      clusterLayer: L.layerGroup().addTo(map),
       handleLayer: L.layerGroup().addTo(map),
       draftLayer: L.layerGroup().addTo(map),
       entries: [],
+      hiddenLayers: new Set<string>(),
+      interactive: true,
       rubber: null,
     };
     viewRef.current = view;
@@ -141,7 +152,7 @@ export function MapCanvas(props: MapCanvasProps) {
       } else if (isInsideMap(event.latlng, size)) {
         const point = unproject(event.latlng, size);
         if (activeTool === 'pin' || activeTool === 'label') onPlace(activeTool, point);
-        else onDraftAdd(point);
+        else onDraftAdd(point); // paths, regions and measuring
       }
     });
     map.on('dblclick', () => {
@@ -149,7 +160,7 @@ export function MapCanvas(props: MapCanvasProps) {
     });
     map.on('mousemove', (event: L.LeafletMouseEvent) => {
       const { tool: activeTool, draft: points } = latest.current;
-      if (view.rubber && isDrawingTool(activeTool) && points.length > 0) {
+      if (view.rubber && isLineTool(activeTool) && points.length > 0) {
         view.rubber.setLatLngs([...points.map((p) => project(p, size)), event.latlng]);
       }
     });
@@ -169,13 +180,13 @@ export function MapCanvas(props: MapCanvasProps) {
       map.remove();
       viewRef.current = null;
     };
-  }, [sceneKey, worldId, mapId, width, height, latest]);
+  }, [sceneKey, worldId, mapId, width, height, imageVersion, latest]);
 
   // Drawing a path or region uses double-click to finish, so it can't also zoom.
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
-    if (isDrawingTool(tool)) view.map.doubleClickZoom.disable();
+    if (isLineTool(tool)) view.map.doubleClickZoom.disable();
     else view.map.doubleClickZoom.enable();
   }, [tool, sceneKey]);
 
@@ -188,6 +199,8 @@ export function MapCanvas(props: MapCanvasProps) {
       open: (id) => latest.current.onOpenMap(id),
       move: (id, points) => latest.current.onMovePoints(id, points),
     };
+    view.hiddenLayers = hiddenLayers;
+    view.interactive = tool === 'select';
     view.featureLayer.clearLayers();
     view.handleLayer.clearLayers();
     view.entries = features.map((feature) =>
@@ -207,7 +220,7 @@ export function MapCanvas(props: MapCanvasProps) {
       for (const handle of buildHandles(selected, view, handlers))
         view.handleLayer.addLayer(handle);
     }
-  }, [sceneKey, features, typeById, selectedId, tool, canEdit, latest]);
+  }, [sceneKey, features, typeById, selectedId, tool, canEdit, hiddenLayers, latest]);
 
   // The path or region being drawn, plus the line that follows the cursor.
   useEffect(() => {
@@ -215,8 +228,8 @@ export function MapCanvas(props: MapCanvasProps) {
     if (!view) return;
     view.draftLayer.clearLayers();
     view.rubber = null;
-    if (!isDrawingTool(tool) || draft.length === 0) return;
-    const color = DEFAULT_COLORS[tool as 'path' | 'region'];
+    if (!isLineTool(tool) || draft.length === 0) return;
+    const color = tool === 'measure' ? MEASURE_COLOR : DEFAULT_COLORS[tool as 'path' | 'region'];
     const corners = draft.map((p) => project(p, view.size));
     if (tool === 'region' && corners.length >= 3) {
       view.draftLayer.addLayer(
@@ -232,17 +245,19 @@ export function MapCanvas(props: MapCanvasProps) {
     view.draftLayer.addLayer(
       L.polyline(corners, { color, weight: 3, dashArray: '6 6', interactive: false }),
     );
-    for (const corner of corners) {
-      view.draftLayer.addLayer(
-        L.circleMarker(corner, {
-          radius: 5,
-          color: '#fff',
-          weight: 2,
-          fillColor: color,
-          fillOpacity: 1,
-          interactive: false,
-        }),
-      );
+    for (const [index, corner] of corners.entries()) {
+      const dot = L.circleMarker(corner, {
+        radius: 5,
+        color: '#fff',
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1,
+        interactive: false,
+      });
+      if (tool === 'measure' && measureLabel && index === corners.length - 1 && index > 0) {
+        dot.bindTooltip(measureLabel, { permanent: true, direction: 'top', offset: [0, -8] });
+      }
+      view.draftLayer.addLayer(dot);
     }
     view.rubber = L.polyline([corners[corners.length - 1]!], {
       color,
@@ -251,7 +266,7 @@ export function MapCanvas(props: MapCanvasProps) {
       opacity: 0.8,
       interactive: false,
     }).addTo(view.draftLayer);
-  }, [sceneKey, draft, tool]);
+  }, [sceneKey, draft, tool, measureLabel]);
 
   // "Fit" returns to the whole-map view.
   useEffect(() => {
@@ -282,7 +297,7 @@ export function MapCanvas(props: MapCanvasProps) {
       className={cn(
         'relative isolate h-full w-full overflow-hidden',
         // The map element's own classes are managed by Leaflet, so the cursor is set from here.
-        isDrawingTool(tool) || tool === 'pin' || tool === 'label' ? 'atlas-drawing' : '',
+        isLineTool(tool) || tool === 'pin' || tool === 'label' ? 'atlas-drawing' : '',
       )}
     >
       <div ref={containerRef} className="atlas-map absolute inset-0" />

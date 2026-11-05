@@ -228,3 +228,28 @@
 .atlas-handle:active {
   cursor: grabbing;
 }
+
+.atlas-cluster-wrap {
+  background: none;
+  border: none;
+}
+.atlas-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  background: #334155;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 3px rgb(51 65 85 / 0.35),
+    0 1px 5px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+}
+.atlas-cluster:hover {
+  background: #1e293b;
+}

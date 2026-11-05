@@ -147,6 +147,8 @@ function world(): WorldExport {
           error: '',
           width: 4000,
           height: 3000,
+          imageVersion: 1,
+          scale: null,
           entityId: null,
           entity: null,
           visibility: 'player',
@@ -163,6 +165,8 @@ function world(): WorldExport {
           error: '',
           width: 1000,
           height: 1000,
+          imageVersion: 1,
+          scale: null,
           entityId: 'e-eel',
           entity: null,
           visibility: 'gm',
@@ -179,6 +183,8 @@ function world(): WorldExport {
           points: [[0.25, 0.5]],
           label: 'Vesh',
           notes: '',
+          gmNotes: '',
+          layerId: null,
           entityId: 'e-eel',
           entity: null,
           linkMapId: 'm2',
@@ -191,6 +197,7 @@ function world(): WorldExport {
           updatedAt: '',
         },
       ],
+      layers: [],
     },
     calendar: null,
     progressions: [
@@ -444,6 +451,24 @@ describe('worldToMarkdown', () => {
     expect(files.get('aerth/Atlas/Vesh.md')).toContain('Inside: [[Atlas/Aerth|Aerth]]');
   });
 
+  it('includes a map’s scale, layers and GM prep notes', () => {
+    const data = world();
+    data.atlas.maps[0]!.scale = {
+      width: 900,
+      unit: 'mi',
+      modes: [{ name: 'On foot', perDay: 24 }],
+    };
+    data.atlas.layers = [
+      { id: 'l1', mapId: 'm1', name: 'Borders', visibleByDefault: true, sortOrder: 0 },
+    ];
+    data.atlas.features[0]!.layerId = 'l1';
+    data.atlas.features[0]!.gmNotes = 'The cult meets here.\nTrap on the door.';
+    const aerth = byPath(worldToMarkdown(data)).get('aerth/Atlas/Aerth.md')!;
+    expect(aerth).toContain('The map is 900 mi wide. Travel per day: On foot 24 mi.');
+    expect(aerth).toContain('**Vesh** (pin, layer: Borders)');
+    expect(aerth).toContain('(GM notes: The cult meets here. Trap on the door.)');
+  });
+
   it('writes a timeline in date order, grouped by year', () => {
     const timeline = byPath(worldToMarkdown(world())).get('aerth/Timeline.md')!;
     expect(timeline).toContain(
@@ -494,7 +519,7 @@ describe('worldToMarkdown', () => {
       entities: [],
       relationships: [],
       manuscript: [],
-      atlas: { maps: [], features: [] },
+      atlas: { maps: [], features: [], layers: [] },
       progressions: [],
       gallery: [],
       rollTables: [],
