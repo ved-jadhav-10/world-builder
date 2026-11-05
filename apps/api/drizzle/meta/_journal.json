@@ -43,6 +43,13 @@
       "when": 1791854833992,
       "tag": "0005_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793864195402,
+      "tag": "0006_tables",
+      "breakpoints": true
     }
   ]
 }

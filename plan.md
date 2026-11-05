@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 7 are built, tested and on `main`; M2 to M7 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 8 are built, tested and on `main`; M2 to M8 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -105,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -220,13 +220,27 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - changing the email address, and downloading all of an account's data in one file (each world still exports on its own)
   - sharing rate-limit counters between API instances
 
+## Milestone 8 (Dice, rollable tables and the roll log): done
+
+- **Dice:** `packages/shared/src/dice.ts` parses and rolls `2d6+3`, `d20`, `d%`, `4d6kh3` and `2d20kl1` (keep highest or lowest), `3d6!` (exploding, cut off after 20 extra dice) and sums of those with constants. Limits: 100 dice per term, 1,000 sides, 10 terms. Parsing never throws; it returns a message saying what to fix. The random source is passed in, so the server uses `crypto.randomInt` and the tests a fixed one.
+- **Tables:** a table's rows have weights, and rolling picks a position from 1 to the total weight, so weights 3, 3, 4 make a d10 with ranges 1-3, 4-6 and 7-10 (`rowRanges`). That covers both weighted rows and dice ranges. Row text can hold `[[2d6]]` (rolled in place) and `{{Other table}}` (rolls that table and splices in the result); a chain that loops back or goes more than 4 deep stays as written, with a note. Names are unique per world, ignoring case, because chaining finds tables by name. Pasted rows (`1-3, Rain`, tab or comma separated, quoted fields, a header row) are read by `parseTableText`, which reports every line it skipped or changed.
+- **Roll log:** `rolls` keeps the newest 500 per world. Each entry is GM-only or "shown to the players", and players poll it every few seconds. Rolling is the GM's (editors, not while previewing); players see only the tables and rolls the GM shared. Tables have a visibility like everything else, and a hidden table answers 404.
+- **API:** `/tables` (list, get, create, update with all rows replaced, delete), `/tables/:id/roll`, `/dice/roll` and `/rolls` (list, clear). Rolls are rate-limited (240 a minute). Tables are in the JSON export (as `rollTables`) and the Markdown export (`Tables/<name>.md`, with the roll ranges); the roll log is not exported.
+- **Web:** Tables & dice in the sidebar (GM and players), a page with the table list, an editor (weights, derived ranges, add, remove, import dialog, visibility, save, delete) and a roll panel with a dice box, quick dice, "show my rolls to the players" and the log. After a roll, the row that came up is highlighted.
+- **Also:** the Vite dev proxy follows `API_PORT`, since another project can hold port 3000.
+- **Verified in Chrome** (scripted, 17 steps, with a real GM and a real player): creating and importing, saving before rolling, chained tables with inline dice, duplicate names refused, keep-highest dice with the dropped die struck out, bad expressions, sharing a roll and a table with a player, what the player cannot see or do (create, roll, edit, a hidden table), the import report, delete, clear log and phone width. It caught a real bug: deleting a table made the page refetch the deleted table and log a 404.
+- **Deferred:**
+  - an embeddable roller inside prep notes and session notes (comes with the session notes and the GM screen)
+  - players rolling their own dice (only the GM rolls for now)
+  - saving a roll's result as an entry (an entry-aware generator, v2)
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
-1. **GM screen, session notes and rollable tables (D).** Finishes the game-master half.
+1. **GM screen and session notes (D).** Finishes the game-master half. Dice and rollable tables are done (M8); the GM screen can embed them as widgets.
 2. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
 3. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
 4. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.

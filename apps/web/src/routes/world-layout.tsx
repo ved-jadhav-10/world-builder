@@ -1,6 +1,7 @@
 import {
   CalendarRange,
   ChevronLeft,
+  Dices,
   Images,
   LogOut,
   Library,
@@ -116,6 +117,11 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <NavLink to={`${base}/quests`} className={navItem}>
           <ScrollText /> Quests
         </NavLink>
+        {audience === 'gm' || audience === 'player' ? (
+          <NavLink to={`${base}/tables`} className={navItem}>
+            <Dices /> Tables & dice
+          </NavLink>
+        ) : null}
         <NavLink to={`${base}/gallery`} className={navItem}>
           <Images /> Gallery
         </NavLink>

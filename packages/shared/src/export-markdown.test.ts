@@ -219,6 +219,21 @@ function world(): WorldExport {
         updatedAt: '',
       },
     ],
+    rollTables: [
+      {
+        id: 't1',
+        name: 'Weather',
+        description: 'Roll each morning.',
+        visibility: 'player',
+        rowCount: 3,
+        rows: [
+          { id: 'r1', weight: 3, text: 'Rain | heavy' },
+          { id: 'r2', weight: 1, text: 'Fog' },
+        ],
+        createdAt: '',
+        updatedAt: '',
+      },
+    ],
     gallery: [
       {
         id: 'img1',
@@ -291,6 +306,13 @@ describe('worldToMarkdown', () => {
     );
     expect(mira).toContain(
       '## Details\n\n- **Age:** 41\n- **Alive:** Yes\n- **Moods:** calm, tense',
+    );
+  });
+
+  it('writes each rollable table with its roll ranges', () => {
+    const files = byPath(worldToMarkdown(world()));
+    expect(files.get('aerth/Tables/Weather.md')).toBe(
+      '---\nvisibility: player\n---\n\n# Weather\n\nRoll each morning.\n\n| Roll | Result |\n| --- | --- |\n| 1-3 | Rain \\| heavy |\n| 4 | Fog |\n',
     );
   });
 
@@ -409,6 +431,7 @@ describe('worldToMarkdown', () => {
       atlas: { maps: [], features: [] },
       progressions: [],
       gallery: [],
+      rollTables: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)

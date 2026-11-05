@@ -1,3 +1,5 @@
+import type { DiceResult } from './dice';
+import type { TableRollResult } from './tables';
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
 import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
@@ -125,6 +127,8 @@ export interface WorldExport {
   progressions: Progression[];
   /** Details of every gallery image. The image files themselves are not included. */
   gallery: GalleryImage[];
+  /** Rollable tables with their rows. The roll log is not included. */
+  rollTables: RollTable[];
 }
 
 export interface ApiErrorBody {
@@ -374,3 +378,32 @@ export interface QuestSummary {
   /** What the quest is linked to: where it happens, who gave it, who it involves. */
   links: { label: string; other: { id: string; name: string; typeId: string } }[];
 }
+
+// ---- Dice, tables and the roll log --------------------------------------------------------------
+
+export interface RollTableSummary {
+  id: string;
+  name: string;
+  description: string;
+  visibility: Visibility;
+  rowCount: number;
+  updatedAt: string;
+}
+
+export interface RollTable extends RollTableSummary {
+  rows: { id: string; weight: number; text: string }[];
+  createdAt: string;
+}
+
+/** One line of the roll log. `detail` is what was rolled, in full, for showing the dice. */
+export type RollLogEntry = {
+  id: string;
+  /** Who is allowed to see it: the GM only, or the players too. */
+  visibility: 'gm' | 'player';
+  /** The expression rolled, or the table's name. */
+  label: string;
+  /** One line summing it up, such as `2d6+3 → [4, 2] +3 = 9`. */
+  summary: string;
+  rolledBy: { id: string; name: string } | null;
+  createdAt: string;
+} & ({ kind: 'dice'; detail: DiceResult } | { kind: 'table'; detail: TableRollResult });

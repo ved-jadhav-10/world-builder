@@ -19,6 +19,8 @@ export const limits = {
   upload: limit(30, '10 minutes'),
   /** Search runs as you type, so the allowance is high. */
   search: limit(120, '1 minute'),
+  /** Rolling dice or a table writes to the log, so a script cannot fill it. */
+  roll: limit(240, '1 minute'),
   /** An export reads the whole world. */
   export: limit(6, '10 minutes'),
 };

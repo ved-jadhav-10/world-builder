@@ -3,6 +3,9 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
+// The API listens on API_PORT (3000 unless set), and the dev proxy follows it.
+const apiPort = process.env.API_PORT ?? '3000';
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -17,6 +20,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     // Same-origin API calls: session cookies work without CORS.
-    proxy: { '/api': 'http://localhost:3000' },
+    proxy: { '/api': `http://localhost:${apiPort}` },
   },
 });

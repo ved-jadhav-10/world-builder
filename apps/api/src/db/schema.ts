@@ -447,3 +447,63 @@ export const images = pgTable(
       .where(sql`${t.isPortrait}`),
   ],
 );
+
+/** A rollable table. Its rows are in `roll_table_rows`; a row's weight sets how often it comes up. */
+export const rollTables = pgTable(
+  'roll_tables',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  // Tables chain to each other by name, so a name means one table in a world.
+  (t) => [uniqueIndex('roll_tables_world_name_uq').on(t.worldId, sql`lower(${t.name})`)],
+);
+
+export const rollTableRows = pgTable(
+  'roll_table_rows',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tableId: uuid('table_id')
+      .notNull()
+      .references(() => rollTables.id, { onDelete: 'cascade' }),
+    sortOrder: integer('sort_order').notNull(),
+    weight: integer('weight').notNull().default(1),
+    text: text('text').notNull(),
+  },
+  (t) => [
+    index('roll_table_rows_table_idx').on(t.tableId, t.sortOrder),
+    check('roll_table_rows_weight_chk', sql`${t.weight} >= 1`),
+  ],
+);
+
+/** The roll log: the latest rolls in a world, newest first. Old ones are pruned as new arrive. */
+export const rolls = pgTable(
+  'rolls',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    kind: text('kind').notNull(),
+    label: text('label').notNull(),
+    summary: text('summary').notNull(),
+    detail: jsonb('detail').$type<unknown>().notNull(),
+    /** Only 'gm' or 'player'; the GM can show a roll to the table. */
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('rolls_world_created_idx').on(t.worldId, t.createdAt),
+    check('rolls_kind_chk', sql`${t.kind} IN ('dice', 'table')`),
+    check('rolls_visibility_chk', sql`${t.visibility} IN ('gm', 'player')`),
+  ],
+);

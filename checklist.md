@@ -60,7 +60,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Session notes and recaps** linked to the entries involved [v1; deferred in M5], with **live tables** embedded in prep notes [v1].
 - [ ] **Player handouts** and image reveals pushed to players live [v1; deferred in M5].
 - [ ] **Shops and merchants** (a location's inventory doubles as a priced shop) [v1].
-- [ ] **Rollable tables:** weighted rows and dice ranges, chained tables, dice expressions in results, CSV import, an embeddable roller [v1]; a **dice roller and roll log** [v1].
+- [x] **Rollable tables:** weighted rows and dice ranges, chained tables, dice expressions in results, pasted-row import, and a **dice roller and roll log** (M8). Still to do: an embeddable roller inside notes [v1].
 - [ ] **Entry-aware generators** that read your own world and save results as entries, input variables, culture-based name generators, encounter templates [v2].
 - [ ] **Initiative and HP tracker**, condition tracking, loot and treasure tracker, downtime and XP tracker [v2]; session scheduling [v2, or integrate].
 - [ ] **System packs** (optional, never in the core): an encounter builder, a custom stat-block builder, system-styled sheets, an opt-in SRD 5.2 compendium with automatic attribution, ORC for Pathfinder, Daggerheart only after legal review [v2].

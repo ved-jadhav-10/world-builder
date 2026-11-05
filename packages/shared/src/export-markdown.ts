@@ -2,6 +2,7 @@ import { DEFAULT_CALENDAR, dayToDate, formatDate, formatYear } from './calendar'
 import { richTextToMarkdown } from './markdown';
 import type { CalendarDef } from './schemas/calendar';
 import type { FieldDefinition } from './schemas/entity-type';
+import { formatRange, rowRanges } from './tables';
 import type { WorldExport } from './types';
 
 /*
@@ -406,11 +407,27 @@ export function worldToMarkdown(
   if (worldPictures.length)
     add('Gallery/Gallery.md', `# Gallery\n\n${worldPictures.join('\n\n')}\n`);
 
+  // ---- Rollable tables ----
+  for (const table of [...data.rollTables].sort(byName)) {
+    const ranges = rowRanges(table.rows);
+    const rows = table.rows
+      .map((row, i) => {
+        const text = row.text.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+        return `| ${formatRange(ranges[i]!)} | ${text} |`;
+      })
+      .join('\n');
+    const description = table.description ? `${table.description}\n\n` : '';
+    add(
+      `Tables/${names.unique('Tables', table.name)}.md`,
+      `---\nvisibility: ${table.visibility}\n---\n\n# ${table.name}\n\n${description}| Roll | Result |\n| --- | --- |\n${rows}\n`,
+    );
+  }
+
   // ---- Overview ----
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   add(
     'README.md',
-    `# ${data.world.name}\n\n${data.world.description ? `${data.world.description}\n\n` : ''}Exported ${data.exportedAt.slice(0, 10)} from Atlas & Ink.\n\n## What is here\n\n- **Codex/**: ${count(data.entities.length, 'entry', 'entries')}, one note each, in a folder per type\n- **Manuscript/**: ${count(data.manuscript.filter((n) => n.kind === 'scene').length, 'scene', 'scenes')} in reading order (start with Contents)\n- **Atlas/**: ${count(data.atlas.maps.length, 'map', 'maps')} with their pins and shapes (images not included)\n- **Timeline.md** and **Calendar.md**\n- **world.json**: everything above in one file, for a lossless copy\n\nOpen this folder as a vault in Obsidian and the links between notes work. Each note's front-matter says who it is visible to in Atlas & Ink (\`visibility\`), so you can filter before sharing anything.\n`,
+    `# ${data.world.name}\n\n${data.world.description ? `${data.world.description}\n\n` : ''}Exported ${data.exportedAt.slice(0, 10)} from Atlas & Ink.\n\n## What is here\n\n- **Codex/**: ${count(data.entities.length, 'entry', 'entries')}, one note each, in a folder per type\n- **Manuscript/**: ${count(data.manuscript.filter((n) => n.kind === 'scene').length, 'scene', 'scenes')} in reading order (start with Contents)\n- **Atlas/**: ${count(data.atlas.maps.length, 'map', 'maps')} with their pins and shapes (images not included)\n- **Tables/**: ${count(data.rollTables.length, 'rollable table', 'rollable tables')}\n- **Timeline.md** and **Calendar.md**\n- **world.json**: everything above in one file, for a lossless copy\n\nOpen this folder as a vault in Obsidian and the links between notes work. Each note's front-matter says who it is visible to in Atlas & Ink (\`visibility\`), so you can filter before sharing anything.\n`,
   );
   return files;
 }

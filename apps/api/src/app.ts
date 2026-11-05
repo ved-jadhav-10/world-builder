@@ -20,6 +20,7 @@ import { progressionRoutes } from './modules/progressions/routes';
 import { questRoutes } from './modules/quests/routes';
 import { relationshipRoutes } from './modules/relationships/routes';
 import { searchRoutes } from './modules/search/routes';
+import { tableRoutes } from './modules/tables/routes';
 import { tagRoutes } from './modules/tags/routes';
 import { timelineRoutes } from './modules/timeline/routes';
 import { worldCollectionRoutes, worldItemRoutes } from './modules/worlds/routes';
@@ -44,6 +45,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(timelineRoutes);
   await app.register(galleryRoutes);
   await app.register(questRoutes);
+  await app.register(tableRoutes);
   await app.register(memberRoutes);
 };
 

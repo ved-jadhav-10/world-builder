@@ -21,3 +21,6 @@ export * from './progressions';
 export * from './markdown';
 export * from './export-markdown';
 export * from './mentions';
+export * from './schemas/tables';
+export * from './dice';
+export * from './tables';

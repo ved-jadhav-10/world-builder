@@ -17,6 +17,7 @@ import { getSavedCalendar } from '../calendar/service';
 import { listWorldImages } from '../gallery/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
 import { listWorldProgressions } from '../progressions/service';
+import { listAllTables } from '../tables/service';
 
 /** Everything in a world as one JSON document. Trashed entities are left out. */
 export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExport> {
@@ -60,14 +61,16 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       ),
   ]);
 
-  const [manuscript, bodies, atlas, calendar, progressionList, gallery] = await Promise.all([
-    listTree(db, worldId),
-    getSceneBodies(db, worldId),
-    exportAtlas(db, worldId),
-    getSavedCalendar(db, worldId),
-    listWorldProgressions(db, worldId),
-    listWorldImages(db, worldId),
-  ]);
+  const [manuscript, bodies, atlas, calendar, progressionList, gallery, rollTableList] =
+    await Promise.all([
+      listTree(db, worldId),
+      getSceneBodies(db, worldId),
+      exportAtlas(db, worldId),
+      getSavedCalendar(db, worldId),
+      listWorldProgressions(db, worldId),
+      listWorldImages(db, worldId),
+      listAllTables(db, worldId),
+    ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
   for (const link of tagLinks) {
@@ -134,5 +137,6 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     calendar,
     progressions: progressionList,
     gallery,
+    rollTables: rollTableList,
   };
 }

@@ -48,6 +48,8 @@ export const router = createBrowserRouter([
               { path: 'e/:entityId', lazy: () => import('@/routes/entity-page') },
               { path: 'timeline', lazy: () => import('@/routes/timeline-page') },
               { path: 'quests', lazy: () => import('@/routes/quests-page') },
+              { path: 'tables', lazy: () => import('@/routes/tables-page') },
+              { path: 'tables/:tableId', lazy: () => import('@/routes/tables-page') },
               { path: 'gallery', lazy: () => import('@/routes/gallery-page') },
               { path: 'atlas', element: <AtlasIndexPage /> },
               { path: 'atlas/:mapId', lazy: () => import('@/routes/map-page') },
