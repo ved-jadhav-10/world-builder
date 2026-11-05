@@ -6,6 +6,8 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 import type {
+  BulkEntityInput,
+  BulkEntityResult,
   Entity,
   EntityCreateInput,
   EntityRelationship,
@@ -186,6 +188,19 @@ export function useUpdateEntity(worldId: string, id: string) {
     onSuccess: (entity) => {
       qc.setQueryData(keys.entity(worldId, id), entity);
       invalidateWorldContent(qc, worldId);
+    },
+  });
+}
+
+/** One change (visibility, a tag, the trash) applied to many entries at once. */
+export function useBulkEntities(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkEntityInput) =>
+      api<BulkEntityResult>('POST', `/worlds/${worldId}/entities/bulk`, input),
+    onSuccess: () => {
+      invalidateWorldContent(qc, worldId);
+      void qc.invalidateQueries({ queryKey: keys.tags(worldId) });
     },
   });
 }

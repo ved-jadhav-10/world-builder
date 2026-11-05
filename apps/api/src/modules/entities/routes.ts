@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
+  bulkEntitySchema,
   entityCreateSchema,
   entityListQuerySchema,
   entityUpdateSchema,
@@ -13,6 +14,7 @@ import {
   requireRole,
 } from '../../plugins/auth-guard';
 import {
+  bulkUpdateEntities,
   createEntity,
   getEntity,
   listEntities,
@@ -45,6 +47,13 @@ export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
 
   app.get('/entities/:id', { schema: { params: worldItemParamsSchema } }, async (request) =>
     getEntity(db, currentWorldId(request), request.params.id, currentAudience(request)),
+  );
+
+  // Registered before the item routes so "bulk" is never read as an id.
+  app.post(
+    '/entities/bulk',
+    { onRequest: requireRole('editor'), schema: { body: bulkEntitySchema } },
+    async (request) => bulkUpdateEntities(db, currentWorldId(request), request.body),
   );
 
   app.patch(

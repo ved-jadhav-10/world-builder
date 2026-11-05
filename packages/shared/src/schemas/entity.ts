@@ -65,3 +65,23 @@ export const searchQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 export type SearchQuery = z.input<typeof searchQuerySchema>;
+
+/** How many entries one bulk edit can touch. */
+export const MAX_BULK_ENTRIES = 200;
+
+const bulkIds = z.array(idSchema).min(1, 'Pick at least one entry').max(MAX_BULK_ENTRIES);
+
+/** One change applied to many entries at once. */
+export const bulkEntitySchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('visibility'), ids: bulkIds, visibility: visibilitySchema }),
+  z.object({ action: z.literal('add_tag'), ids: bulkIds, tagId: idSchema }),
+  z.object({ action: z.literal('remove_tag'), ids: bulkIds, tagId: idSchema }),
+  z.object({ action: z.literal('trash'), ids: bulkIds }),
+]);
+export type BulkEntityInput = z.input<typeof bulkEntitySchema>;
+
+/** `skipped` counts ids that are not live entries of this world (already trashed, or unknown). */
+export interface BulkEntityResult {
+  updated: number;
+  skipped: number;
+}

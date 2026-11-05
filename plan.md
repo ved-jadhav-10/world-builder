@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 15 are built, tested and on `main`; M2 to M15 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 16 are built, tested and on `main`; M2 to M16 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -342,6 +342,16 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - overused-word tracking and style or genre guide entries (the rest of that checklist item)
   - per-book or per-chapter targets, goals shared across a team, and a streak "freeze"
   - email or push reminders (an integration, so it waits with launch work)
+
+## Milestone 16 (Bulk edit): done
+
+- **API:** `POST /entities/bulk` applies one change to up to 200 entries in a single transaction: set who can see them, add a tag, remove a tag, or move them to the Trash. It answers `{ updated, skipped }`; ids that are not live entries of this world (unknown, already trashed, from another world) are skipped rather than failing the batch, so a stale selection still does the rest, and repeated ids count once. A tag from another world is a 404. Editors only; a "view as" preview is refused like every write. Trashing rebuilds the scene mentions once, not per entry.
+- **Web:** a "Select" button on each type's list (editors) adds a checkbox to every row and a bar above the list: how many are picked, a "select all shown" box, who can see them (with a confirmation naming the audience), add or remove a tag, and move to Trash (with a confirmation; the Trash page restores them). Only entries on screen are changed, so changing a filter never touches rows you cannot see; after a change the selection clears.
+- **Verified in Chrome** (scripted, 7 steps, with a real player): the checkboxes and counts, changing visibility for five entries, adding a tag to two and filtering by it, removing it, trashing two and finding them in the Trash, a player seeing no Select button and getting 403, and a phone-sized bar.
+- **Deferred:**
+  - bulk edit from search results and the all-entries list, and moving entries between types
+  - bulk edits of dates or fields, and an undo for a bulk visibility change
+  - to-do lists (the other half of that checklist item)
 
 ## Roadmap: what's left
 

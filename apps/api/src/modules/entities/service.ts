@@ -1,9 +1,11 @@
-import { and, asc, desc, eq, exists, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, exists, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   deriveSearchText,
   parseFieldValues,
   type Audience,
+  type BulkEntityResult,
+  type bulkEntitySchema,
   type Entity,
   type entityCreateSchema,
   type entityListQuerySchema,
@@ -305,4 +307,58 @@ export async function listEntities(
     items: page.map(toSummary),
     nextCursor: rows.length > query.limit && last ? encodeCursor(last.sortKey, last.id) : null,
   };
+}
+
+/**
+ * Applies one change to many entries in a single transaction. Ids that are not live entries of
+ * this world (unknown, trashed, or from somewhere else) are skipped, not errors, so a stale
+ * selection still does the rest.
+ */
+export async function bulkUpdateEntities(
+  db: DbOrTx,
+  worldId: string,
+  input: z.output<typeof bulkEntitySchema>,
+): Promise<BulkEntityResult> {
+  const ids = [...new Set(input.ids)];
+  const live = await db
+    .select({ id: entities.id })
+    .from(entities)
+    .where(
+      and(eq(entities.worldId, worldId), inArray(entities.id, ids), isNull(entities.deletedAt)),
+    );
+  const liveIds = live.map((row) => row.id);
+  const result = { updated: liveIds.length, skipped: ids.length - liveIds.length };
+  if (liveIds.length === 0) return result;
+
+  switch (input.action) {
+    case 'visibility':
+      await db
+        .update(entities)
+        .set({ visibility: input.visibility })
+        .where(inArray(entities.id, liveIds));
+      break;
+    case 'add_tag': {
+      const [tag] = await db
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.id, input.tagId), eq(tags.worldId, worldId)));
+      if (!tag) throw notFound('Tag');
+      await db
+        .insert(entityTags)
+        .values(liveIds.map((entityId) => ({ entityId, tagId: tag.id })))
+        .onConflictDoNothing();
+      break;
+    }
+    case 'remove_tag':
+      await db
+        .delete(entityTags)
+        .where(and(inArray(entityTags.entityId, liveIds), eq(entityTags.tagId, input.tagId)));
+      break;
+    case 'trash':
+      await db.update(entities).set({ deletedAt: new Date() }).where(inArray(entities.id, liveIds));
+      // Names stop counting as mentions while an entry is in the trash.
+      await rebuildSceneMentions(db, worldId);
+      break;
+  }
+  return result;
 }

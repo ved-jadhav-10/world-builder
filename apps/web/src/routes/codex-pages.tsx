@@ -1,8 +1,9 @@
-import { Plus } from 'lucide-react';
+import { CheckSquare, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import type { EntitySort } from '@atlas/shared';
 import { useEntityList, useTags } from '@/api/queries';
+import { BulkBar } from '@/components/bulk-bar';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityRow } from '@/components/entity-row';
 import { NewEntityDialog } from '@/components/new-entity-dialog';
@@ -91,6 +92,9 @@ export function EntityListPage() {
   const type = typeByKey.get(typeKey);
   const [sort, setSort] = useState<EntitySort>('name');
   const [tagId, setTagId] = useState('');
+  // Bulk edit: pick rows, then change them all at once.
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const { data: tags = [] } = useTags(world.id);
   const list = useEntityList(world.id, { typeId: type?.id, sort, tagId: tagId || undefined });
 
@@ -99,6 +103,19 @@ export function EntityListPage() {
       <EmptyState title="Unknown type">This entity type doesn't exist in this world.</EmptyState>
     );
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
+  // Only what is on screen counts, so changing a filter never changes hidden entries.
+  const pickedIds = items.filter((entity) => picked.has(entity.id)).map((entity) => entity.id);
+  const allPicked = items.length > 0 && pickedIds.length === items.length;
+  const toggle = (id: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  const stopSelecting = () => {
+    setSelecting(false);
+    setPicked(new Set());
+  };
 
   return (
     <div>
@@ -154,7 +171,35 @@ export function EntityListPage() {
             ))}
           </NativeSelect>
         ) : null}
+        {canEdit && items.length > 0 ? (
+          <Button
+            variant={selecting ? 'default' : 'outline'}
+            className="ml-auto"
+            aria-pressed={selecting}
+            onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+          >
+            <CheckSquare /> {selecting ? 'Done' : 'Select'}
+          </Button>
+        ) : null}
       </div>
+
+      {selecting ? (
+        <div className="mt-4 space-y-2">
+          <BulkBar ids={pickedIds} onDone={stopSelecting} />
+          <label className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={allPicked}
+              onChange={() =>
+                setPicked(allPicked ? new Set() : new Set(items.map((entity) => entity.id)))
+              }
+              className="size-4 accent-primary"
+            />
+            Select all {items.length} shown
+            {list.hasNextPage ? ' (load more to include the rest)' : ''}
+          </label>
+        </div>
+      ) : null}
 
       <div className="mt-4">
         {list.isPending ? (
@@ -170,7 +215,15 @@ export function EntityListPage() {
           <>
             <ul className="-mx-3 divide-y divide-border/60">
               {items.map((entity) => (
-                <EntityRow key={entity.id} entity={entity} />
+                <EntityRow
+                  key={entity.id}
+                  entity={entity}
+                  selection={
+                    selecting
+                      ? { selected: picked.has(entity.id), onToggle: () => toggle(entity.id) }
+                      : undefined
+                  }
+                />
               ))}
             </ul>
             {list.hasNextPage ? (

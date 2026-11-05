@@ -8,17 +8,33 @@ import { useWorld } from '@/lib/world-context';
 export function EntityRow({
   entity,
   showType = false,
+  selection,
 }: {
   entity: EntitySummary;
   showType?: boolean;
+  /** When given, the row has a checkbox for picking it in bulk edit. */
+  selection?: { selected: boolean; onToggle: () => void };
 }) {
   const { typeById, base, audience } = useWorld();
   const type = typeById.get(entity.typeId);
   return (
-    <li>
+    <li className={selection ? 'flex items-start' : undefined}>
+      {selection ? (
+        <input
+          type="checkbox"
+          checked={selection.selected}
+          onChange={selection.onToggle}
+          aria-label={`Select ${entity.name}`}
+          className="mt-4 size-4 shrink-0 accent-primary"
+        />
+      ) : null}
       <Link
         to={`${base}/e/${entity.id}`}
-        className="flex items-start gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-muted"
+        className={
+          selection
+            ? 'flex min-w-0 flex-1 items-start gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-muted'
+            : 'flex items-start gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-muted'
+        }
       >
         <EntityIcon icon={type?.icon ?? 'file-text'} color={type?.color} className="mt-0.5" />
         <div className="min-w-0 flex-1">
