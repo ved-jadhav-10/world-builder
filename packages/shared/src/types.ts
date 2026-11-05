@@ -8,6 +8,7 @@ import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
 import type { ProgressionChanges } from './schemas/progression';
 import type { Role, Visibility } from './schemas/common';
+import type { RevisionKind } from './schemas/revisions';
 import type { FieldDefinition } from './schemas/entity-type';
 import type { RichTextDoc } from './schemas/entity';
 import type { InviteRole } from './schemas/member';
@@ -546,4 +547,39 @@ export interface ContinuityReport {
   linkLabels: Record<string, string>;
   /** How many of each there were to check, to say what was looked at. */
   checked: { entries: number; scenes: number; links: number };
+}
+
+/** One saved version of an entry or a scene, as listed in its history. */
+export interface RevisionSummary {
+  id: string;
+  kind: RevisionKind;
+  /** What the author called it; empty for automatic versions. */
+  label: string;
+  createdAt: string;
+  /** Who made the edit this version holds; null if that person has left. */
+  author: string | null;
+  /** The entry's name or the scene's title at the time. */
+  title: string;
+  words: number;
+}
+
+/** What is kept of an entry in each version. Visibility is deliberately not part of it. */
+export interface EntityRevisionContent {
+  name: string;
+  aliases: string[];
+  summary: string;
+  fields: Record<string, unknown>;
+  body: RichTextDoc | null;
+  startDay: number | null;
+  endDay: number | null;
+}
+
+export interface SceneRevisionContent {
+  title: string;
+  summary: string;
+  body: RichTextDoc | null;
+}
+
+export interface RevisionDetail<Content> extends RevisionSummary {
+  content: Content;
 }

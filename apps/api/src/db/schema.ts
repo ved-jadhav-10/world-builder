@@ -23,6 +23,7 @@ import {
   LINE_STYLES,
   MAP_STATUSES,
   NODE_KINDS,
+  REVISION_KINDS,
   ROLES,
   VISIBILITIES,
   type CalendarDef,
@@ -653,4 +654,36 @@ export const continuityDismissals = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.key] })],
+);
+
+export const revisionKindEnum = pgEnum('revision_kind', REVISION_KINDS);
+
+/**
+ * A saved version of an entry or a scene. Exactly one of `entityId` and `nodeId` is set; the
+ * snapshot in `content` is the whole of what restoring brings back.
+ */
+export const revisions = pgTable(
+  'revisions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'cascade' }),
+    nodeId: uuid('node_id').references(() => manuscriptNodes.id, { onDelete: 'cascade' }),
+    kind: revisionKindEnum('kind').notNull(),
+    label: text('label').notNull().default(''),
+    content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+    /** Hash of `content`, so an unchanged save adds nothing. */
+    contentHash: text('content_hash').notNull(),
+    title: text('title').notNull().default(''),
+    words: integer('words').notNull().default(0),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('revisions_entity_idx').on(t.entityId, t.createdAt),
+    index('revisions_node_idx').on(t.nodeId, t.createdAt),
+    check('revisions_one_subject_chk', sql`num_nonnulls(${t.entityId}, ${t.nodeId}) = 1`),
+  ],
 );

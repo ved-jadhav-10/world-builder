@@ -9,6 +9,7 @@ import {
 import { db } from '../../db/client';
 import {
   currentAudience,
+  currentUser,
   currentWorldId,
   requireAudience,
   requireRole,
@@ -25,6 +26,7 @@ import {
   saveSceneBody,
   updateNode,
 } from './service';
+import { afterEdit, beforeEdit, isScene } from '../revisions/service';
 
 export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
   // The manuscript is the author's own workspace, so only the GM's view reads it.
@@ -47,7 +49,19 @@ export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: requireRole('editor'),
       schema: { params: worldItemParamsSchema, body: nodeUpdateSchema },
     },
-    async (request) => updateNode(db, currentWorldId(request), request.params.id, request.body),
+    async (request) => {
+      const worldId = currentWorldId(request);
+      const { id } = request.params;
+      // Only a scene's title and summary have a history, and only when they are being changed.
+      const tracked =
+        (request.body.title !== undefined || request.body.summary !== undefined) &&
+        (await isScene(db, worldId, id));
+      const subject = { kind: 'scene', id } as const;
+      if (tracked) await beforeEdit(db, worldId, subject);
+      const updated = await updateNode(db, worldId, id, request.body);
+      if (tracked) await afterEdit(db, worldId, subject, currentUser(request).id);
+      return updated;
+    },
   );
 
   app.post(
@@ -80,8 +94,14 @@ export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: requireRole('editor'),
       schema: { params: worldItemParamsSchema, body: sceneBodySchema },
     },
-    async (request) =>
-      saveSceneBody(db, currentWorldId(request), request.params.id, request.body.body),
+    async (request) => {
+      const worldId = currentWorldId(request);
+      const subject = { kind: 'scene', id: request.params.id } as const;
+      await beforeEdit(db, worldId, subject);
+      const saved = await saveSceneBody(db, worldId, request.params.id, request.body.body);
+      await afterEdit(db, worldId, subject, currentUser(request).id);
+      return saved;
+    },
   );
 
   app.get('/mention-index', gmOnly, async (request) => mentionIndex(db, currentWorldId(request)));

@@ -35,3 +35,5 @@ export * from './plot-board';
 export * from './continuity';
 export * from './schemas/continuity';
 export * from './map-tools';
+export * from './text-diff';
+export * from './schemas/revisions';

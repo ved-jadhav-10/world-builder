@@ -22,6 +22,7 @@ import {
   softDeleteEntity,
   updateEntity,
 } from './service';
+import { afterEdit, beforeEdit } from '../revisions/service';
 
 export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/entities', { schema: { querystring: entityListQuerySchema } }, async (request) =>
@@ -52,7 +53,14 @@ export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: requireRole('editor'),
       schema: { params: worldItemParamsSchema, body: entityUpdateSchema },
     },
-    async (request) => updateEntity(db, currentWorldId(request), request.params.id, request.body),
+    async (request) => {
+      const worldId = currentWorldId(request);
+      const subject = { kind: 'entity', id: request.params.id } as const;
+      await beforeEdit(db, worldId, subject);
+      const updated = await updateEntity(db, worldId, request.params.id, request.body);
+      await afterEdit(db, worldId, subject, currentUser(request).id);
+      return updated;
+    },
   );
 
   app.delete(
