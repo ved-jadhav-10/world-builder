@@ -37,7 +37,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Comments** on entries and scenes, with replies, resolving and a comments page (M23). Still to do: notifications and mentions, comments on a passage of text [v1].
 - [x] **Goals, streaks and timed sprints:** a daily goal, a manuscript target and deadline, streaks, a heatmap and a sprint timer (M15).
 - [x] **Overused-word tracking** (a Word check page) and a **Style Guide** entry type (M24). Still to do: highlighting words in the editor, a per-scene breakdown [v1].
-- [ ] **Manuscript drag-and-drop reordering** (moves are menu-based today; deferred in M2).
+- [x] **Manuscript drag-and-drop reordering** in the binder, with the menu moves kept for keyboard and touch (M25).
 - [ ] **Character extras:** abilities with charges, voice and dialogue sheet, interview questionnaire, species trait inheritance, colour palette field [v1]; turnaround sheet [v2]; stat blocks, system-agnostic or 5e [v2].
 - [ ] **Content tree** of all articles, **pop-out windows**, **keyboard shortcuts** for common actions [v1].
 - [ ] **Lore wiki extras:** secret blocks inside an article, embedded maps and timelines [MVP/v1 in the research; see also field-level secrets in F].

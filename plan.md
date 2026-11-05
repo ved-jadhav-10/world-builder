@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 24 are built, tested and on `main`; M2 to M24 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 25 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -440,6 +440,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Migrations housekeeping:** my hand-written migrations 0016 to 0018 had no Drizzle snapshot, so `drizzle-kit generate` would have tried to create their tables again. Generating once showed the diff was exactly those four tables with the same constraint and index names, so the generated SQL was dropped and its snapshot kept as `0019_snapshot.json`; `drizzle-kit generate` now reports no changes.
 - **Verified in Chrome** (scripted, 9 steps, every 4xx or 5xx counted): the page from the sidebar with a character name left out, narrowing to a chapter, watched words remembered after a reload, close repeats and adverbs, the empty state, creating a Style Guide entry with its fields, a player having no link and a 403, and a phone-sized page.
 - **Deferred:** highlighting the words in the scene editor, a per-scene breakdown ("which scene leans on 'just' most"), a word-check button on the scene page, using Style Guide entries' "words to avoid" as the watch list automatically, readability scores, dialogue-tag and passive-voice checks, and languages other than English (the small-word and crutch lists are English).
+
+## Milestone 25 (Drag and drop in the manuscript): done
+
+- **Logic:** `resolveDrop` in `packages/shared/src/manuscript-move.ts` turns "drag this onto that, at its top edge, middle or bottom edge" into the parent and position for the existing move call, or null when it cannot go there: the book, part, chapter and scene nesting rules, nothing inside itself or its own descendants, and dropping where it already sits. Positions count from the list with the moved item taken out, matching what the API does. No server change was needed.
+- **Web:** binder rows are draggable for people who can edit. The top and bottom quarter of a row put the item before or after it, the middle puts it inside (at the end); a row that cannot hold the item uses halves, and a position the rules refuse falls back to the one they allow. A line or a highlight shows where it will land, the dragged row fades, a drop into a collapsed item opens it, and a refused drop shows nothing and changes nothing. The Move up, Move down and Move to menu items stay, and are the way to move things by keyboard or on a touch screen, where browsers do not offer drag and drop.
+- **Verified in Chrome** (scripted with real drag and drop, 8 steps): a scene dropped before another, a scene dropped into a chapter, a chapter reordered, two refused drops changing nothing (a scene onto a book, a chapter onto a scene), the menu still working, and the order surviving a reload, with no 4xx or 5xx.
+- **Deferred:** dragging several items at once, drag handles and touch drag, scrolling the binder while dragging near its edge, and dragging between books.
 
 ## Roadmap: what's left
 

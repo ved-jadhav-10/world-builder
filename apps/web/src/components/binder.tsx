@@ -8,12 +8,14 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState, type DragEvent, type FormEvent } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import {
   ALLOWED_CHILD_KINDS,
   NODE_KIND_LABELS,
+  resolveDrop,
+  type DropPosition,
   type ManuscriptNode,
   type NodeKind,
 } from '@atlas/shared';
@@ -64,6 +66,9 @@ export function Binder({ onNavigate }: { onNavigate?: () => void }) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<ManuscriptNode | null>(null);
   const [moving, setMoving] = useState<ManuscriptNode | null>(null);
+  // Drag and drop: what is being dragged, and where it would land if dropped now.
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [drop, setDrop] = useState<{ id: string; position: DropPosition } | null>(null);
 
   const toggle = (id: string) =>
     setCollapsed((prev) => {
@@ -112,6 +117,38 @@ export function Binder({ onNavigate }: { onNavigate?: () => void }) {
     );
   }
 
+  /**
+   * Where on a row a drop would land: the top or bottom edge puts the dragged item before or
+   * after it, the middle puts it inside. A row that cannot hold the item uses halves instead, and
+   * a position the nesting rules refuse falls back to the one they allow.
+   */
+  function dropPositionFor(event: DragEvent<HTMLElement>, target: ManuscriptNode) {
+    if (!dragId) return null;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
+    const canInside = resolveDrop(tree.nodes, dragId, target.id, 'inside') !== null;
+    const preferred: DropPosition = canInside
+      ? ratio < 0.25
+        ? 'before'
+        : ratio > 0.75
+          ? 'after'
+          : 'inside'
+      : ratio < 0.5
+        ? 'before'
+        : 'after';
+    const order: DropPosition[] = [
+      preferred,
+      'inside',
+      preferred === 'before' ? 'after' : 'before',
+    ];
+    return order.find((p) => resolveDrop(tree.nodes, dragId, target.id, p) !== null) ?? null;
+  }
+
+  function endDrag() {
+    setDragId(null);
+    setDrop(null);
+  }
+
   const renderNode = (node: ManuscriptNode, depth: number) => {
     const Icon = KIND_ICONS[node.kind];
     const kids = tree.childrenOf(node.id);
@@ -119,8 +156,15 @@ export function Binder({ onNavigate }: { onNavigate?: () => void }) {
     const siblings = tree.childrenOf(node.parentId);
     const position = siblings.findIndex((s) => s.id === node.id);
     const childKinds = ALLOWED_CHILD_KINDS[node.kind];
-    const rowClass =
-      'group flex items-center gap-1.5 rounded-md pr-1 text-sm transition-colors hover:bg-muted';
+    const dropHere = drop?.id === node.id ? drop.position : null;
+    const rowClass = cn(
+      'group flex items-center gap-1.5 rounded-md pr-1 text-sm transition-colors hover:bg-muted',
+      dragId === node.id && 'opacity-40',
+      dropHere === 'before' && 'shadow-[inset_0_2px_0_0_var(--color-primary)]',
+      dropHere === 'after' && 'shadow-[inset_0_-2px_0_0_var(--color-primary)]',
+      dropHere === 'inside' && 'bg-primary/10 ring-1 ring-primary',
+    );
+    const draggable = canEdit && renamingId !== node.id;
 
     const label =
       renamingId === node.id ? (
@@ -168,7 +212,50 @@ export function Binder({ onNavigate }: { onNavigate?: () => void }) {
 
     return (
       <li key={node.id}>
-        <div className={rowClass} style={{ paddingLeft: depth * 14 + 4 }}>
+        <div
+          className={rowClass}
+          style={{ paddingLeft: depth * 14 + 4 }}
+          draggable={draggable}
+          onDragStart={(event) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', node.id);
+            setDragId(node.id);
+          }}
+          onDragEnd={endDrag}
+          onDragOver={(event) => {
+            const position = dropPositionFor(event, node);
+            if (!position) {
+              if (drop) setDrop(null);
+              return;
+            }
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            if (drop?.id !== node.id || drop.position !== position) {
+              setDrop({ id: node.id, position });
+            }
+          }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+              setDrop((current) => (current?.id === node.id ? null : current));
+            }
+          }}
+          onDrop={(event) => {
+            const position = dropPositionFor(event, node);
+            const moved = dragId;
+            endDrag();
+            if (!position || !moved) return;
+            event.preventDefault();
+            const placement = resolveDrop(tree.nodes, moved, node.id, position);
+            if (!placement) return;
+            if (placement.parentId) {
+              setCollapsed((prev) => new Set([...prev].filter((id) => id !== placement.parentId)));
+            }
+            moveNode.mutate(
+              { id: moved, ...placement },
+              { onError: (e) => toast.error(errorMessage(e)) },
+            );
+          }}
+        >
           {node.kind !== 'scene' ? (
             <button
               type="button"
