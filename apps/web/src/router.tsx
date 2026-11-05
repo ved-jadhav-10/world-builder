@@ -48,6 +48,7 @@ export const router = createBrowserRouter([
               { path: 'e/:entityId', lazy: () => import('@/routes/entity-page') },
               { path: 'timeline', lazy: () => import('@/routes/timeline-page') },
               { path: 'quests', lazy: () => import('@/routes/quests-page') },
+              { path: 'screen', lazy: () => import('@/routes/screen-page') },
               { path: 'sessions', lazy: () => import('@/routes/sessions-page') },
               { path: 'tables', lazy: () => import('@/routes/tables-page') },
               { path: 'tables/:tableId', lazy: () => import('@/routes/tables-page') },

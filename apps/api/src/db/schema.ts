@@ -26,6 +26,7 @@ import {
   VISIBILITIES,
   type CalendarDef,
   type FieldDefinition,
+  type GmWidget,
   type MapPoint,
   type ProgressionChanges,
   type RichTextDoc,
@@ -506,4 +507,20 @@ export const rolls = pgTable(
     check('rolls_kind_chk', sql`${t.kind} IN ('dice', 'table')`),
     check('rolls_visibility_chk', sql`${t.visibility} IN ('gm', 'player')`),
   ],
+);
+
+/** One GM's arrangement of widgets on their screen for a world (see `gmScreenSchema`). */
+export const gmScreens = pgTable(
+  'gm_screens',
+  {
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    widgets: jsonb('widgets').$type<GmWidget[]>().notNull().default([]),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.userId] })],
 );

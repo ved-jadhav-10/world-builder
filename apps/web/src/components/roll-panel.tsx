@@ -113,10 +113,17 @@ export function RollResult({ entry, big = false }: { entry: RollLogEntry; big?: 
  * Rolls dice, and lists the latest rolls. The GM rolls (and can show a roll to the players);
  * everyone else sees only the rolls the GM shared.
  */
-export function RollPanel({ className }: { className?: string }) {
+export function RollPanel({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  /** For a small widget: no heading, and only the latest few rolls. */
+  compact?: boolean;
+}) {
   const { world, canEdit, audience } = useWorld();
   const isGm = canEdit && audience === 'gm';
-  const { data: rolls, isPending } = useRolls(world.id);
+  const { data: rolls, isPending } = useRolls(world.id, compact ? 6 : 30);
   const roll = useRollDice(world.id);
   const clear = useClearRolls(world.id);
   const [expression, setExpression] = useState('');
@@ -140,10 +147,16 @@ export function RollPanel({ className }: { className?: string }) {
   };
 
   return (
-    <section aria-label="Dice and roll log" className={cn('space-y-4', className)}>
-      <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
-        <Dices className="size-5" /> Dice
-      </h2>
+    // In a widget the frame already names it, so it is not a second landmark.
+    <section
+      aria-label={compact ? undefined : 'Dice and roll log'}
+      className={cn('space-y-4', className)}
+    >
+      {compact ? null : (
+        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
+          <Dices className="size-5" /> Dice
+        </h2>
+      )}
 
       {isGm ? (
         <div className="space-y-3 rounded-xl border bg-card p-3">

@@ -25,3 +25,4 @@ export * from './schemas/tables';
 export * from './dice';
 export * from './tables';
 export * from './schemas/sessions';
+export * from './schemas/gm-screen';

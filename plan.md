@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 8 are built, tested and on `main`; M2 to M8 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 9 are built, tested and on `main`; M2 to M9 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -105,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -234,17 +234,29 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - players rolling their own dice (only the GM rolls for now)
   - saving a roll's result as an entry (an entry-aware generator, v2)
 
+## Milestone 9 (Session notes and the GM screen): done
+
+- **Session notes:** sessions are entries of a new built-in Session type, like quests, so search, tags, links, dates, "as of" views, exports and visibility all work with no new machinery. Fields: number, status (Planned or Played), played on, recap and threads for next time; the body holds the prep and notes. A new `featured` link type ("features" / "featured in") ties a session to the characters, places and quests in it, using the ordinary relationships panel. The migration adds the type and link to existing worlds, and `GET /sessions` / `POST /sessions` list them (newest first, each with its links) and start the next one, numbered after the highest and called "Session N". Numbers count trashed sessions too, so one is never reused. A recap shared with the players is just a session whose visibility is Players; a player sees only those, and only the links to entries they can see. The link-gathering code that quests used now lives in `lib/entry-links.ts`, shared by both.
+- **GM screen:** a page of widgets that belongs to one GM in one world (`gm_screens`, one row per person and world, the widgets stored as JSON and validated by `gmScreenSchema`). It is GM-only: players, readers and a GM previewing another view get 403. Widgets are dice and roll log, a table roller (pick a table, roll, optionally show the players), pinned entries (name, type and summary, resolved by the server so trashed entries drop out but stay pinned for a restore), a scratchpad, a segmented clock (4 to 12 segments, for doom clocks and countdowns) and the current session. Up to 24 widgets; each can be renamed, moved earlier or later and removed. A first-time GM gets dice, the current session and a scratchpad. The page autosaves a moment after the last change and again when leaving the page.
+- **Also:** `RollPanel` has a compact mode for widgets, and the entry icon set gained the notebook pen.
+- **Verified in Chrome** (scripted: 7 steps for sessions, 12 for the screen, with a real player): starting a session, the list with status, date, summary and links, what a player sees and does not, autosave of the scratchpad, dice and table rolls from the screen, pinning and unpinning entries with their summaries, the clock, reordering and removing with the order kept across a reload, a change saved on leaving the page, the player's refusal on both the page and the API, the preview view, and phone width. It caught a real accessibility nit: the dice widget nested a second landmark with the same name inside its frame.
+- **Deferred:**
+  - dragging widgets (they move with buttons for now), widgets that span columns, and several screens per world
+  - an initiative tracker and HP (a v2 item; the scratchpad covers it for now)
+  - a "mark as played" shortcut on a session card and a recap template
+  - live tables embedded inside prep notes
+  - player handouts pushed live
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
-1. **GM screen and session notes (D).** Finishes the game-master half. Dice and rollable tables are done (M8); the GM screen can embed them as widgets.
-2. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
-3. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
-4. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
-5. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
+1. **Relationship graph, family trees and plot board (B).** Finishes the writer half.
+2. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
+3. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
+4. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
 ### Deliberately not building (integrate or skip)
 A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automation; character builders for licensed game systems; hosting audio files; a paid-GM marketplace; random dungeon generation (import instead); streaming audio to Discord (use Kenku FM).

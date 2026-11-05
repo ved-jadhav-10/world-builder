@@ -56,8 +56,8 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## D. Running the game (GM tools)
 
-- [ ] **GM screen dashboard** with configurable widgets (initiative, pinned NPCs, tables, timers, notes) [v1; deferred in M5].
-- [ ] **Session notes and recaps** linked to the entries involved [v1; deferred in M5], with **live tables** embedded in prep notes [v1].
+- [x] **GM screen** with widgets: dice, table roller, pinned entries, scratchpad, clocks and the current session (M9). Still to do: drag to rearrange, and an initiative tracker (see the v2 item below) [v1].
+- [x] **Session notes and recaps** linked to the entries involved (M9). Still to do: live tables embedded in prep notes [v1].
 - [ ] **Player handouts** and image reveals pushed to players live [v1; deferred in M5].
 - [ ] **Shops and merchants** (a location's inventory doubles as a priced shop) [v1].
 - [x] **Rollable tables:** weighted rows and dice ranges, chained tables, dice expressions in results, pasted-row import, and a **dice roller and roll log** (M8). Still to do: an embeddable roller inside notes [v1].

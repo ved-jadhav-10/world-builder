@@ -57,6 +57,13 @@
       "when": 1793880815537,
       "tag": "0007_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793881191178,
+      "tag": "0008_gm_screen",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import type { GmWidget } from './schemas/gm-screen';
 import type { DiceResult } from './dice';
 import type { TableRollResult } from './tables';
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
@@ -429,3 +430,11 @@ export type RollLogEntry = {
   rolledBy: { id: string; name: string } | null;
   createdAt: string;
 } & ({ kind: 'dice'; detail: DiceResult } | { kind: 'table'; detail: TableRollResult });
+
+// ---- The GM screen ------------------------------------------------------------------------------
+
+export interface GmScreen {
+  widgets: GmWidget[];
+  /** The entries the pinned-entries widgets point to, still existing; trashed ones are left out. */
+  entries: EntitySummary[];
+}

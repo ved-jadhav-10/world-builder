@@ -4,6 +4,7 @@ import {
   Dices,
   Images,
   LogOut,
+  LayoutDashboard,
   Library,
   Map as MapIcon,
   Menu,
@@ -118,6 +119,11 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         <NavLink to={`${base}/quests`} className={navItem}>
           <ScrollText /> Quests
         </NavLink>
+        {audience === 'gm' ? (
+          <NavLink to={`${base}/screen`} className={navItem}>
+            <LayoutDashboard /> GM screen
+          </NavLink>
+        ) : null}
         {audience === 'gm' || audience === 'player' ? (
           <>
             <NavLink to={`${base}/sessions`} className={navItem}>
