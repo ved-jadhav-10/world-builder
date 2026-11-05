@@ -41,3 +41,4 @@ export * from './writing-stats';
 export * from './schemas/writing';
 export * from './manuscript-text';
 export * from './manuscript-html';
+export * from './schemas/handouts';

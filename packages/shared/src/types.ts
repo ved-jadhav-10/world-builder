@@ -136,6 +136,8 @@ export interface WorldExport {
   rollTables: RollTable[];
   /** Plot boards with their beats, storylines and cards. */
   plotBoards: PlotBoard[];
+  /** Handout texts and titles; the pictures are not included. */
+  handouts: Handout[];
 }
 
 export interface ApiErrorBody {
@@ -609,4 +611,21 @@ export interface WritingStats {
   manuscriptWords: number;
   progress: ManuscriptProgress | null;
   sprints: WritingSprint[];
+}
+
+/** A letter, a map scrap or a picture the GM hands to the players, once they choose to reveal it. */
+export interface Handout {
+  id: string;
+  title: string;
+  body: string;
+  visibility: Visibility;
+  /** When it was first shown to anyone besides the GM; null while it is still hidden. */
+  revealedAt: string | null;
+  hasImage: boolean;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  /** Goes up when the picture changes, so browsers fetch the new one. */
+  imageVersion: number;
+  createdAt: string;
+  updatedAt: string;
 }

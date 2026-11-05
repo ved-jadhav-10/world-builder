@@ -389,6 +389,17 @@ export function worldToMarkdown(
     add('Timeline.md', body);
   }
 
+  // ---- Handouts ----
+  if (data.handouts.length > 0) {
+    const picture = (hasImage: boolean) => (hasImage ? ' (has a picture, not included)' : '');
+    const notes = data.handouts.map((h) =>
+      [`## ${h.title}`, `Visible to: ${h.visibility}${picture(h.hasImage)}`, h.body]
+        .filter(Boolean)
+        .join('\n\n'),
+    );
+    add('Handouts.md', `# Handouts\n\n${notes.join('\n\n')}\n`);
+  }
+
   // ---- Calendar ----
   {
     const cal = calendar;

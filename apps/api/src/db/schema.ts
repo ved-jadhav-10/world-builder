@@ -742,3 +742,28 @@ export const writingSprints = pgTable(
   },
   (t) => [index('writing_sprints_user_idx').on(t.worldId, t.userId, t.createdAt)],
 );
+
+/** A handout the GM can reveal to the players: some text and, optionally, one picture. */
+export const handouts = pgTable(
+  'handouts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    body: text('body').notNull().default(''),
+    /** The GM's until revealed. */
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    /** When it was first shown to anyone besides the GM; null while hidden. */
+    revealedAt: timestamp('revealed_at', { withTimezone: true }),
+    /** The picture, if any, lives in file storage under this handout's own id. */
+    imageWidth: integer('image_width'),
+    imageHeight: integer('image_height'),
+    imageVersion: integer('image_version').notNull().default(0),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('handouts_world_idx').on(t.worldId, t.revealedAt)],
+);

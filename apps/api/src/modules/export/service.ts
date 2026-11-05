@@ -15,6 +15,7 @@ import { notFound } from '../../errors';
 import { exportAtlas } from '../atlas/service';
 import { getSavedCalendar } from '../calendar/service';
 import { listWorldImages } from '../gallery/service';
+import { listAllHandouts } from '../handouts/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
 import { listWorldProgressions } from '../progressions/service';
 import { listAllBoards } from '../plot/service';
@@ -62,17 +63,27 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       ),
   ]);
 
-  const [manuscript, bodies, atlas, calendar, progressionList, gallery, rollTableList, plotBoards] =
-    await Promise.all([
-      listTree(db, worldId),
-      getSceneBodies(db, worldId),
-      exportAtlas(db, worldId),
-      getSavedCalendar(db, worldId),
-      listWorldProgressions(db, worldId),
-      listWorldImages(db, worldId),
-      listAllTables(db, worldId),
-      listAllBoards(db, worldId),
-    ]);
+  const [
+    manuscript,
+    bodies,
+    atlas,
+    calendar,
+    progressionList,
+    gallery,
+    rollTableList,
+    plotBoards,
+    handoutList,
+  ] = await Promise.all([
+    listTree(db, worldId),
+    getSceneBodies(db, worldId),
+    exportAtlas(db, worldId),
+    getSavedCalendar(db, worldId),
+    listWorldProgressions(db, worldId),
+    listWorldImages(db, worldId),
+    listAllTables(db, worldId),
+    listAllBoards(db, worldId),
+    listAllHandouts(db, worldId),
+  ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
   for (const link of tagLinks) {
@@ -141,5 +152,6 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     gallery,
     rollTables: rollTableList,
     plotBoards,
+    handouts: handoutList,
   };
 }

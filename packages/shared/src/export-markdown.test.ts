@@ -226,6 +226,21 @@ function world(): WorldExport {
         updatedAt: '',
       },
     ],
+    handouts: [
+      {
+        id: 'h1',
+        title: 'The map scrap',
+        body: 'Follow the river.',
+        visibility: 'player',
+        revealedAt: '2026-01-01T00:00:00.000Z',
+        hasImage: true,
+        imageWidth: 100,
+        imageHeight: 100,
+        imageVersion: 1,
+        createdAt: '',
+        updatedAt: '',
+      },
+    ],
     plotBoards: [
       {
         id: 'pb1',
@@ -469,6 +484,13 @@ describe('worldToMarkdown', () => {
     expect(aerth).toContain('(GM notes: The cult meets here. Trap on the door.)');
   });
 
+  it('lists handouts with who can see them', () => {
+    const note = byPath(worldToMarkdown(world())).get('aerth/Handouts.md')!;
+    expect(note).toContain('## The map scrap');
+    expect(note).toContain('Visible to: player (has a picture, not included)');
+    expect(note).toContain('Follow the river.');
+  });
+
   it('writes a timeline in date order, grouped by year', () => {
     const timeline = byPath(worldToMarkdown(world())).get('aerth/Timeline.md')!;
     expect(timeline).toContain(
@@ -524,6 +546,7 @@ describe('worldToMarkdown', () => {
       gallery: [],
       rollTables: [],
       plotBoards: [],
+      handouts: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)
