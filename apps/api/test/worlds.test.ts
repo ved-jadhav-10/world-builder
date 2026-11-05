@@ -64,6 +64,10 @@ describe('worlds', () => {
       'quest',
       'session',
       'lore_article',
+      'religion',
+      'language',
+      'system',
+      'glossary_term',
     ]);
     expect(types.every((t) => t.isBuiltin && t.entityCount === 0)).toBe(true);
 

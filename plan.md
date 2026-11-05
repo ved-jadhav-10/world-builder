@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 18 are built, tested and on `main`; M2 to M18 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 19 are built, tested and on `main`; M2 to M19 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -378,6 +378,14 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - a cover image, and running the output through EPUBCheck
   - PDF and a story-bible export, front and back matter, footnotes
   - choosing the language of the book (it is always `en`)
+
+## Milestone 19 (More built-in types): done
+
+- **Four new built-in entry types** with ready-made fields, the same as a type a person adds themselves but present from the start: **Religion** (kind, deities, beliefs, practices, holy sites, clergy, followers), **Language** (status, spoken by, family, script, sounds, grammar, sample phrases), **Magic or Tech System** (kind, source, how it works, limits and costs, who can use it, ruling notes) and **Glossary Term** (pronunciation, category, meaning, used by). Each names its own two dates (Founded and Ended, Emerged and Died out, Discovered and Lost, Coined and Fell out of use).
+- **Existing worlds get them too:** migration 0014 is generated from the same definitions (so the two cannot drift) and inserts each type into every world that does not already have one with that key, after that world's last type. Run against the 73 worlds in the development database it added each type once to every world with no repeated sort order. A custom type a person already made with one of these keys is left alone.
+- **Web:** two more icons (`languages`, `book-a`) are offered for types. Everything else, from the sidebar to the entry page, follows from a type being data.
+- **Tests:** a new world starts with the types in a fixed order; entries of each type take and validate their fields; one world's edits to a type don't touch another's. Two tests that counted the built-in types were updated. Chrome: the sidebar lists them and a Religion entry opens with its fields and saves.
+- **Deferred:** a world's own "template" of types to copy into new worlds, and entry templates (both in the saved filters and templates item).
 
 ## Roadmap: what's left
 

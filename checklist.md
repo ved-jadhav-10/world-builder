@@ -28,7 +28,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Mass edit:** bulk visibility, tag and trash from a type's list (M16). Still to do: moving entries between types, and bulk edit from search results [MVP].
 - [ ] **To-do lists** [MVP].
 - [ ] **Saved filters, entry templates and world templates** [MVP].
-- [ ] **More built-in types:** Religion, Language, Magic or Tech System and Glossary [v1]. Users can already add any of these as their own type; the built-ins would come with ready-made fields.
+- [x] **More built-in types:** Religion, Language, Magic or Tech System and Glossary Term, with ready-made fields, added to new and existing worlds (M19).
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].
 - [ ] **Arc tracker** showing how traits and relationships change across chapters, powered by progressions [v1].
 - [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
