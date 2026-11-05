@@ -2,6 +2,7 @@ import {
   CalendarRange,
   ChevronLeft,
   ClipboardList,
+  ListChecks,
   Dices,
   FileImage,
   Images,
@@ -125,6 +126,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards
+            </NavLink>
+            <NavLink to={`${base}/todos`} className={navItem}>
+              <ListChecks /> To-do
             </NavLink>
             <NavLink to={`${base}/continuity`} className={navItem}>
               <ShieldCheck /> Continuity

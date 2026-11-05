@@ -241,6 +241,28 @@ function world(): WorldExport {
         updatedAt: '',
       },
     ],
+    todos: [
+      {
+        id: 't1',
+        title: 'Rename the harbour',
+        notes: 'Too\nsimilar to Havenmouth.',
+        done: false,
+        doneAt: null,
+        entity: { id: 'e1', name: 'Port Ardel', typeId: 'ty1' },
+        createdAt: '',
+        updatedAt: '',
+      },
+      {
+        id: 't2',
+        title: 'Draw the north coast',
+        notes: '',
+        done: true,
+        doneAt: '2026-01-02T00:00:00.000Z',
+        entity: null,
+        createdAt: '',
+        updatedAt: '',
+      },
+    ],
     plotBoards: [
       {
         id: 'pb1',
@@ -491,6 +513,12 @@ describe('worldToMarkdown', () => {
     expect(note).toContain('Follow the river.');
   });
 
+  it('writes the to-do list as a checklist', () => {
+    const note = byPath(worldToMarkdown(world())).get('aerth/To-do.md')!;
+    expect(note).toContain('- [ ] Rename the harbour (Port Ardel) — Too similar to Havenmouth.');
+    expect(note).toContain('- [x] Draw the north coast');
+  });
+
   it('writes a timeline in date order, grouped by year', () => {
     const timeline = byPath(worldToMarkdown(world())).get('aerth/Timeline.md')!;
     expect(timeline).toContain(
@@ -547,6 +575,7 @@ describe('worldToMarkdown', () => {
       rollTables: [],
       plotBoards: [],
       handouts: [],
+      todos: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)

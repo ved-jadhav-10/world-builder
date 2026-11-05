@@ -13,6 +13,7 @@ import { calendarRoutes } from './modules/calendar/routes';
 import { continuityRoutes } from './modules/continuity/routes';
 import { revisionRoutes } from './modules/revisions/routes';
 import { handoutRoutes } from './modules/handouts/routes';
+import { todoRoutes } from './modules/todos/routes';
 import { writingRoutes } from './modules/writing/routes';
 import { entityRoutes } from './modules/entities/routes';
 import { entityTypeRoutes } from './modules/entity-types/routes';
@@ -58,6 +59,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(revisionRoutes);
   await app.register(writingRoutes);
   await app.register(handoutRoutes);
+  await app.register(todoRoutes);
   await app.register(plotRoutes);
   await app.register(graphRoutes);
   await app.register(gmScreenRoutes);

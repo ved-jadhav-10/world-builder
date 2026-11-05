@@ -138,6 +138,8 @@ export interface WorldExport {
   plotBoards: PlotBoard[];
   /** Handout texts and titles; the pictures are not included. */
   handouts: Handout[];
+  /** The to-do list, open tasks first. */
+  todos: Todo[];
 }
 
 export interface ApiErrorBody {
@@ -626,6 +628,19 @@ export interface Handout {
   imageHeight: number | null;
   /** Goes up when the picture changes, so browsers fetch the new one. */
   imageVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One thing to do in a world: write a scene, fix a map, decide a name. */
+export interface Todo {
+  id: string;
+  title: string;
+  notes: string;
+  done: boolean;
+  doneAt: string | null;
+  /** The entry the task is about, if any; null once that entry is gone. */
+  entity: { id: string; name: string; typeId: string } | null;
   createdAt: string;
   updatedAt: string;
 }

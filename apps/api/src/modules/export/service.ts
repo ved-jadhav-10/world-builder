@@ -17,6 +17,7 @@ import { getSavedCalendar } from '../calendar/service';
 import { listWorldImages } from '../gallery/service';
 import { listAllHandouts } from '../handouts/service';
 import { getSceneBodies, listTree } from '../manuscript/service';
+import { listTodos } from '../todos/service';
 import { listWorldProgressions } from '../progressions/service';
 import { listAllBoards } from '../plot/service';
 import { listAllTables } from '../tables/service';
@@ -73,6 +74,7 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     rollTableList,
     plotBoards,
     handoutList,
+    todoList,
   ] = await Promise.all([
     listTree(db, worldId),
     getSceneBodies(db, worldId),
@@ -83,6 +85,7 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     listAllTables(db, worldId),
     listAllBoards(db, worldId),
     listAllHandouts(db, worldId),
+    listTodos(db, worldId),
   ]);
 
   const tagIdsByEntity = new Map<string, string[]>();
@@ -153,5 +156,6 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
     rollTables: rollTableList,
     plotBoards,
     handouts: handoutList,
+    todos: todoList,
   };
 }

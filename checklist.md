@@ -26,7 +26,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 - [ ] **Series codex:** entries shared across books, or scoped per book or per series [MVP].
 - [x] **Mass edit:** bulk visibility, tag and trash from a type's list (M16). Still to do: moving entries between types, and bulk edit from search results [MVP].
-- [ ] **To-do lists** [MVP].
+- [x] **To-do lists:** a world to-do list for the GM and editors; a task can point at an entry (M21). Still to do: due dates, priorities and manual ordering [MVP].
 - [ ] **Saved filters, entry templates and world templates** [MVP].
 - [x] **More built-in types:** Religion, Language, Magic or Tech System and Glossary Term, with ready-made fields, added to new and existing worlds (M19).
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].

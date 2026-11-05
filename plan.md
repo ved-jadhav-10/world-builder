@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 20 are built, tested and on `main`; M2 to M20 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 21 are built, tested and on `main`; M2 to M21 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -399,6 +399,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - instant delivery by server-sent events or websockets instead of polling
   - revealing in the middle of a session from the Sessions page or GM screen, handouts tied to a scene, entry or map pin, and a "show on the table" full-screen view
   - several pictures or rich text per handout, and per-player handouts
+
+## Milestone 21 (To-do lists): done
+
+- **Data:** a `todos` table (title up to 200 characters, notes up to 2,000, done and when it was finished, and an optional link to an entry that is cleared if that entry is deleted for good). A world holds up to 500 to-dos; adding more is refused with a message to clear finished ones.
+- **Access:** the list is the working side of a world, so like the manuscript it is for the GM and editors: players, readers and the player preview get 403. A task can only point at a live entry of the same world; an entry in the trash reads as no link and the link comes back when it is restored.
+- **Behaviour:** open tasks are listed oldest first, finished ones after, latest finished on top. Ticking a finished task again keeps its original finish time. "Clear finished" removes every finished task at once. To-dos are in the JSON export and in the Markdown export as `To-do.md`, a checklist.
+- **Web:** a To-do page in the sidebar (GM only) with a quick-add row, an optional "About an entry" picker, open and finished sections, an entry chip that opens the entry, an edit dialog (title, notes, entry) and delete.
+- **Verified in Chrome** (scripted, 9 steps): empty state, adding with and without an entry, ticking and unticking, editing and unlinking, opening the entry from its chip, clearing finished and deleting, the player having no link and a 403, and a phone-sized page.
+- **Deferred:** due dates and priorities, manual ordering, to-dos shown on an entry's own page, to-dos tied to a scene or map pin, and recurring tasks.
 
 ## Roadmap: what's left
 

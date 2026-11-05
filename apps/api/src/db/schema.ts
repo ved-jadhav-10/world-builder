@@ -767,3 +767,23 @@ export const handouts = pgTable(
   },
   (t) => [index('handouts_world_idx').on(t.worldId, t.revealedAt)],
 );
+
+/** A task on the world's to-do list, optionally about one entry. */
+export const todos = pgTable(
+  'todos',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    notes: text('notes').notNull().default(''),
+    done: boolean('done').notNull().default(false),
+    doneAt: timestamp('done_at', { withTimezone: true }),
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'set null' }),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('todos_world_idx').on(t.worldId, t.done, t.createdAt)],
+);

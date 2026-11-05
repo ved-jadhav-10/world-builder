@@ -400,6 +400,16 @@ export function worldToMarkdown(
     add('Handouts.md', `# Handouts\n\n${notes.join('\n\n')}\n`);
   }
 
+  // ---- To-do ----
+  if (data.todos.length > 0) {
+    const line = (t: (typeof data.todos)[number]) => {
+      const about = t.entity ? ` (${t.entity.name})` : '';
+      const notes = t.notes ? ` — ${t.notes.replace(/\s+/g, ' ')}` : '';
+      return `- [${t.done ? 'x' : ' '}] ${t.title}${about}${notes}`;
+    };
+    add('To-do.md', `# To-do\n\n${data.todos.map(line).join('\n')}\n`);
+  }
+
   // ---- Calendar ----
   {
     const cal = calendar;
