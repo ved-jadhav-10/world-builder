@@ -34,3 +34,4 @@ export * from './plot-templates';
 export * from './plot-board';
 export * from './continuity';
 export * from './schemas/continuity';
+export * from './map-tools';

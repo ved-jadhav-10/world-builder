@@ -6,6 +6,9 @@ import {
   featureCreateSchema,
   featureParamsSchema,
   featureUpdateSchema,
+  layerCreateSchema,
+  layerParamsSchema,
+  layerUpdateSchema,
   MAX_MAP_BYTES,
   mapCreateSchema,
   mapItemParamsSchema,
@@ -19,18 +22,23 @@ import { receiveUpload } from '../../lib/upload';
 import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import {
   createFeature,
+  createLayer,
   createMap,
   deleteFeature,
+  deleteLayer,
   deleteMap,
   getMap,
   listEntityMapLinks,
   listFeatures,
+  listLayers,
   listMaps,
   readThumbnail,
   readTile,
+  replaceMapImage,
   retryTiling,
   searchAtlas,
   updateFeature,
+  updateLayer,
   updateMap,
 } from './service';
 import { inspectImage } from './tiling';
@@ -89,6 +97,30 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request, reply) => {
       await deleteMap(db, currentWorldId(request), request.params.id);
       return reply.status(204).send();
+    },
+  );
+
+  app.post(
+    '/maps/:id/image',
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: mapItemParamsSchema },
+      config: limits.upload,
+    },
+    async (request) => {
+      const upload = await receiveUpload(request, MAX_MAP_BYTES);
+      try {
+        const size = await inspectImage(upload.imagePath);
+        return await replaceMapImage(
+          db,
+          currentWorldId(request),
+          request.params.id,
+          { path: upload.imagePath, ...size },
+          request.log,
+        );
+      } finally {
+        await rm(upload.imagePath, { force: true });
+      }
     },
   );
 
@@ -178,6 +210,47 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     { onRequest: requireRole('editor'), schema: { params: featureParamsSchema } },
     async (request, reply) => {
       await deleteFeature(db, currentWorldId(request), request.params.id, request.params.featureId);
+      return reply.status(204).send();
+    },
+  );
+
+  app.get('/maps/:id/layers', { schema: { params: mapItemParamsSchema } }, async (request) =>
+    listLayers(db, currentWorldId(request), request.params.id, currentAudience(request)),
+  );
+
+  app.post(
+    '/maps/:id/layers',
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: mapItemParamsSchema, body: layerCreateSchema },
+    },
+    async (request, reply) => {
+      const layer = await createLayer(db, currentWorldId(request), request.params.id, request.body);
+      return reply.status(201).send(layer);
+    },
+  );
+
+  app.patch(
+    '/maps/:id/layers/:layerId',
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: layerParamsSchema, body: layerUpdateSchema },
+    },
+    async (request) =>
+      updateLayer(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        request.params.layerId,
+        request.body,
+      ),
+  );
+
+  app.delete(
+    '/maps/:id/layers/:layerId',
+    { onRequest: requireRole('editor'), schema: { params: layerParamsSchema } },
+    async (request, reply) => {
+      await deleteLayer(db, currentWorldId(request), request.params.id, request.params.layerId);
       return reply.status(204).send();
     },
   );

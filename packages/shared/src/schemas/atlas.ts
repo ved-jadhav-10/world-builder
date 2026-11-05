@@ -53,6 +53,19 @@ const optionalId = z.preprocess(
   idSchema.nullable(),
 );
 
+/** How big a map is in the world, and how fast people cross it. */
+export const travelModeSchema = z.object({
+  name: z.string().trim().min(1, 'Name the way of travelling').max(24),
+  perDay: z.number().positive('Must be more than zero').max(1_000_000),
+});
+
+export const mapScaleSchema = z.object({
+  /** How many units the full width of the map covers. */
+  width: z.number().positive('Must be more than zero').max(10_000_000),
+  unit: z.string().trim().min(1, 'Name the unit').max(12),
+  modes: z.array(travelModeSchema).max(8),
+});
+
 const mapNameSchema = z.string().trim().min(1, 'Name is required').max(120);
 const mapDescriptionSchema = z.string().trim().max(2000);
 
@@ -75,6 +88,8 @@ export const mapUpdateSchema = z.object({
   parentId: idSchema.nullable().optional(),
   entityId: idSchema.nullable().optional(),
   visibility: visibilitySchema.optional(),
+  /** Null removes the scale (and with it distances and travel times). */
+  scale: mapScaleSchema.nullable().optional(),
 });
 export type MapUpdateInput = z.input<typeof mapUpdateSchema>;
 
@@ -104,8 +119,28 @@ export function pointCountProblem(kind: FeatureKind, points: readonly unknown[])
   return `A ${FEATURE_KIND_LABELS[kind].toLowerCase()} takes ${noun}`;
 }
 
+const layerNameSchema = z.string().trim().min(1, 'Name is required').max(60);
+
+export const layerCreateSchema = z.object({
+  name: layerNameSchema,
+  /** Whether the layer is switched on when the map opens. */
+  visibleByDefault: z.boolean().default(true),
+});
+export type LayerCreateInput = z.input<typeof layerCreateSchema>;
+
+export const layerUpdateSchema = z.object({
+  name: layerNameSchema.optional(),
+  visibleByDefault: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).max(10_000).optional(),
+});
+export type LayerUpdateInput = z.input<typeof layerUpdateSchema>;
+
+export const layerParamsSchema = z.object({ worldId: idSchema, id: idSchema, layerId: idSchema });
+
 const featureLabelSchema = z.string().trim().max(120);
 const featureNotesSchema = z.string().trim().max(5000);
+/** Prep notes for the GM; nobody else is sent them. */
+const featureGmNotesSchema = z.string().trim().max(5000);
 
 export const featureCreateSchema = z
   .object({
@@ -113,6 +148,8 @@ export const featureCreateSchema = z
     points: z.array(pointSchema).min(1).max(500),
     label: featureLabelSchema.default(''),
     notes: featureNotesSchema.default(''),
+    gmNotes: featureGmNotesSchema.default(''),
+    layerId: idSchema.nullable().default(null),
     entityId: idSchema.nullable().default(null),
     /** Another map this feature opens. */
     linkMapId: idSchema.nullable().default(null),
@@ -139,6 +176,8 @@ export const featureUpdateSchema = z.object({
   points: z.array(pointSchema).min(1).max(500).optional(),
   label: featureLabelSchema.optional(),
   notes: featureNotesSchema.optional(),
+  gmNotes: featureGmNotesSchema.optional(),
+  layerId: idSchema.nullable().optional(),
   entityId: idSchema.nullable().optional(),
   linkMapId: idSchema.nullable().optional(),
   icon: iconSchema.nullable().optional(),

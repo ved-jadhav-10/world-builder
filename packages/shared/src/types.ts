@@ -2,6 +2,7 @@ import type { ContinuityFinding } from './continuity';
 import type { GmWidget } from './schemas/gm-screen';
 import type { DiceResult } from './dice';
 import type { TableRollResult } from './tables';
+import type { MapScale } from './map-tools';
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
 import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
@@ -123,7 +124,7 @@ export interface WorldExport {
   /** Book > part > chapter > scene, flat with parent links; scenes include their text. */
   manuscript: (ManuscriptNode & { body: RichTextDoc | null })[];
   /** Map details and everything drawn on them. The map images themselves are not included. */
-  atlas: { maps: AtlasMap[]; features: MapFeature[] };
+  atlas: { maps: AtlasMap[]; features: MapFeature[]; layers: MapLayer[] };
   /** The world's calendar, or null if it still uses the default one. */
   calendar: { name: string; definition: CalendarDef } | null;
   progressions: Progression[];
@@ -207,6 +208,10 @@ export interface AtlasMap {
   error: string;
   width: number;
   height: number;
+  /** Goes up each time the image is replaced, so browsers fetch the new tiles. */
+  imageVersion: number;
+  /** What a distance on this map means; null until the GM sets one. */
+  scale: MapScale | null;
   /** The entry this map shows, such as the Location it covers. */
   entityId: string | null;
   entity: MapEntityRef | null;
@@ -224,6 +229,10 @@ export interface MapFeature {
   points: MapPoint[];
   label: string;
   notes: string;
+  /** Prep notes; always empty for anyone but the GM. */
+  gmNotes: string;
+  /** The layer this belongs to, or null for the base map. */
+  layerId: string | null;
   entityId: string | null;
   entity: MapEntityRef | null;
   /** Another map this feature opens. */
@@ -236,6 +245,15 @@ export interface MapFeature {
   minZoom: number;
   visibility: Visibility;
   updatedAt: string;
+}
+
+/** A named group of pins, paths and regions on one map that can be switched on and off. */
+export interface MapLayer {
+  id: string;
+  mapId: string;
+  name: string;
+  visibleByDefault: boolean;
+  sortOrder: number;
 }
 
 /** Where an entry shows up in the Atlas. */

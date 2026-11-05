@@ -78,6 +78,13 @@
       "when": 1793886832270,
       "tag": "0010_continuity",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793888121908,
+      "tag": "0011_atlas_upgrades",
+      "breakpoints": true
     }
   ]
 }

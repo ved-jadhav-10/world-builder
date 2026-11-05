@@ -24,12 +24,15 @@ import {
   type featureUpdateSchema,
   type MapEntityRef,
   type MapFeature,
+  type MapLayer,
+  type layerCreateSchema,
+  type layerUpdateSchema,
   type mapCreateSchema,
   type MapPoint,
   type mapUpdateSchema,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities, mapFeatures, maps } from '../../db/schema';
+import { entities, mapFeatures, mapLayers, maps } from '../../db/schema';
 import { badRequest, conflict, notFound } from '../../errors';
 import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
@@ -105,6 +108,8 @@ function toMap(
     error: map.error,
     width: map.width,
     height: map.height,
+    imageVersion: map.imageVersion,
+    scale: map.scale,
     entityId: view ? (entity?.id ?? null) : map.entityId,
     entity,
     visibility: map.visibility,
@@ -237,6 +242,38 @@ export async function deleteMap(db: DbOrTx, worldId: string, mapId: string): Pro
   await removeMapFiles(worldId, existing.id);
 }
 
+/**
+ * Swaps in a new image for a map. Pins, paths and regions stay where they are as fractions of
+ * the map, so a new image of the same shape lines up, and one of a different shape stretches them.
+ */
+export async function replaceMapImage(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  image: { path: string; width: number; height: number },
+  log: TilingLog,
+): Promise<AtlasMap> {
+  const existing = await getMapRow(db, worldId, mapId);
+  if (existing.status === 'processing') {
+    throw conflict('This map is still being prepared. Try again once it has finished.');
+  }
+  await mkdir(mapDir(worldId, mapId), { recursive: true });
+  await rename(image.path, originalPath(worldId, mapId));
+  await db
+    .update(maps)
+    .set({
+      width: image.width,
+      height: image.height,
+      imageVersion: sql`${maps.imageVersion} + 1`,
+      status: 'processing',
+      error: '',
+    })
+    .where(eq(maps.id, existing.id));
+  const replaced = await getMap(db, worldId, mapId);
+  enqueueTiling(existing.id, log);
+  return replaced;
+}
+
 /** Tries the tiling again for a map where it failed. */
 export async function retryTiling(
   db: DbOrTx,
@@ -339,6 +376,9 @@ function toFeature(
     points: feature.points,
     label: feature.label,
     notes: feature.notes,
+    // Prep notes never leave the GM's own views (only the GM gets a feature without `linkable`).
+    gmNotes: linkable ? '' : feature.gmNotes,
+    layerId: feature.layerId,
     entityId: linkable ? (entity?.id ?? null) : feature.entityId,
     entity,
     linkMapId:
@@ -392,8 +432,9 @@ async function assertFeatureLinks(
   db: DbOrTx,
   worldId: string,
   mapId: string,
-  links: { entityId?: string | null; linkMapId?: string | null },
+  links: { entityId?: string | null; linkMapId?: string | null; layerId?: string | null },
 ) {
+  if (links.layerId) await getLayerRow(db, worldId, mapId, links.layerId);
   if (links.entityId) await getEntityRow(db, worldId, links.entityId);
   if (links.linkMapId) {
     if (links.linkMapId === mapId) throw badRequest("A map can't link to itself");
@@ -447,6 +488,109 @@ export async function deleteFeature(
 ): Promise<void> {
   const existing = await getFeature(db, worldId, mapId, featureId);
   await db.delete(mapFeatures).where(eq(mapFeatures.id, existing.id));
+}
+
+// ---- Layers ---------------------------------------------------------------
+
+const MAX_LAYERS_PER_MAP = 20;
+
+type LayerRow = typeof mapLayers.$inferSelect;
+
+const toLayer = (row: LayerRow): MapLayer => ({
+  id: row.id,
+  mapId: row.mapId,
+  name: row.name,
+  visibleByDefault: row.visibleByDefault,
+  sortOrder: row.sortOrder,
+});
+
+async function getLayerRow(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  layerId: string,
+): Promise<LayerRow> {
+  const [row] = await db
+    .select()
+    .from(mapLayers)
+    .where(
+      and(eq(mapLayers.id, layerId), eq(mapLayers.mapId, mapId), eq(mapLayers.worldId, worldId)),
+    );
+  if (!row) throw notFound('Layer');
+  return row;
+}
+
+/**
+ * A map's layers in order. Other audiences only get layers that hold something they can see,
+ * so the name of a secret layer does not leak.
+ */
+export async function listLayers(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  audience: Audience = 'gm',
+): Promise<MapLayer[]> {
+  await getMapRow(db, worldId, mapId, audience);
+  const rows = await db
+    .select()
+    .from(mapLayers)
+    .where(and(eq(mapLayers.mapId, mapId), eq(mapLayers.worldId, worldId)))
+    .orderBy(asc(mapLayers.sortOrder), asc(mapLayers.createdAt));
+  if (audience === 'gm') return rows.map(toLayer);
+  const used = new Set(
+    (await listFeatures(db, worldId, mapId, audience)).map((feature) => feature.layerId),
+  );
+  return rows.filter((row) => used.has(row.id)).map(toLayer);
+}
+
+export async function createLayer(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  input: z.output<typeof layerCreateSchema>,
+): Promise<MapLayer> {
+  await getMapRow(db, worldId, mapId);
+  const existing = await db
+    .select({ sortOrder: mapLayers.sortOrder })
+    .from(mapLayers)
+    .where(eq(mapLayers.mapId, mapId));
+  if (existing.length >= MAX_LAYERS_PER_MAP) {
+    throw badRequest(`A map can have up to ${MAX_LAYERS_PER_MAP} layers`);
+  }
+  const sortOrder = existing.reduce((top, row) => Math.max(top, row.sortOrder), -1) + 1;
+  const [row] = await db
+    .insert(mapLayers)
+    .values({ ...input, worldId, mapId, sortOrder })
+    .returning();
+  return toLayer(row!);
+}
+
+export async function updateLayer(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  layerId: string,
+  input: z.output<typeof layerUpdateSchema>,
+): Promise<MapLayer> {
+  const existing = await getLayerRow(db, worldId, mapId, layerId);
+  if (Object.keys(input).length === 0) return toLayer(existing);
+  const [row] = await db
+    .update(mapLayers)
+    .set(input)
+    .where(eq(mapLayers.id, existing.id))
+    .returning();
+  return toLayer(row!);
+}
+
+/** Removes a layer; what was on it goes back to the base map. */
+export async function deleteLayer(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  layerId: string,
+): Promise<void> {
+  const existing = await getLayerRow(db, worldId, mapId, layerId);
+  await db.delete(mapLayers).where(eq(mapLayers.id, existing.id));
 }
 
 // ---- Entries, search, export ----------------------------------------------
@@ -574,9 +718,18 @@ export async function searchAtlas(
 
 /** Every map and everything on it, for the world export. */
 export async function exportAtlas(db: DbOrTx, worldId: string) {
-  const [mapList, featureRows] = await Promise.all([
+  const [mapList, featureRows, layerRows] = await Promise.all([
     listMaps(db, worldId),
     selectFeatures(db).where(eq(mapFeatures.worldId, worldId)).orderBy(asc(mapFeatures.createdAt)),
+    db
+      .select()
+      .from(mapLayers)
+      .where(eq(mapLayers.worldId, worldId))
+      .orderBy(asc(mapLayers.sortOrder), asc(mapLayers.createdAt)),
   ]);
-  return { maps: mapList, features: featureRows.map((row) => toFeature(row)) };
+  return {
+    maps: mapList,
+    features: featureRows.map((row) => toFeature(row)),
+    layers: layerRows.map(toLayer),
+  };
 }

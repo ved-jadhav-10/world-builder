@@ -29,6 +29,7 @@ import {
   type FieldDefinition,
   type GmWidget,
   type MapPoint,
+  type MapScale,
   type ProgressionChanges,
   type RichTextDoc,
 } from '@atlas/shared';
@@ -329,6 +330,10 @@ export const maps = pgTable(
     error: text('error').notNull().default(''),
     width: integer('width').notNull(),
     height: integer('height').notNull(),
+    /** Goes up when the image is replaced; tile URLs carry it so browsers drop old tiles. */
+    imageVersion: integer('image_version').notNull().default(1),
+    /** Distance scale and travel paces; null until the GM sets one. */
+    scale: jsonb('scale').$type<MapScale>(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -337,6 +342,25 @@ export const maps = pgTable(
     index('maps_parent_idx').on(t.parentId),
     index('maps_entity_idx').on(t.entityId),
   ],
+);
+
+/** A named group of features on one map (political, trade routes…) that can be switched off. */
+export const mapLayers = pgTable(
+  'map_layers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    mapId: uuid('map_id')
+      .notNull()
+      .references(() => maps.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    visibleByDefault: boolean('visible_by_default').notNull().default(true),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('map_layers_map_idx').on(t.mapId)],
 );
 
 /** Pins, labels, paths and regions drawn on a map. Points are fractions of the map's size. */
@@ -354,6 +378,10 @@ export const mapFeatures = pgTable(
     points: jsonb('points').$type<MapPoint[]>().notNull(),
     label: text('label').notNull().default(''),
     notes: text('notes').notNull().default(''),
+    /** Prep notes only the GM is ever sent. */
+    gmNotes: text('gm_notes').notNull().default(''),
+    // Deleting a layer puts its features back on the base map rather than deleting them.
+    layerId: uuid('layer_id').references(() => mapLayers.id, { onDelete: 'set null' }),
     entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'set null' }),
     linkMapId: uuid('link_map_id').references(() => maps.id, { onDelete: 'set null' }),
     /** Null = take the linked entry's icon and colour. */
@@ -370,6 +398,7 @@ export const mapFeatures = pgTable(
     index('map_features_map_idx').on(t.mapId),
     index('map_features_world_idx').on(t.worldId),
     index('map_features_entity_idx').on(t.entityId),
+    index('map_features_layer_idx').on(t.layerId),
   ],
 );
 
