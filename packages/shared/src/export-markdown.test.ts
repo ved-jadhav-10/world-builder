@@ -242,6 +242,7 @@ function world(): WorldExport {
       },
     ],
     entryTemplates: [],
+    comments: [],
     todos: [
       {
         id: 't1',
@@ -578,6 +579,7 @@ describe('worldToMarkdown', () => {
       handouts: [],
       todos: [],
       entryTemplates: [],
+      comments: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)

@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ClipboardList,
   ListChecks,
+  MessageSquare,
   Dices,
   FileImage,
   Images,
@@ -23,6 +24,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { hasRole } from '@atlas/shared';
 import { useMemo, useState } from 'react';
 import { HandoutAlert } from '@/components/handout-alert';
 import { SprintRunner } from '@/components/sprint-runner';
@@ -82,6 +84,8 @@ function LeaveWorld({ ctx }: { ctx: WorldContextValue }) {
 
 function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => void }) {
   const { world, types, base, canEdit, audience } = ctx;
+  // Comments are for the owner, co-GMs and commenters, and never shown in a preview.
+  const canComment = hasRole(world.role, 'commenter') && !ctx.previewing;
   // Only someone who can edit has a GM view to switch away from (and back to).
   const isGm = world.role === 'owner' || world.role === 'editor';
   return (
@@ -134,6 +138,11 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
               <ShieldCheck /> Continuity
             </NavLink>
           </>
+        ) : null}
+        {canComment ? (
+          <NavLink to={`${base}/comments`} className={navItem}>
+            <MessageSquare /> Comments
+          </NavLink>
         ) : null}
         <NavLink to={`${base}/timeline`} className={navItem}>
           <CalendarRange /> Timeline

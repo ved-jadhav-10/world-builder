@@ -34,7 +34,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
 - [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
 - [x] **Version history** per entry and per scene with a word-level comparison, named versions and restore (M14). Still to do: history for chapters and other records, and partial restore [v1].
-- [ ] **Comments** on entries and scenes [v1].
+- [x] **Comments** on entries and scenes, with replies, resolving and a comments page (M23). Still to do: notifications and mentions, comments on a passage of text [v1].
 - [x] **Goals, streaks and timed sprints:** a daily goal, a manuscript target and deadline, streaks, a heatmap and a sprint timer (M15).
 - [ ] **Overused-word tracking** and **style and genre guide entries** [v1].
 - [ ] **Manuscript drag-and-drop reordering** (moves are menu-based today; deferred in M2).
@@ -76,7 +76,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 - [ ] **Hand over ownership**, and several owners.
 - [ ] **Inviting by name** (looking up an existing user); a notice when someone joins; an audit trail of who joined with which link. (Emailing an invite link shipped in M7.)
-- [ ] **Comments for the `commenter` role** (the role exists but has no features of its own yet) [v1].
+- [x] **Comments for the `commenter` role:** commenters can be invited and comment on what readers can see (M23).
 - [ ] **Player journals and posts**, so players add their own notes to entries [v1]; discussion boards [v2].
 - [ ] **Mobile companion** for character sheets and handouts [v2].
 - [ ] **Shared content library** across a party [v3].

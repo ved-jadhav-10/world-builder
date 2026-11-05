@@ -91,7 +91,6 @@ describe('making invite links', () => {
     const t = await build();
     for (const body of [
       { role: 'owner' },
-      { role: 'commenter' },
       { role: 'player', maxUses: 0 },
       { role: 'player', expiresInDays: 0 },
       { role: 'player', label: 'x'.repeat(81) },
@@ -102,6 +101,16 @@ describe('making invite links', () => {
         JSON.stringify(body),
       ).toBe(400);
     }
+  });
+
+  it('can make a commenter link, which joins people as commenters who read what readers read', async () => {
+    const t = await build();
+    const created = await t.invite({ role: 'commenter' });
+    const joiner = await signUp(app);
+    expect((await joiner.api.post(`/invites/${created.token}/accept`)).statusCode).toBe(200);
+    expect(await visibleNames(joiner.api, t.gm.w)).toEqual(['Open Hero']);
+    const members = (await t.gm.api.get(`${t.gm.w}/members`)).json<{ role: string }[]>();
+    expect(members.map((m) => m.role).sort()).toEqual(['commenter', 'owner']);
   });
 
   it('can be cancelled, after which the link stops working', async () => {

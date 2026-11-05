@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 22 are built, tested and on `main`; M2 to M22 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 23 are built, tested and on `main`; M2 to M23 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -419,6 +419,18 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - **world templates** (starting a new world from a ready-made or saved world)
   - renaming a template or a filter, replacing a template's content from an entry, tag copying and starter relationships in templates
   - filters across all types, text filters and sharing a saved filter with the world
+
+## Milestone 23 (Comments): done
+
+- **Data:** a `comments` table: on an entry or a scene (a check constraint allows exactly one), an optional parent for replies (threads are one level deep), the author, the text (plain, up to 4,000 characters), `resolved_at` on a thread's first comment, and `edited_at`. Comments go with their entry or scene; a trashed entry's comments wait for it and come back on restore. Up to 500 per entry or scene. All comments are in the JSON export as `comments`.
+- **Who:** comments are for the people working on the world: the owner, co-GMs and the **commenter** role, which can now be invited (it was held back until it had a feature). Players, readers and a GM previewing as one get 403, and the UI hides everything. A commenter sees and comments only on what readers can see (never GM-only or player-only entries); scene comments are for the GM side, since the manuscript is.
+- **Rules:** you can edit only your own comments (marked "edited" when the words change); you can remove your own, and the owner and co-GMs can remove anyone's (removing a thread's first comment removes its replies); a thread can be resolved or reopened by its author or a co-GM; a reply must answer a thread's first comment, on the same entry.
+- **Web:** a Comments button with an open-thread count on every entry page (for commenters too) and on the scene toolbar, opening a dialog with threads, replies, edit, delete, resolve and reopen, and "Show resolved"; a **Comments** page in the sidebar listing every thread in the world (Open, Resolved, All) with what it is about, the first words, the author, replies and a link.
+- **Two bugs the check turned up, fixed:**
+  - Dialogs opened from an entry page bubbled their form submit up to the entry's own save form (React portals), so writing a comment also tried to save the entry, and a commenter saw a permission error. The entry form now ignores submits that did not come from itself. This also stopped a silent extra save when saving a template.
+  - Every non-GM viewer's entry page asked for the manuscript tree (for the "as of" control) and was refused. Only the GM asks now, and previews skip it and comments too.
+- **Verified in Chrome** (scripted, 10 steps, GM plus a commenter and a player in their own sessions, and every 4xx or 5xx on a page counted as a failure): starting a thread, a commenter replying and editing only their own words, the GM resolving, the comments page and its links, a commenter's list leaving out GM-only and scene threads, the player having nothing, a reader preview hiding it, the scene button, and a phone-sized dialog.
+- **Deferred:** notifications and mentions of people, comments on a selected passage of text, on maps, pins and other things, reactions, a "waiting on me" filter, and beta readers commenting on scenes (which needs manuscript sharing, F).
 
 ## Roadmap: what's left
 

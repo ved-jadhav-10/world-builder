@@ -142,6 +142,8 @@ export interface WorldExport {
   todos: Todo[];
   /** Entry templates; saved filters are personal and stay out. */
   entryTemplates: EntryTemplate[];
+  /** Every comment, flat; replies name their thread. */
+  comments: Comment[];
 }
 
 export interface ApiErrorBody {
@@ -667,4 +669,33 @@ export interface SavedFilter {
   tagId: string | null;
   visibility: Visibility | null;
   sort: EntitySort;
+}
+
+/** A remark on an entry or a scene. A reply names the comment that starts its thread. */
+export interface Comment {
+  id: string;
+  /** Null for a comment that starts a thread. */
+  parentId: string | null;
+  /** Exactly one of these is set. */
+  entityId: string | null;
+  nodeId: string | null;
+  /** Null once that person has left. */
+  author: { id: string; name: string } | null;
+  body: string;
+  /** Set on the comment that starts a thread once it is marked as dealt with. */
+  resolvedAt: string | null;
+  editedAt: string | null;
+  createdAt: string;
+}
+
+export interface CommentThread {
+  comment: Comment;
+  replies: Comment[];
+}
+
+/** A thread as the world's comment inbox lists it, with what it is about. */
+export interface InboxThread {
+  comment: Comment;
+  replyCount: number;
+  subject: { kind: 'entity' | 'scene'; id: string; title: string; typeId: string | null };
 }

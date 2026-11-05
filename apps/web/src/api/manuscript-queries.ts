@@ -9,6 +9,7 @@ import type {
   RichTextDoc,
   Scene,
 } from '@atlas/shared';
+import { getViewAs } from '@/lib/view-as';
 import { api } from './client';
 
 export const manuscriptKeys = {
@@ -18,10 +19,13 @@ export const manuscriptKeys = {
   appearances: (worldId: string, entityId: string) => ['appearances', worldId, entityId] as const,
 };
 
-export const useManuscript = (worldId: string) =>
+export const useManuscript = (worldId: string, enabled = true) =>
   useQuery({
     queryKey: manuscriptKeys.tree(worldId),
-    queryFn: () => api<ManuscriptNode[]>('GET', `/worlds/${worldId}/manuscript`),
+    // The manuscript is not part of any preview, so there is nothing to ask for while one is on.
+    queryFn: async () =>
+      getViewAs() ? [] : api<ManuscriptNode[]>('GET', `/worlds/${worldId}/manuscript`),
+    enabled,
   });
 
 export const useScene = (worldId: string, sceneId: string) =>

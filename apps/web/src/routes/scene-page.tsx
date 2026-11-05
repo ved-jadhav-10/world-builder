@@ -9,6 +9,7 @@ import {
   History,
   LoaderCircle,
   Maximize2,
+  MessageSquare,
   Minimize2,
   PanelRight,
   X,
@@ -43,6 +44,7 @@ import { CodexPanel } from '@/components/codex-panel';
 import { DateField } from '@/components/date-field';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker } from '@/components/entity-picker';
+import { CommentsDialog } from '@/components/comments-dialog';
 import { HistoryDialog } from '@/components/history-dialog';
 import { MentionHoverLayer } from '@/components/mention-hover-layer';
 import { WritingChip } from '@/components/writing-chip';
@@ -324,6 +326,17 @@ function SceneWorkspace({ scene, onRestored }: { scene: Scene; onRestored: () =>
               <PanelRight />
               <span className="sr-only">Toggle Codex panel</span>
             </Button>
+            {canEdit ? (
+              <CommentsDialog
+                subject={{ kind: 'scene', id: scene.id }}
+                trigger={(count) => (
+                  <Button variant="ghost" size="icon-sm" title="Comments">
+                    <MessageSquare />
+                    <span className="sr-only">Comments{count > 0 ? ` (${count} open)` : ''}</span>
+                  </Button>
+                )}
+              />
+            ) : null}
             {canEdit ? (
               <HistoryDialog
                 subject="scene"

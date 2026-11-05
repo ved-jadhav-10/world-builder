@@ -30,11 +30,13 @@ export function buildTree(nodes: ManuscriptNode[]): ManuscriptTree {
   };
 }
 
+/** The manuscript is the GM's, so everyone else gets an empty tree without asking the server. */
 export function useManuscriptTree() {
-  const { world } = useWorld();
-  const query = useManuscript(world.id);
+  const { world, audience } = useWorld();
+  const isGm = audience === 'gm';
+  const query = useManuscript(world.id, isGm);
   const tree = useMemo(() => buildTree(query.data ?? []), [query.data]);
-  return { ...query, tree };
+  return { ...query, isPending: isGm && query.isPending, tree };
 }
 
 /** "Book › Part › Chapter" for a node, excluding the node itself. */

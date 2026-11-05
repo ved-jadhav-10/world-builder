@@ -44,3 +44,5 @@ export * from './manuscript-html';
 export * from './schemas/handouts';
 export * from './schemas/todos';
 export * from './schemas/templates';
+export * from './comments';
+export * from './schemas/comments';

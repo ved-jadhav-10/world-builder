@@ -1,11 +1,8 @@
 import { z } from 'zod';
 import type { Role } from './common';
 
-/**
- * Roles that can be handed out. Nobody is invited as an owner, and commenters have no features
- * of their own yet (they see what readers see), so they aren't offered.
- */
-export const INVITE_ROLES = ['editor', 'player', 'reader'] as const;
+/** Roles that can be handed out. Nobody is invited as an owner. */
+export const INVITE_ROLES = ['editor', 'commenter', 'player', 'reader'] as const;
 export type InviteRole = (typeof INVITE_ROLES)[number];
 export const inviteRoleSchema = z.enum(INVITE_ROLES);
 
@@ -52,6 +49,10 @@ export const INVITE_ROLE_INFO: Record<InviteRole, { label: string; description: 
   reader: {
     label: ROLE_LABELS.reader,
     description: 'Sees only what you share with readers, such as lore for beta readers.',
+  },
+  commenter: {
+    label: ROLE_LABELS.commenter,
+    description: 'Sees what readers see and can leave comments on entries.',
   },
   editor: {
     label: ROLE_LABELS.editor,

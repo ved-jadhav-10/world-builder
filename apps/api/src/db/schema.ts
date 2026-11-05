@@ -833,3 +833,31 @@ export const savedFilters = pgTable(
   },
   (t) => [index('saved_filters_user_idx').on(t.worldId, t.userId, t.typeId)],
 );
+
+/** A remark on an entry or a scene; a reply points at the comment that starts its thread. */
+export const comments = pgTable(
+  'comments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id').references(() => entities.id, { onDelete: 'cascade' }),
+    nodeId: uuid('node_id').references(() => manuscriptNodes.id, { onDelete: 'cascade' }),
+    parentId: uuid('parent_id').references((): AnyPgColumn => comments.id, {
+      onDelete: 'cascade',
+    }),
+    authorId: text('author_id').references(() => user.id, { onDelete: 'set null' }),
+    body: text('body').notNull(),
+    /** Set on the comment that starts a thread once the thread is marked as dealt with. */
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    editedAt: timestamp('edited_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('comments_entity_idx').on(t.entityId, t.createdAt),
+    index('comments_node_idx').on(t.nodeId, t.createdAt),
+    index('comments_world_idx').on(t.worldId, t.resolvedAt),
+    check('comments_one_subject_chk', sql`num_nonnulls(${t.entityId}, ${t.nodeId}) = 1`),
+  ],
+);

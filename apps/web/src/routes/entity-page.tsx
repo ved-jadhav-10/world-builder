@@ -22,6 +22,7 @@ import { AsOfControl } from '@/components/as-of-control';
 import { DateField } from '@/components/date-field';
 import { EntityAsOfView } from '@/components/entity-as-of';
 import { EntityGallery, EntityPortrait } from '@/components/entity-gallery';
+import { CommentsButton } from '@/components/comments-dialog';
 import { HistoryDialog } from '@/components/history-dialog';
 import { ProgressionsPanel } from '@/components/progressions-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -38,6 +39,7 @@ import { FieldError, Label, NativeSelect, Textarea } from '@/components/ui/input
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { formatAsOf, parseAsOf, type AsOf } from '@/lib/as-of';
 import { entityBlocks } from '@/lib/revision-text';
+import { useCanComment } from '@/lib/use-can-comment';
 import { timeAgo } from '@/lib/utils';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
@@ -121,6 +123,7 @@ function EntityEditor({
   onAsOfChange: (value: AsOf | null) => void;
 }) {
   const { world, typeById, base, canEdit, audience } = useWorld();
+  const canComment = useCanComment();
   const type = typeById.get(entity.typeId) ?? FALLBACK_TYPE;
   const updateEntity = useUpdateEntity(world.id, entity.id);
   const deleteEntity = useDeleteEntity(world.id);
@@ -217,7 +220,13 @@ function EntityEditor({
   const fieldErrors = errors.fields as Record<string, { message?: string }> | undefined;
 
   return (
-    <form onSubmit={save}>
+    <form
+      onSubmit={(event) => {
+        // Dialogs open from this page render elsewhere, but their submit events still bubble up
+        // here through React; only this form's own submit is a save.
+        if (event.target === event.currentTarget) void save(event);
+      }}
+    >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
         <Link
           to={type.key ? `${base}/codex/${type.key}` : base}
@@ -235,6 +244,7 @@ function EntityEditor({
         <Link to={`${base}/family/${entity.id}`} className="hover:text-foreground">
           Family tree
         </Link>
+        {canComment ? <CommentsButton subject={{ kind: 'entity', id: entity.id }} /> : null}
         {canEdit ? (
           <HistoryDialog
             subject="entity"
