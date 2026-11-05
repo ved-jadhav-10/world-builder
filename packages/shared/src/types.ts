@@ -476,3 +476,37 @@ export interface FamilyData {
   spouses: [string, string][];
   siblings: [string, string][];
 }
+
+// ---- The plot board -----------------------------------------------------------------------------
+
+export interface PlotBoardSummary {
+  id: string;
+  name: string;
+  templateKey: string;
+  beatCount: number;
+  threadCount: number;
+  cardCount: number;
+  updatedAt: string;
+}
+
+/**
+ * A grid: the beats are its columns, the storylines its rows, and a card sits in one cell.
+ * Beats and threads come in order; cards come in order within their cell.
+ */
+export interface PlotBoard {
+  id: string;
+  name: string;
+  templateKey: string;
+  beats: { id: string; title: string; description: string }[];
+  threads: { id: string; name: string; color: string }[];
+  cards: {
+    id: string;
+    beatId: string;
+    threadId: string;
+    title: string;
+    text: string;
+    sceneId: string | null;
+    color: string | null;
+  }[];
+  updatedAt: string;
+}

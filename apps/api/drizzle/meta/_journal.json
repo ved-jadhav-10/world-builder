@@ -64,6 +64,13 @@
       "when": 1793881191178,
       "tag": "0008_gm_screen",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793885545803,
+      "tag": "0009_plot_board",
+      "breakpoints": true
     }
   ]
 }

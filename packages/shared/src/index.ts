@@ -29,3 +29,5 @@ export * from './schemas/gm-screen';
 export * from './graph-layout';
 export * from './family';
 export * from './schemas/graph';
+export * from './schemas/plot';
+export * from './plot-templates';

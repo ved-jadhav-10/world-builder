@@ -5,6 +5,7 @@ import {
   boolean,
   check,
   customType,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -523,4 +524,89 @@ export const gmScreens = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.userId] })],
+);
+
+/** A plot board: beats as columns, storylines as rows, cards in the cells. The author's own. */
+export const plotBoards = pgTable(
+  'plot_boards',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** The structure it started from, for showing; the beats can be changed freely. */
+    templateKey: text('template_key').notNull().default('blank'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('plot_boards_world_idx').on(t.worldId)],
+);
+
+export const plotBeats = pgTable(
+  'plot_beats',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => plotBoards.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description').notNull().default(''),
+    sortOrder: integer('sort_order').notNull(),
+  },
+  (t) => [
+    index('plot_beats_board_idx').on(t.boardId, t.sortOrder),
+    // Lets a card point at "this beat of this board", so a card can never sit in another board's.
+    uniqueIndex('plot_beats_board_id_uq').on(t.boardId, t.id),
+  ],
+);
+
+export const plotThreads = pgTable(
+  'plot_threads',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => plotBoards.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    color: text('color').notNull(),
+    sortOrder: integer('sort_order').notNull(),
+  },
+  (t) => [
+    index('plot_threads_board_idx').on(t.boardId, t.sortOrder),
+    uniqueIndex('plot_threads_board_id_uq').on(t.boardId, t.id),
+  ],
+);
+
+export const plotCards = pgTable(
+  'plot_cards',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    boardId: uuid('board_id')
+      .notNull()
+      .references(() => plotBoards.id, { onDelete: 'cascade' }),
+    beatId: uuid('beat_id').notNull(),
+    threadId: uuid('thread_id').notNull(),
+    title: text('title').notNull(),
+    text: text('text').notNull().default(''),
+    sceneId: uuid('scene_id').references(() => manuscriptNodes.id, { onDelete: 'set null' }),
+    color: text('color'),
+    /** Place within its cell, counted from 0. */
+    sortOrder: integer('sort_order').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('plot_cards_board_idx').on(t.boardId),
+    index('plot_cards_scene_idx').on(t.sceneId),
+    // Deleting a beat or a storyline takes its cards with it.
+    foreignKey({
+      columns: [t.boardId, t.beatId],
+      foreignColumns: [plotBeats.boardId, plotBeats.id],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.boardId, t.threadId],
+      foreignColumns: [plotThreads.boardId, plotThreads.id],
+    }).onDelete('cascade'),
+  ],
 );
