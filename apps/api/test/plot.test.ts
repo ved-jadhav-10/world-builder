@@ -134,6 +134,16 @@ describe('plot boards', () => {
     expect(api).toBeDefined();
   });
 
+  it('is included in the JSON export, with its cards', async () => {
+    const { api, w, board, card } = await setup();
+    await card(await board('Book', 'kishotenketsu'), 'A card');
+    const data = (await api.get(`${w}/export`)).json<{ plotBoards: PlotBoard[] }>();
+    expect(data.plotBoards).toHaveLength(1);
+    expect(data.plotBoards[0]).toMatchObject({ name: 'Book' });
+    expect(data.plotBoards[0]!.beats).toHaveLength(4);
+    expect(data.plotBoards[0]!.cards.map((c) => c.title)).toEqual(['A card']);
+  });
+
   it('is private to its world', async () => {
     const mine = await setup();
     const other = await signUpWithWorld(app, 'Elsewhere');

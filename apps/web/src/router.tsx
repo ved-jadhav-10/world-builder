@@ -48,6 +48,18 @@ export const router = createBrowserRouter([
               { path: 'e/:entityId', lazy: () => import('@/routes/entity-page') },
               { path: 'timeline', lazy: () => import('@/routes/timeline-page') },
               { path: 'quests', lazy: () => import('@/routes/quests-page') },
+              {
+                path: 'plot',
+                lazy: async () => ({
+                  Component: (await import('@/routes/plot-pages')).PlotIndexPage,
+                }),
+              },
+              {
+                path: 'plot/:boardId',
+                lazy: async () => ({
+                  Component: (await import('@/routes/plot-pages')).PlotBoardPage,
+                }),
+              },
               { path: 'graph', lazy: () => import('@/routes/graph-page') },
               { path: 'family/:entityId', lazy: () => import('@/routes/family-page') },
               { path: 'screen', lazy: () => import('@/routes/screen-page') },

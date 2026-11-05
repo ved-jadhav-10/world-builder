@@ -130,6 +130,8 @@ export interface WorldExport {
   gallery: GalleryImage[];
   /** Rollable tables with their rows. The roll log is not included. */
   rollTables: RollTable[];
+  /** Plot boards with their beats, storylines and cards. */
+  plotBoards: PlotBoard[];
 }
 
 export interface ApiErrorBody {

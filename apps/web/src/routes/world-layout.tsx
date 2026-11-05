@@ -1,6 +1,7 @@
 import {
   CalendarRange,
   ChevronLeft,
+  ClipboardList,
   Dices,
   Images,
   LogOut,
@@ -110,9 +111,14 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
           <MapIcon /> Atlas
         </NavLink>
         {audience === 'gm' ? (
-          <NavLink to={`${base}/manuscript`} className={navItem}>
-            <PenLine /> Manuscript
-          </NavLink>
+          <>
+            <NavLink to={`${base}/manuscript`} className={navItem}>
+              <PenLine /> Manuscript
+            </NavLink>
+            <NavLink to={`${base}/plot`} className={navItem}>
+              <ClipboardList /> Plot boards
+            </NavLink>
+          </>
         ) : null}
         <NavLink to={`${base}/timeline`} className={navItem}>
           <CalendarRange /> Timeline

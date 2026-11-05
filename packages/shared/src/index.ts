@@ -31,3 +31,4 @@ export * from './family';
 export * from './schemas/graph';
 export * from './schemas/plot';
 export * from './plot-templates';
+export * from './plot-board';

@@ -30,7 +30,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **More built-in types:** Religion, Language, Magic or Tech System and Glossary [v1]. Users can already add any of these as their own type; the built-ins would come with ready-made fields.
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].
 - [ ] **Arc tracker** showing how traits and relationships change across chapters, powered by progressions [v1].
-- [ ] **Plot board** (beat and scene cards on a corkboard or kanban, plus a multi-thread timeline with one row per storyline) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) [v1].
+- [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
 - [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
 - [ ] **Comments**, and **version history** per entry and per chapter with restore; **revision snapshots** in the manuscript [v1; the snapshots were deferred in M2].
 - [ ] **Goals, streaks and timed sprints**, **overused-word tracking**, **style and genre guide entries** [v1; goals and streaks deferred in M2].

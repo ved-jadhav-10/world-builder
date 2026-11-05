@@ -219,6 +219,42 @@ function world(): WorldExport {
         updatedAt: '',
       },
     ],
+    plotBoards: [
+      {
+        id: 'pb1',
+        name: 'Book one',
+        templateKey: 'kishotenketsu',
+        updatedAt: '',
+        beats: [
+          { id: 'be1', title: 'Ki', description: 'Introduce things.' },
+          { id: 'be2', title: 'Ten', description: '' },
+        ],
+        threads: [
+          { id: 'th1', name: 'Main plot', color: '#6366f1' },
+          { id: 'th2', name: 'Romance', color: '#ef4444' },
+        ],
+        cards: [
+          {
+            id: 'c1',
+            beatId: 'be1',
+            threadId: 'th1',
+            title: 'Mira counts ships',
+            text: 'Her routine.\nThe missing ship.',
+            sceneId: null,
+            color: null,
+          },
+          {
+            id: 'c2',
+            beatId: 'be1',
+            threadId: 'th2',
+            title: 'A stranger',
+            text: '',
+            sceneId: 'a-scene-that-was-deleted',
+            color: null,
+          },
+        ],
+      },
+    ],
     rollTables: [
       {
         id: 't1',
@@ -306,6 +342,36 @@ describe('worldToMarkdown', () => {
     );
     expect(mira).toContain(
       '## Details\n\n- **Age:** 41\n- **Alive:** Yes\n- **Moods:** calm, tense',
+    );
+  });
+
+  it('writes each plot board beat by beat, with cards under their storylines', () => {
+    const note = byPath(worldToMarkdown(world())).get('aerth/Plot/Book one.md')!;
+    expect(note).toBe(
+      [
+        '# Book one',
+        '',
+        'Storylines: Main plot, Romance.',
+        '',
+        '## Ki',
+        '',
+        'Introduce things.',
+        '',
+        '### Main plot',
+        '',
+        '- **Mira counts ships**',
+        '  Her routine.',
+        '  The missing ship.',
+        '',
+        '### Romance',
+        '',
+        '- **A stranger** (scene: a deleted scene)',
+        '',
+        '## Ten',
+        '',
+        '*No cards yet.*',
+        '',
+      ].join('\n'),
     );
   });
 
@@ -432,6 +498,7 @@ describe('worldToMarkdown', () => {
       progressions: [],
       gallery: [],
       rollTables: [],
+      plotBoards: [],
     };
     const paths = worldToMarkdown(empty)
       .map((f) => f.path)

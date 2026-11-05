@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 10 are built, tested and on `main`; M2 to M10 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 11 are built, tested and on `main`; M2 to M11 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -105,7 +105,7 @@ Key files: `api/client.ts` (fetch wrapper), `api/queries/*.ts` (Query hooks), `c
 5. Seed script and CI workflow.
 
 ## Later milestones
-All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen, **M10** the relationship graph and family trees. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
+All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M4** calendars, progressions and timeline, **M5** GM tools, galleries and Markdown export, **M6** invites and members, **M7** accounts, email and abuse limits, **M8** dice, rollable tables and the roll log, **M9** session notes and the GM screen, **M10** the relationship graph and family trees, **M11** the plot board and structure templates. What is left is in [checklist.md](checklist.md), with the suggested order in the Roadmap at the end.
 
 ## Verification
 1. `pnpm install` → `db:up` → `db:migrate` → `db:seed` → `pnpm dev` (web :5173, API :3000).
@@ -260,16 +260,27 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - aunts, uncles and cousins in the tree (the whole lineage of the ancestors), and marking divorces or deaths on it
   - faction diplomacy scores and the arc tracker, which build on this data
 
+## Milestone 11 (Plot board and structure templates): done
+
+- **The board:** a plot board is a grid. The columns are **beats** (the stages of a structure), the rows are **storylines** (one per plot thread, with a colour), and a **card** sits in one cell: one thing that happens, with a title, notes, an optional colour and an optional link to a manuscript scene. A world can have up to 20 boards, a board up to 40 beats, 20 storylines and 1,000 cards. The database enforces that a card can only sit in a beat and a storyline of its own board (composite foreign keys), whatever the code does, and deleting a beat or storyline takes its cards with it (the page says how many first). A board always keeps at least one beat and one storyline. A card's scene link is dropped, not the card, if the scene is deleted.
+- **Templates:** a new board starts from Three-act structure (9 beats), Save the Cat (15), the Hero's Journey (12), Kishōtenketsu (4) or a blank board; each beat comes with a short reminder of what it is for, written for this app. After that the beats are ordinary: rename, reorder, add and remove them freely.
+- **API:** `/plot` (boards), `/plot/:id` and, under it, `/beats`, `/threads`, `/cards`, `/cards/:id/move` and `PUT /order` (new order of columns and/or rows, which must list every one exactly once). Every change answers with the whole board, so the page shows what the server numbered. Moving a card renumbers both cells in one transaction under a row lock on the board, so simultaneous moves cannot leave a cell with repeated or skipped places (tested with six at once). Like the manuscript, boards are the author's own workspace: only the GM's view reads them, only editors change them, and a GM previewing another view gets 403.
+- **Web:** Plot boards in the sidebar (GM only); a list with a template picker; a grid that scrolls inside its own frame, with the storyline names pinned on the left. Cards drag between cells (dropping on a card inserts before it, applied at once and put back if the server refuses), and open into a dialog with the same beat and storyline choices, so touch screens, where dragging does not work, can move cards too. Click a beat or storyline to rename, reorder or delete it. Plot boards are in both exports (JSON as `plotBoards`; Markdown as `Plot/<board>.md`, beat by beat, with scene links).
+- **Verified in Chrome** (scripted, 13 steps, with a real player): the template picker, a fifteen-column Save the Cat board, adding cards with notes and colours, dragging between cells and onto a card with the result persisted, moving a card from its dialog, linking a scene and following the link, adding and renaming a storyline, renaming and reordering a beat, deleting a beat with a warning of its card count, renaming the board, the player's refusal on the page and the API, and phone width. Playwright cannot drag to a column that is scrolled out of view, so that check uses a four-beat board; browsers scroll the grid when you drag near its edge. It caught a real bug in the API: `.partial()` on a schema with defaults would have wiped a beat's description (and a storyline's colour) on every rename.
+- **Deferred:**
+  - the multi-thread timeline view (a row per storyline over in-world time), and showing a card's scene word count and status
+  - drag to reorder beats and storylines (buttons for now), and cards that span several beats
+  - a board's use as a checklist against the manuscript (which scenes lack a card), and structure templates a user saves themselves
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
-1. **Plot board and structure templates (B).** Finishes the writer half; the relationship graph and family trees are done (M10).
-2. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
-3. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
-4. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
+1. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
+2. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
+3. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
 ### Deliberately not building (integrate or skip)
 A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automation; character builders for licensed game systems; hosting audio files; a paid-GM marketplace; random dungeon generation (import instead); streaming audio to Discord (use Kenku FM).

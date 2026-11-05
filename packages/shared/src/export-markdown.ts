@@ -423,11 +423,39 @@ export function worldToMarkdown(
     );
   }
 
+  // ---- Plot boards ----
+  for (const board of [...data.plotBoards].sort(byName)) {
+    const cardLines = (beatId: string, threadId: string) =>
+      board.cards
+        .filter((card) => card.beatId === beatId && card.threadId === threadId)
+        .map((card) => {
+          const scene = card.sceneId
+            ? ` (scene: ${link(scenePath.get(card.sceneId), sceneById.get(card.sceneId)?.title ?? 'a deleted scene')})`
+            : '';
+          const notes = card.text ? `\n  ${card.text.replace(/\r?\n/g, '\n  ')}` : '';
+          return `- **${card.title}**${scene}${notes}`;
+        });
+    const sections = board.beats.map((beat) => {
+      const rows = board.threads
+        .map((thread) => ({ thread, lines: cardLines(beat.id, thread.id) }))
+        .filter((row) => row.lines.length > 0)
+        .map((row) => `### ${row.thread.name}\n\n${row.lines.join('\n')}`);
+      const intro = beat.description ? `${beat.description}\n\n` : '';
+      return `## ${beat.title}\n\n${intro}${rows.length ? rows.join('\n\n') : '*No cards yet.*'}`;
+    });
+    const storylines = board.threads.map((thread) => thread.name).join(', ');
+    add(
+      `Plot/${names.unique('Plot', board.name)}.md`,
+      `# ${board.name}\n\nStorylines: ${storylines}.\n\n${sections.join('\n\n')}\n`,
+    );
+  }
+
   // ---- Overview ----
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   add(
     'README.md',
-    `# ${data.world.name}\n\n${data.world.description ? `${data.world.description}\n\n` : ''}Exported ${data.exportedAt.slice(0, 10)} from Atlas & Ink.\n\n## What is here\n\n- **Codex/**: ${count(data.entities.length, 'entry', 'entries')}, one note each, in a folder per type\n- **Manuscript/**: ${count(data.manuscript.filter((n) => n.kind === 'scene').length, 'scene', 'scenes')} in reading order (start with Contents)\n- **Atlas/**: ${count(data.atlas.maps.length, 'map', 'maps')} with their pins and shapes (images not included)\n- **Tables/**: ${count(data.rollTables.length, 'rollable table', 'rollable tables')}\n- **Timeline.md** and **Calendar.md**\n- **world.json**: everything above in one file, for a lossless copy\n\nOpen this folder as a vault in Obsidian and the links between notes work. Each note's front-matter says who it is visible to in Atlas & Ink (\`visibility\`), so you can filter before sharing anything.\n`,
+    `# ${data.world.name}\n\n${data.world.description ? `${data.world.description}\n\n` : ''}Exported ${data.exportedAt.slice(0, 10)} from Atlas & Ink.\n\n## What is here\n\n- **Codex/**: ${count(data.entities.length, 'entry', 'entries')}, one note each, in a folder per type\n- **Manuscript/**: ${count(data.manuscript.filter((n) => n.kind === 'scene').length, 'scene', 'scenes')} in reading order (start with Contents)\n- **Atlas/**: ${count(data.atlas.maps.length, 'map', 'maps')} with their pins and shapes (images not included)\n- **Plot/**: ${count(data.plotBoards.length, 'plot board', 'plot boards')}, one note each, beat by beat
+- **Tables/**: ${count(data.rollTables.length, 'rollable table', 'rollable tables')}\n- **Timeline.md** and **Calendar.md**\n- **world.json**: everything above in one file, for a lossless copy\n\nOpen this folder as a vault in Obsidian and the links between notes work. Each note's front-matter says who it is visible to in Atlas & Ink (\`visibility\`), so you can filter before sharing anything.\n`,
   );
   return files;
 }
