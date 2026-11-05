@@ -610,3 +610,18 @@ export const plotCards = pgTable(
     }).onDelete('cascade'),
   ],
 );
+
+/** Findings of the continuity checker that the author has said are intended. */
+export const continuityDismissals = pgTable(
+  'continuity_dismissals',
+  {
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    /** The finding's key, which changes if the facts behind it do. */
+    key: text('key').notNull(),
+    dismissedBy: text('dismissed_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.key] })],
+);

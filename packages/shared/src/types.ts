@@ -1,3 +1,4 @@
+import type { ContinuityFinding } from './continuity';
 import type { GmWidget } from './schemas/gm-screen';
 import type { DiceResult } from './dice';
 import type { TableRollResult } from './tables';
@@ -511,4 +512,20 @@ export interface PlotBoard {
     color: string | null;
   }[];
   updatedAt: string;
+}
+
+// ---- The continuity checker ---------------------------------------------------------------------
+
+export interface ContinuityReport {
+  /** What is worth a look, warnings first. */
+  findings: ContinuityFinding[];
+  /** What the author said was intended. They can be brought back. */
+  dismissed: ContinuityFinding[];
+  /** Names for everything the findings mention. */
+  entities: { id: string; name: string; typeId: string }[];
+  scenes: { id: string; title: string }[];
+  /** How each link reads, from its source: "spouse of". */
+  linkLabels: Record<string, string>;
+  /** How many of each there were to check, to say what was looked at. */
+  checked: { entries: number; scenes: number; links: number };
 }
