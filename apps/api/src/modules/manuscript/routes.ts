@@ -27,6 +27,7 @@ import {
   updateNode,
 } from './service';
 import { afterEdit, beforeEdit, isScene } from '../revisions/service';
+import { recordWords, sceneWordCount } from '../writing/service';
 
 export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
   // The manuscript is the author's own workspace, so only the GM's view reads it.
@@ -98,7 +99,12 @@ export const manuscriptRoutes: FastifyPluginAsyncZod = async (app) => {
       const worldId = currentWorldId(request);
       const subject = { kind: 'scene', id: request.params.id } as const;
       await beforeEdit(db, worldId, subject);
+      const words = await sceneWordCount(db, worldId, request.params.id);
       const saved = await saveSceneBody(db, worldId, request.params.id, request.body.body);
+      // Counting the day's words must never get in the way of saving the text.
+      await recordWords(db, worldId, currentUser(request).id, saved.wordCount - words).catch(
+        (error: unknown) => request.log.warn({ err: error }, 'Could not record words written'),
+      );
       await afterEdit(db, worldId, subject, currentUser(request).id);
       return saved;
     },

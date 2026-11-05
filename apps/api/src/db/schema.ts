@@ -5,6 +5,7 @@ import {
   boolean,
   check,
   customType,
+  date,
   foreignKey,
   index,
   integer,
@@ -686,4 +687,58 @@ export const revisions = pgTable(
     index('revisions_node_idx').on(t.nodeId, t.createdAt),
     check('revisions_one_subject_chk', sql`num_nonnulls(${t.entityId}, ${t.nodeId}) = 1`),
   ],
+);
+
+/** One person's writing goals in one world. */
+export const writingGoals = pgTable(
+  'writing_goals',
+  {
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    dailyWords: integer('daily_words'),
+    totalWords: integer('total_words'),
+    deadline: date('deadline', { mode: 'string' }),
+    /** The zone this person's days are counted in. */
+    timezone: text('timezone').notNull().default('UTC'),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.userId] })],
+);
+
+/** Net words written by one person on one calendar day (in their own zone). */
+export const writingDays = pgTable(
+  'writing_days',
+  {
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    day: date('day', { mode: 'string' }).notNull(),
+    words: integer('words').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.userId, t.day] })],
+);
+
+/** A finished timed writing sprint. */
+export const writingSprints = pgTable(
+  'writing_sprints',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    minutes: integer('minutes').notNull(),
+    words: integer('words').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('writing_sprints_user_idx').on(t.worldId, t.userId, t.createdAt)],
 );

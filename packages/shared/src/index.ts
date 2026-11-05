@@ -37,3 +37,5 @@ export * from './schemas/continuity';
 export * from './map-tools';
 export * from './text-diff';
 export * from './schemas/revisions';
+export * from './writing-stats';
+export * from './schemas/writing';

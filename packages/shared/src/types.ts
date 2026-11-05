@@ -3,6 +3,7 @@ import type { GmWidget } from './schemas/gm-screen';
 import type { DiceResult } from './dice';
 import type { TableRollResult } from './tables';
 import type { MapScale } from './map-tools';
+import type { ManuscriptProgress, Streaks, WritingDay, WritingGoals } from './writing-stats';
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
 import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
@@ -582,4 +583,30 @@ export interface SceneRevisionContent {
 
 export interface RevisionDetail<Content> extends RevisionSummary {
   content: Content;
+}
+
+export interface WritingSprint {
+  id: string;
+  minutes: number;
+  words: number;
+  createdAt: string;
+}
+
+/** Everything the writing goals page shows for one person in one world. */
+export interface WritingStats {
+  /** Today's date in the person's time zone, "YYYY-MM-DD". */
+  today: string;
+  timezone: string;
+  goals: WritingGoals;
+  /** Words written today (net of words cut). */
+  todayWords: number;
+  /** Words written in the last seven days, not counting days spent cutting. */
+  weekWords: number;
+  streaks: Streaks;
+  /** Days with any recorded change, oldest first. */
+  days: WritingDay[];
+  /** Words in the manuscript now, across all scenes. */
+  manuscriptWords: number;
+  progress: ManuscriptProgress | null;
+  sprints: WritingSprint[];
 }
