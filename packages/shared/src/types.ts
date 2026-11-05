@@ -7,6 +7,7 @@ import type { ManuscriptProgress, Streaks, WritingDay, WritingGoals } from './wr
 import type { FeatureKind, FeatureSize, LineStyle, MapPoint, MapStatus } from './schemas/atlas';
 import type { CalendarDef } from './schemas/calendar';
 import type { NodeKind } from './schemas/manuscript';
+import type { WordCheck } from './word-check';
 import type { ProgressionChanges } from './schemas/progression';
 import type { Role, Visibility } from './schemas/common';
 import type { RevisionKind } from './schemas/revisions';
@@ -698,4 +699,11 @@ export interface InboxThread {
   comment: Comment;
   replyCount: number;
   subject: { kind: 'entity' | 'scene'; id: string; title: string; typeId: string | null };
+}
+
+/** The result of checking a stretch of the manuscript for word habits. */
+export interface WordCheckResult {
+  /** What was checked: the whole manuscript (id null) or one part of it. */
+  scope: { id: string | null; title: string; kind: NodeKind | null; scenes: number };
+  check: WordCheck;
 }

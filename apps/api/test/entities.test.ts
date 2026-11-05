@@ -111,7 +111,7 @@ describe('entity types', () => {
     });
     expect(created.statusCode, created.body).toBe(201);
     const ship = created.json<EntityType>();
-    expect(ship).toMatchObject({ key: 'ship', isBuiltin: false, sortOrder: 14 });
+    expect(ship).toMatchObject({ key: 'ship', isBuiltin: false, sortOrder: 15 });
 
     const bad = await api.post(`${w}/entities`, {
       typeId: ship.id,

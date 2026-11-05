@@ -19,6 +19,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  SpellCheck,
   SlidersHorizontal,
   Target,
   Trash2,
@@ -127,6 +128,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
             <NavLink to={`${base}/writing`} className={navItem}>
               <Target /> Writing goals
+            </NavLink>
+            <NavLink to={`${base}/word-check`} className={navItem}>
+              <SpellCheck /> Word check
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards

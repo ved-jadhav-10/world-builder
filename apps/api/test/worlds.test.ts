@@ -68,6 +68,7 @@ describe('worlds', () => {
       'language',
       'system',
       'glossary_term',
+      'style_guide',
     ]);
     expect(types.every((t) => t.isBuiltin && t.entityCount === 0)).toBe(true);
 

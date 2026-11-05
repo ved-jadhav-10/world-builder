@@ -15,7 +15,7 @@ describe('built-in entry types', () => {
     const types = (await api.get(`${w}/entity-types`)).json<EntityType[]>();
     const byKey = new Map(types.map((t) => [t.key, t]));
     expect([...byKey.keys()]).toEqual(
-      expect.arrayContaining(['religion', 'language', 'system', 'glossary_term']),
+      expect.arrayContaining(['religion', 'language', 'system', 'glossary_term', 'style_guide']),
     );
     expect(byKey.get('religion')).toMatchObject({
       name: 'Religion',
@@ -53,6 +53,10 @@ describe('built-in entry types', () => {
     expect((await make('glossary_term', { pronunciation: 'kah-REN' })).fields).toMatchObject({
       pronunciation: 'kah-REN',
     });
+    expect(
+      (await make('style_guide', { pov: 'Third limited', tense: 'Past', avoid: 'suddenly' }))
+        .fields,
+    ).toMatchObject({ pov: 'Third limited', tense: 'Past' });
     // The choices are checked like any other select field.
     const bad = await api.post(`${w}/entities`, {
       typeId: ctx.typeId('language'),

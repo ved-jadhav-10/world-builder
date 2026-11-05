@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 23 are built, tested and on `main`; M2 to M23 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 24 are built, tested and on `main`; M2 to M24 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -431,6 +431,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
   - Every non-GM viewer's entry page asked for the manuscript tree (for the "as of" control) and was refused. Only the GM asks now, and previews skip it and comments too.
 - **Verified in Chrome** (scripted, 10 steps, GM plus a commenter and a player in their own sessions, and every 4xx or 5xx on a page counted as a failure): starting a thread, a commenter replying and editing only their own words, the GM resolving, the comments page and its links, a commenter's list leaving out GM-only and scene threads, the player having nothing, a reader preview hiding it, the scene button, and a phone-sized dialog.
 - **Deferred:** notifications and mentions of people, comments on a selected passage of text, on maps, pins and other things, reactions, a "waiting on me" filter, and beta readers commenting on scenes (which needs manuscript sharing, F).
+
+## Milestone 24 (Word check and Style Guide): done
+
+- **Word check:** pure logic in `packages/shared/src/word-check.ts` (`analyzeWords`, `tokenize`, `wordsOfNames`) and `GET /manuscript/word-check` (GM side only, like the manuscript). It checks the whole manuscript or one book, part, chapter or scene and returns: word, different-word and sentence counts, words per sentence, sentences over 40 words, the **most used words** (three or more uses, leaving out small words and the names and aliases of the world's entries, so a character called Mira is not the top "overused word"), **crutch words** (just, really, very, suddenly, seemed and similar), **adverbs** ending in -ly (with a list of words that only look like adverbs, such as family and early), **words the writer asked to watch**, and **close repeats** (the same word again within 15 words). Every list is per 1,000 words as well as a count, and sorted the same way each time.
+- **Web:** a Word check page in the GM sidebar: pick the whole manuscript or any item in the binder, type words to watch (kept in the browser only), and read stat tiles and bar lists. The wording says these are places to look, not rules.
+- **Style Guide built-in type:** the second half of "style and genre guide entries". Fields for what it covers, point of view, tense, spelling, voice and tone, words to use, words to avoid and other rules. Added to new worlds and backfilled into existing ones by migration 0019 (checked on the dev database: 98 of 98 worlds, no clashing sort orders).
+- **Migrations housekeeping:** my hand-written migrations 0016 to 0018 had no Drizzle snapshot, so `drizzle-kit generate` would have tried to create their tables again. Generating once showed the diff was exactly those four tables with the same constraint and index names, so the generated SQL was dropped and its snapshot kept as `0019_snapshot.json`; `drizzle-kit generate` now reports no changes.
+- **Verified in Chrome** (scripted, 9 steps, every 4xx or 5xx counted): the page from the sidebar with a character name left out, narrowing to a chapter, watched words remembered after a reload, close repeats and adverbs, the empty state, creating a Style Guide entry with its fields, a player having no link and a 403, and a phone-sized page.
+- **Deferred:** highlighting the words in the scene editor, a per-scene breakdown ("which scene leans on 'just' most"), a word-check button on the scene page, using Style Guide entries' "words to avoid" as the watch list automatically, readability scores, dialogue-tag and passive-voice checks, and languages other than English (the small-word and crutch lists are English).
 
 ## Roadmap: what's left
 
