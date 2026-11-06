@@ -169,6 +169,13 @@
       "when": 1794584893234,
       "tag": "0023_fog_of_war",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794671293234,
+      "tag": "0024_series_codex",
+      "breakpoints": true
     }
   ]
 }

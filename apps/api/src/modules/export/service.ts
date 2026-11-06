@@ -140,6 +140,7 @@ export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExp
       aliases: e.aliases,
       summary: e.summary,
       visibility: e.visibility,
+      scopeBookIds: e.scopeBookIds,
       fields: e.fields,
       body: e.body,
       startDay: e.startDay,

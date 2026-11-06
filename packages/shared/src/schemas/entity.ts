@@ -17,6 +17,12 @@ const entityDateRange = (value: { startDay?: number | null; endDay?: number | nu
   value.startDay == null || value.endDay == null || value.endDay >= value.startDay;
 const dateRangeIssue = { path: ['endDay'], message: 'The end cannot come before the start' };
 
+/**
+ * The books an entry belongs to. Empty means it is shared across the whole series; otherwise it
+ * is for those books only (one book, or a few that form a series of their own).
+ */
+const scopeSchema = z.array(idSchema).max(50);
+
 export const entityCreateSchema = z
   .object({
     typeId: idSchema,
@@ -29,6 +35,7 @@ export const entityCreateSchema = z
     visibility: visibilitySchema.default('gm'),
     startDay: dayNumberSchema.nullable().default(null),
     endDay: dayNumberSchema.nullable().default(null),
+    scopeBookIds: scopeSchema.default([]),
   })
   .refine(entityDateRange, dateRangeIssue);
 export type EntityCreateInput = z.input<typeof entityCreateSchema>;
@@ -43,6 +50,7 @@ export const entityUpdateSchema = z
     visibility: visibilitySchema.optional(),
     startDay: dayNumberSchema.nullable().optional(),
     endDay: dayNumberSchema.nullable().optional(),
+    scopeBookIds: scopeSchema.optional(),
   })
   .refine(entityDateRange, dateRangeIssue);
 export type EntityUpdateInput = z.input<typeof entityUpdateSchema>;
@@ -53,6 +61,8 @@ export type EntitySort = (typeof ENTITY_SORTS)[number];
 export const entityListQuerySchema = z.object({
   typeId: idSchema.optional(),
   tagId: idSchema.optional(),
+  /** Entries usable in this book: the shared ones and those scoped to it. */
+  bookId: idSchema.optional(),
   /** Only entries with exactly this visibility; people who cannot see it get nothing. */
   visibility: visibilitySchema.optional(),
   sort: z.enum(ENTITY_SORTS).default('name'),

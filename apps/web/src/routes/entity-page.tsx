@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { BookCopy, History, Save, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
-import { Controller, useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type Control, type Resolver } from 'react-hook-form';
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -41,14 +41,58 @@ import { formatAsOf, parseAsOf, type AsOf } from '@/lib/as-of';
 import { entityBlocks } from '@/lib/revision-text';
 import { useCanComment } from '@/lib/use-can-comment';
 import { timeAgo } from '@/lib/utils';
+import { useManuscriptTree } from '@/lib/manuscript-tree';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
+
+/** Which books an entry is for. None ticked means it is shared across the whole series. */
+function BookScope({ control, disabled }: { control: Control<FormValues>; disabled: boolean }) {
+  const { tree } = useManuscriptTree();
+  const books = tree.nodes.filter((n) => n.kind === 'book');
+  if (books.length === 0) return null;
+  return (
+    <Controller
+      control={control}
+      name="scopeBookIds"
+      render={({ field }) => {
+        const chosen = new Set(field.value);
+        return (
+          <fieldset className="space-y-1.5">
+            <legend className="text-[13px] font-medium text-muted-foreground">Used in books</legend>
+            {books.map((book) => (
+              <label key={book.id} className="flex items-center gap-1.5 text-sm">
+                <input
+                  type="checkbox"
+                  disabled={disabled}
+                  checked={chosen.has(book.id)}
+                  onChange={(event) => {
+                    const next = new Set(chosen);
+                    if (event.target.checked) next.add(book.id);
+                    else next.delete(book.id);
+                    field.onChange([...next]);
+                  }}
+                />
+                {book.title}
+              </label>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              {chosen.size === 0
+                ? 'Shared: this entry is part of every book.'
+                : 'Only these books. The codex can be filtered by book.'}
+            </p>
+          </fieldset>
+        );
+      }}
+    />
+  );
+}
 
 interface FormValues {
   name: string;
   aliases: string[];
   summary: string;
   visibility: Visibility;
+  scopeBookIds: string[];
   fields: Record<string, unknown>;
   body: RichTextDoc | null;
   startDay: number | null;
@@ -64,6 +108,7 @@ const toFormValues = (entity: Entity, type: EntityType): FormValues => ({
   aliases: entity.aliases,
   summary: entity.summary,
   visibility: entity.visibility,
+  scopeBookIds: entity.scopeBookIds,
   fields: Object.fromEntries(type.fieldSchema.map((f) => [f.key, entity.fields[f.key] ?? null])),
   body: entity.body,
   startDay: entity.startDay,
@@ -138,6 +183,7 @@ function EntityEditor({
           aliases: z.array(z.string()),
           summary: z.string().max(2000),
           visibility: visibilitySchema,
+          scopeBookIds: z.array(z.string()),
           fields: buildFieldValuesSchema(type.fieldSchema),
           body: z.unknown(),
           startDay: z.number().int().nullable(),
@@ -435,6 +481,7 @@ function EntityEditor({
                   Who can see this entry. Use “View as” in the sidebar to check.
                 </p>
               </div>
+              <BookScope control={form.control} disabled={!canEdit} />
             </section>
 
             <RelationshipsPanel entity={entity} />

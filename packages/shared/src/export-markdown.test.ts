@@ -44,6 +44,7 @@ function world(): WorldExport {
     aliases: [] as string[],
     summary: '',
     visibility: 'gm' as const,
+    scopeBookIds: [] as string[],
     fields: {},
     body: null,
     startDay: null,

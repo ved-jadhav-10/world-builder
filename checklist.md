@@ -24,7 +24,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## B. Writing and the Codex
 
-- [ ] **Series codex:** entries shared across books, or scoped per book or per series [MVP].
+- [x] **Series codex:** entries are shared across every book by default, or scoped to one book or several (M34).
 - [x] **Mass edit:** bulk visibility, tag and trash from a type's list (M16). Still to do: moving entries between types, and bulk edit from search results [MVP].
 - [x] **To-do lists:** a world to-do list for the GM and editors; a task can point at an entry (M21). Still to do: due dates, priorities and manual ordering [MVP].
 - [x] **Saved filters and entry templates:** per-person saved filters (tag, visibility, sort) on a type's list, and entry templates made from an entry (M22). Still to do: **world templates** (starting a new world from a ready-made one) [MVP].

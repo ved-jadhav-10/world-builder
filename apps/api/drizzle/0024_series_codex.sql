@@ -1,0 +1,1 @@
+ALTER TABLE "entities" ADD COLUMN "scope_book_ids" uuid[] DEFAULT '{}'::uuid[] NOT NULL;

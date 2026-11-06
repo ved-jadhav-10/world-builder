@@ -1,4 +1,16 @@
-import { and, asc, desc, eq, exists, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  exists,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   deriveSearchText,
@@ -16,7 +28,7 @@ import {
   type TrashedEntity,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities, entityTags, images, tags } from '../../db/schema';
+import { entities, entityTags, images, manuscriptNodes, tags } from '../../db/schema';
 import { badRequest, notFound } from '../../errors';
 import { visibleTo } from '../../lib/visibility';
 import { getEntityTypeRow } from '../entity-types/service';
@@ -32,6 +44,7 @@ export const summaryColumns = {
   aliases: entities.aliases,
   summary: entities.summary,
   visibility: entities.visibility,
+  scopeBookIds: entities.scopeBookIds,
   updatedAt: entities.updatedAt,
 };
 
@@ -45,6 +58,7 @@ export function toSummary(row: SummaryRow): EntitySummary {
     aliases: row.aliases,
     summary: row.summary,
     visibility: row.visibility,
+    scopeBookIds: row.scopeBookIds,
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -105,6 +119,24 @@ export async function getEntity(
   return toEntity(row, await tagsFor(db, row.id));
 }
 
+/** The books an entry is scoped to must be books of this world; duplicates are dropped. */
+async function checkBooks(db: DbOrTx, worldId: string, ids: string[]): Promise<string[]> {
+  const unique = [...new Set(ids.map((id) => id.toLowerCase()))];
+  if (unique.length === 0) return [];
+  const found = await db
+    .select({ id: manuscriptNodes.id })
+    .from(manuscriptNodes)
+    .where(
+      and(
+        eq(manuscriptNodes.worldId, worldId),
+        eq(manuscriptNodes.kind, 'book'),
+        inArray(manuscriptNodes.id, unique),
+      ),
+    );
+  if (found.length !== unique.length) throw notFound('Book');
+  return unique;
+}
+
 export async function createEntity(
   db: DbOrTx,
   worldId: string,
@@ -113,6 +145,7 @@ export async function createEntity(
 ): Promise<Entity> {
   const type = await getEntityTypeRow(db, worldId, input.typeId);
   const fields = parseFieldValues(type.fieldSchema, input.fields);
+  const scopeBookIds = await checkBooks(db, worldId, input.scopeBookIds);
   const [row] = await db
     .insert(entities)
     .values({
@@ -126,6 +159,7 @@ export async function createEntity(
       visibility: input.visibility,
       startDay: input.startDay,
       endDay: input.endDay,
+      scopeBookIds,
       searchText: deriveSearchText({ ...input, fields }),
       createdBy: userId,
     })
@@ -162,9 +196,13 @@ export async function updateEntity(
   if (startDay !== null && endDay !== null && endDay < startDay) {
     throw badRequest('The end cannot come before the start');
   }
+  const scopeBookIds =
+    input.scopeBookIds === undefined
+      ? existing.scopeBookIds
+      : await checkBooks(db, worldId, input.scopeBookIds);
   const [row] = await db
     .update(entities)
-    .set({ ...merged, startDay, endDay, searchText: deriveSearchText(merged) })
+    .set({ ...merged, startDay, endDay, scopeBookIds, searchText: deriveSearchText(merged) })
     .where(eq(entities.id, existing.id))
     .returning();
   // Names and aliases drive mention detection, so a rename means rescanning the manuscript.
@@ -272,6 +310,15 @@ export async function listEntities(
   if (visible) conditions.push(visible);
   if (query.typeId) conditions.push(eq(entities.typeId, query.typeId));
   if (query.visibility) conditions.push(eq(entities.visibility, query.visibility));
+  if (query.bookId) {
+    // Shared entries are usable in every book; scoped ones only in the books they name.
+    conditions.push(
+      or(
+        sql`cardinality(${entities.scopeBookIds}) = 0`,
+        sql`${query.bookId}::uuid = any(${entities.scopeBookIds})`,
+      )!,
+    );
+  }
   if (query.tagId) {
     conditions.push(
       exists(

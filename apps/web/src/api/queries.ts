@@ -126,6 +126,8 @@ export function useEntityList(
   params: {
     typeId?: string;
     tagId?: string;
+    /** Only entries usable in this book: the shared ones and those scoped to it. */
+    bookId?: string;
     visibility?: Visibility;
     sort?: EntitySort;
     limit?: number;

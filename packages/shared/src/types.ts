@@ -55,6 +55,8 @@ export interface EntitySummary {
   aliases: string[];
   summary: string;
   visibility: Visibility;
+  /** The books this entry is for; empty = shared across the whole series. */
+  scopeBookIds: string[];
   updatedAt: string;
 }
 

@@ -163,6 +163,11 @@ export const entities = pgTable(
       sql`to_tsvector('simple'::regconfig, search_text)`,
     ),
     visibility: visibilityEnum('visibility').notNull().default('gm'),
+    /** Book nodes this entry is for; empty = shared across every book. */
+    scopeBookIds: uuid('scope_book_ids')
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
     /** In-world day numbers (see calendars): born/died, founded/fallen, begins/ends. */
     startDay: bigint('start_day', { mode: 'number' }),
     endDay: bigint('end_day', { mode: 'number' }),

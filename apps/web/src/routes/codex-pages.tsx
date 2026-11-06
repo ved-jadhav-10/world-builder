@@ -11,6 +11,7 @@ import { NewEntityDialog } from '@/components/new-entity-dialog';
 import { Button } from '@/components/ui/button';
 import { NativeSelect } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner, Spinner } from '@/components/ui/misc';
+import { useManuscriptTree } from '@/lib/manuscript-tree';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
 
@@ -95,6 +96,9 @@ export function EntityListPage() {
   const [sort, setSort] = useState<EntitySort>('name');
   const [tagId, setTagId] = useState('');
   const [visibility, setVisibility] = useState<Visibility | ''>('');
+  const [bookId, setBookId] = useState('');
+  const { tree } = useManuscriptTree();
+  const books = tree.nodes.filter((n) => n.kind === 'book');
   // Bulk edit: pick rows, then change them all at once.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -103,6 +107,7 @@ export function EntityListPage() {
     typeId: type?.id,
     sort,
     tagId: tagId || undefined,
+    bookId: bookId || undefined,
     visibility: visibility || undefined,
   });
 
@@ -175,6 +180,21 @@ export function EntityListPage() {
             {tags.map((tag) => (
               <option key={tag.id} value={tag.id}>
                 {tag.name}
+              </option>
+            ))}
+          </NativeSelect>
+        ) : null}
+        {books.length > 0 ? (
+          <NativeSelect
+            aria-label="Filter by book"
+            className="w-auto"
+            value={bookId}
+            onChange={(e) => setBookId(e.target.value)}
+          >
+            <option value="">All books</option>
+            {books.map((book) => (
+              <option key={book.id} value={book.id}>
+                {book.title}
               </option>
             ))}
           </NativeSelect>

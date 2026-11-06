@@ -511,6 +511,12 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified:** I could not test a real import into Foundry or Fantasy Grounds, so the file follows the published .dd2vtt layout from memory of the format. Portals and object lines are exported empty.
 - **Deferred:** portals (doors) from pins on a "Doors" layer, token frames from a library, Foundry journal/actor packs (H in the checklist).
 
+## Milestone 34 (Series codex): done
+
+- **Model:** `entities.scope_book_ids` (migration 0024), a list of book ids from the manuscript. **Empty means shared** across the whole series, which is what every existing entry is. One id is a single-book entry; several make a series of their own ("books 1 and 2 only"). There is no separate "series" object, since a series is just a set of books. Create and update validate that every id is a book of this world (404 otherwise; duplicates are dropped); deleting a book removes it from every scope, so an entry that was only for that book becomes shared again rather than lost.
+- **Codex list:** `GET /entities?bookId=` returns the shared entries plus those scoped to that book. The list page has a "Filter by book" select (GM side, since the manuscript is the GM's). The entry page has "Used in books" checkboxes. The world export carries `scopeBookIds`.
+- **Deliberately not done:** search and mention detection ignore scope (a character from another book still links in prose), and scope is not part of saved filters or entry history.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

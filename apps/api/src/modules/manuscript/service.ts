@@ -1,4 +1,4 @@
-import { and, asc, eq, getTableColumns, isNull, max, ne } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns, isNull, max, ne, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
   ALLOWED_CHILD_KINDS,
@@ -216,6 +216,16 @@ export async function moveNode(
 export async function deleteNode(db: DbOrTx, worldId: string, nodeId: string): Promise<void> {
   const node = await getNodeRow(db, worldId, nodeId);
   await db.delete(manuscriptNodes).where(eq(manuscriptNodes.id, node.id));
+  // Entries scoped to a deleted book would be left for no book at all; let them go back to
+  // being usable everywhere unless other books remain on their scope.
+  if (node.kind === 'book') {
+    await db
+      .update(entities)
+      .set({ scopeBookIds: sql`array_remove(${entities.scopeBookIds}, ${node.id}::uuid)` })
+      .where(
+        and(eq(entities.worldId, worldId), sql`${node.id}::uuid = any(${entities.scopeBookIds})`),
+      );
+  }
 }
 
 export async function mentionIndex(db: DbOrTx, worldId: string): Promise<MentionIndexEntry[]> {
