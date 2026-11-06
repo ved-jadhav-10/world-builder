@@ -61,6 +61,7 @@ export const router = createBrowserRouter([
                 }),
               },
               { path: 'continuity', lazy: () => import('@/routes/continuity-page') },
+              { path: 'arcs', lazy: () => import('@/routes/arc-page') },
               { path: 'word-check', lazy: () => import('@/routes/word-check-page') },
               { path: 'writing', lazy: () => import('@/routes/writing-page') },
               { path: 'comments', lazy: () => import('@/routes/comments-page') },

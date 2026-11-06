@@ -2,6 +2,16 @@ import { z } from 'zod';
 import { idSchema, visibilitySchema } from './common';
 import { dayNumberSchema } from './calendar';
 
+export const relationshipChangeSchema = z.object({
+  relationshipId: idSchema,
+  /** The link becomes another kind (friend to rival). */
+  typeId: idSchema.optional(),
+  /** The link is over from here on. */
+  ended: z.boolean().optional(),
+  notes: z.string().trim().max(2000).optional(),
+});
+export type RelationshipChange = z.infer<typeof relationshipChangeSchema>;
+
 /**
  * What a progression changes on its entry. Field values replace the entry's own; `null` clears
  * one (say, a title lost in a coup). A summary replaces the entry's summary.
@@ -9,6 +19,12 @@ import { dayNumberSchema } from './calendar';
 export const progressionChangesSchema = z.object({
   fields: z.record(z.string(), z.unknown()).optional(),
   summary: z.string().trim().max(2000).optional(),
+  /** A new name from here on (a title taken, a name changed at marriage). */
+  name: z.string().trim().min(1).max(200).optional(),
+  /** The full list of other names from here on; it replaces the entry's own. */
+  aliases: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
+  /** What happens to a link of this entry's: it ends, becomes another kind, or gets new notes. */
+  relationships: z.array(relationshipChangeSchema).max(50).optional(),
 });
 export type ProgressionChanges = z.infer<typeof progressionChangesSchema>;
 

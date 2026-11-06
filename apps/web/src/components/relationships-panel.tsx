@@ -2,7 +2,13 @@ import { CalendarClock, Link2, Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { isActiveAt, type Entity, type EntityRelationship, type StoryPoint } from '@atlas/shared';
+import {
+  isActiveAt,
+  type Entity,
+  type EntityRelationship,
+  type LinkState,
+  type StoryPoint,
+} from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import {
   useCreateRelationship,
@@ -36,10 +42,13 @@ export function RelationshipsPanel({
   entity,
   asOf = null,
   readOnly = false,
+  linkStates,
 }: {
   entity: Entity;
   asOf?: StoryPoint | null;
   readOnly?: boolean;
+  /** What progressions have done to links by `asOf`: some have ended or changed kind. */
+  linkStates?: Map<string, LinkState>;
 }) {
   const { world, typeById, base, canEdit: canEditWorld } = useWorld();
   const canEdit = canEditWorld && !readOnly;
@@ -70,10 +79,18 @@ export function RelationshipsPanel({
     const groups = new Map<string, EntityRelationship[]>();
     for (const link of links ?? []) {
       if (!isActiveAt(link.validFromDay, link.validToDay, asOf)) continue;
-      groups.set(link.label, [...(groups.get(link.label) ?? []), link]);
+      const state = linkStates?.get(link.id);
+      if (state?.ended) continue;
+      const kind = state?.typeId ? relTypes.find((t) => t.id === state.typeId) : undefined;
+      const label = kind
+        ? link.direction === 'outgoing'
+          ? kind.label
+          : kind.inverseLabel
+        : link.label;
+      groups.set(label, [...(groups.get(label) ?? []), link]);
     }
     return [...groups.entries()];
-  }, [links, asOf]);
+  }, [links, asOf, linkStates, relTypes]);
 
   async function addLink(other: { id: string }) {
     if (!selected) return;

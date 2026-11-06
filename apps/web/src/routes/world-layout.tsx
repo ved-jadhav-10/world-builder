@@ -20,6 +20,7 @@ import {
   Settings,
   ShieldCheck,
   SpellCheck,
+  Spline,
   SlidersHorizontal,
   Target,
   Trash2,
@@ -131,6 +132,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
             <NavLink to={`${base}/word-check`} className={navItem}>
               <SpellCheck /> Word check
+            </NavLink>
+            <NavLink to={`${base}/arcs`} className={navItem}>
+              <Spline /> Arc tracker
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards

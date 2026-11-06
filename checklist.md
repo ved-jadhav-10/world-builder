@@ -30,7 +30,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Saved filters and entry templates:** per-person saved filters (tag, visibility, sort) on a type's list, and entry templates made from an entry (M22). Still to do: **world templates** (starting a new world from a ready-made one) [MVP].
 - [x] **More built-in types:** Religion, Language, Magic or Tech System and Glossary Term, with ready-made fields, added to new and existing worlds (M19).
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].
-- [ ] **Arc tracker** showing how traits and relationships change across chapters, powered by progressions [v1].
+- [x] **Arc tracker** showing how a name, details and links change across chapters or scenes, powered by progressions (M26).
 - [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
 - [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
 - [x] **Version history** per entry and per scene with a word-level comparison, named versions and restore (M14). Still to do: history for chapters and other records, and partial restore [v1].
@@ -55,7 +55,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Fog of war** and reveals for players [v2]; light annotation tools beyond the current pins, labels, paths and regions [v1].
 - [ ] **Map art importers** for Azgaar and Watabou output [MVP import is plain upload today]; hex and grid overlays and a vector map editor [v3].
 - [ ] **Calendars:** several calendars per world and parallel timeline tracks beyond lanes by type (deferred in M4); **calendar reminders** on entries [v1].
-- [ ] **Progressions** for relationships, names and aliases (deferred in M4).
+- [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.
 - [ ] **Timeline playback** and **chronicles playback** (animating events in place on the map) [v2].
 - [x] **Continuity checker:** warns when a dead character reappears, a narrator is outside their life, a parent is younger than a child, a link starts outside someone's life, an item has two owners or a narrator is in two places at once (M12). Still to do: travel feasibility from map distances, and age against species lifespan [v2].
 - [ ] **Universal VTT export**, a **token maker** [v2].

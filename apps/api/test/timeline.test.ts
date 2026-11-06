@@ -438,3 +438,91 @@ describe('export', () => {
     });
   });
 });
+
+describe('progressions for names, aliases and links', () => {
+  async function withLink() {
+    const ctx = await setup();
+    const { api, w } = ctx;
+    const hero = await ctx.entity('character', 'Maren');
+    const friend = await ctx.entity('character', 'Dov');
+    const types = (await api.get(`${w}/relationship-types`)).json<RelationshipType[]>();
+    const created = await api.post(`${w}/relationships`, {
+      sourceId: hero.id,
+      targetId: friend.id,
+      typeId: types[0]!.id,
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    const book = await ctx.node('book', 'One');
+    const chapter = await ctx.node('chapter', 'Ch', book.id);
+    const scene = await ctx.node('scene', 'The feast', chapter.id);
+    return { ...ctx, hero, friend, types, link: created.json<{ id: string }>(), scene };
+  }
+
+  it('keeps a new name, aliases and link changes, and lists them world-wide', async () => {
+    const { api, w, hero, link, types, progress, scene } = await withLink();
+    const made = await progress(hero.id, {
+      title: 'Wed',
+      sceneId: scene.id,
+      changes: {
+        name: 'Maren Vael',
+        aliases: ['Mare', 'Mare'],
+        relationships: [{ relationshipId: link.id, typeId: types[1]!.id, ended: true }],
+      },
+    });
+    expect(made.changes).toEqual({
+      name: 'Maren Vael',
+      aliases: ['Mare'],
+      relationships: [{ relationshipId: link.id, typeId: types[1]!.id, ended: true }],
+    });
+    const all = (await api.get(`${w}/progressions`)).json<Progression[]>();
+    expect(all.map((p) => p.id)).toEqual([made.id]);
+  });
+
+  it("refuses links that are not this entry's, or kinds from elsewhere", async () => {
+    const { api, w, hero, friend, link, scene, types } = await withLink();
+    const stranger = await setup();
+    const other = await stranger.entity('character', 'Stranger');
+    const otherLink = await stranger.api.post(`${stranger.w}/relationships`, {
+      sourceId: other.id,
+      targetId: (await stranger.entity('character', 'Another')).id,
+      typeId: (await stranger.api.get(`${stranger.w}/relationship-types`)).json<
+        RelationshipType[]
+      >()[0]!.id,
+    });
+    const body = (relationships: object[]) => ({
+      title: 'x',
+      sceneId: scene.id,
+      changes: { relationships },
+    });
+    const bad = await api.post(
+      `${w}/entities/${hero.id}/progressions`,
+      body([{ relationshipId: otherLink.json<{ id: string }>().id, ended: true }]),
+    );
+    expect(bad.statusCode).toBe(404);
+    const badType = await api.post(
+      `${w}/entities/${hero.id}/progressions`,
+      body([
+        {
+          relationshipId: link.id,
+          typeId: (await stranger.api.get(`${stranger.w}/relationship-types`)).json<
+            RelationshipType[]
+          >()[0]!.id,
+        },
+      ]),
+    );
+    expect(badType.statusCode).toBe(404);
+    // The other end of the link may record it too.
+    const fromFriend = await api.post(
+      `${w}/entities/${friend.id}/progressions`,
+      body([{ relationshipId: link.id, ended: true }]),
+    );
+    expect(fromFriend.statusCode).toBe(201);
+    expect(types.length).toBeGreaterThan(1);
+  });
+
+  it('keeps the world-wide list to the GM', async () => {
+    const { w } = await setup();
+    const outsider = await signUp(app);
+    expect((await outsider.api.get(`${w}/progressions`)).statusCode).toBeGreaterThanOrEqual(403);
+  });
+});

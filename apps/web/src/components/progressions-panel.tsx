@@ -7,6 +7,7 @@ import {
   type EntityType,
   type Progression,
   type ProgressionChanges,
+  type RelationshipChange,
   type Visibility,
 } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
@@ -23,7 +24,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { Spinner } from '@/components/ui/misc';
+import { useEntityRelationships, useRelationshipTypes } from '@/api/queries';
 import { useAnchorLabel, useScenes } from '@/lib/as-of';
+import { useLinkWords } from '@/lib/use-link-words';
 import { describeChanges } from '@/lib/progression-text';
 import { VisibilityBadge, VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
@@ -55,6 +58,15 @@ function ProgressionForm({
   const [summaryOn, setSummaryOn] = useState(existing?.changes.summary !== undefined);
   const [summary, setSummary] = useState(existing?.changes.summary ?? entity.summary);
   const [visibility, setVisibility] = useState<Visibility>(existing?.visibility ?? 'gm');
+  const [nameOn, setNameOn] = useState(existing?.changes.name !== undefined);
+  const [name, setName] = useState(existing?.changes.name ?? entity.name);
+  const [aliasesOn, setAliasesOn] = useState(existing?.changes.aliases !== undefined);
+  const [aliases, setAliases] = useState((existing?.changes.aliases ?? entity.aliases).join(', '));
+  const [linkChanges, setLinkChanges] = useState<RelationshipChange[]>(
+    existing?.changes.relationships ?? [],
+  );
+  const { data: links = [] } = useEntityRelationships(world.id, entity.id);
+  const { data: relTypes = [] } = useRelationshipTypes(world.id);
 
   const unused = type.fieldSchema.filter((f) => !(f.key in fields));
   const placed = anchor === 'scene' ? sceneId !== '' : day !== null;
@@ -65,6 +77,16 @@ function ProgressionForm({
     const changes: ProgressionChanges = {
       ...(Object.keys(fields).length > 0 ? { fields } : {}),
       ...(summaryOn ? { summary } : {}),
+      ...(nameOn && name.trim() ? { name: name.trim() } : {}),
+      ...(aliasesOn
+        ? {
+            aliases: aliases
+              .split(',')
+              .map((a) => a.trim())
+              .filter(Boolean),
+          }
+        : {}),
+      ...(linkChanges.length > 0 ? { relationships: linkChanges } : {}),
     };
     const payload = {
       title,
@@ -208,6 +230,106 @@ function ProgressionForm({
             onChange={(event) => setSummary(event.target.value)}
           />
         ) : null}
+        <label className="flex items-center gap-1.5 text-sm">
+          <input
+            type="checkbox"
+            checked={nameOn}
+            onChange={(event) => setNameOn(event.target.checked)}
+          />
+          Change the name
+        </label>
+        {nameOn ? (
+          <Input
+            aria-label="New name"
+            maxLength={200}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        ) : null}
+        <label className="flex items-center gap-1.5 text-sm">
+          <input
+            type="checkbox"
+            checked={aliasesOn}
+            onChange={(event) => setAliasesOn(event.target.checked)}
+          />
+          Change the other names
+        </label>
+        {aliasesOn ? (
+          <div className="space-y-1">
+            <Input
+              aria-label="New other names"
+              placeholder="Mare, the Squire"
+              value={aliases}
+              onChange={(event) => setAliases(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Separate names with commas. This replaces the entry’s other names; leave it empty to
+              clear them.
+            </p>
+          </div>
+        ) : null}
+        {links.length > 0 || linkChanges.length > 0 ? (
+          <div className="space-y-2">
+            {linkChanges.map((change, i) => {
+              const link = links.find((l) => l.id === change.relationshipId);
+              const patch = (next: Partial<RelationshipChange>) =>
+                setLinkChanges(linkChanges.map((c, j) => (j === i ? { ...c, ...next } : c)));
+              return (
+                <div key={change.relationshipId} className="space-y-1.5 rounded-md border p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {link ? `${link.label} ${link.other.name}` : 'A link that no longer exists'}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                      onClick={() => setLinkChanges(linkChanges.filter((_, j) => j !== i))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={change.ended === true}
+                      onChange={(event) => patch({ ended: event.target.checked })}
+                    />
+                    This link ends here
+                  </label>
+                  <NativeSelect
+                    aria-label="Becomes"
+                    value={change.typeId ?? ''}
+                    onChange={(event) => patch({ typeId: event.target.value || undefined })}
+                  >
+                    <option value="">Stays the same kind of link</option>
+                    {relTypes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        Becomes “{t.label}”
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+              );
+            })}
+            <NativeSelect
+              aria-label="Change a link"
+              value=""
+              onChange={(event) => {
+                if (!event.target.value) return;
+                setLinkChanges([...linkChanges, { relationshipId: event.target.value }]);
+              }}
+            >
+              <option value="">Change a link…</option>
+              {links
+                .filter((l) => !linkChanges.some((c) => c.relationshipId === l.id))
+                .map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.label} {l.other.name}
+                  </option>
+                ))}
+            </NativeSelect>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-1.5">
@@ -273,6 +395,7 @@ export function ProgressionsPanel({ entity, type }: { entity: Entity; type: Enti
   const { index } = useScenes();
   const anchorLabel = useAnchorLabel();
   const remove = useDeleteProgression(world.id, entity.id);
+  const words = useLinkWords(entity.id);
   const ordered = sortProgressions(progressions ?? [], index, true);
 
   return (
@@ -304,7 +427,7 @@ export function ProgressionsPanel({ entity, type }: { entity: Entity; type: Enti
       ) : (
         <ol className="space-y-2">
           {ordered.map((progression) => {
-            const lines = describeChanges(type, progression.changes);
+            const lines = describeChanges(type, progression.changes, words);
             const unplaced = !progression.sceneId && progression.day === null;
             return (
               <li key={progression.id} className="group rounded-lg border bg-card p-3 text-sm">

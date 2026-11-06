@@ -169,6 +169,36 @@ describe('applying progressions', () => {
     expect(base.fields).toEqual({ title: 'Squire', home: 'Vael' }); // the original is untouched
   });
 
+  it('changes names, aliases and links, the last word winning', () => {
+    const wed = progression('Wed', { sceneId: 's2' }, { name: 'Maren Vael', aliases: ['Mare'] });
+    const feud = progression(
+      'Feud',
+      { sceneId: 's3' },
+      {
+        aliases: [],
+        relationships: [
+          { relationshipId: 'r1', typeId: 't-rival', notes: 'Since the feast.' },
+          { relationshipId: 'r2', ended: true },
+        ],
+      },
+    );
+    const mend = progression(
+      'Mend',
+      { sceneId: 's4' },
+      { relationships: [{ relationshipId: 'r2', ended: false }] },
+    );
+    const named = { ...base, name: 'Maren', aliases: ['Squire'] };
+    const early = applyProgressions(named, [wed, feud, mend], pointAtScene(scenes, 's1')!, scenes);
+    expect(early).toMatchObject({ name: 'Maren', aliases: ['Squire'] });
+    expect(early.links.size).toBe(0);
+    const mid = applyProgressions(named, [wed, feud, mend], pointAtScene(scenes, 's3')!, scenes);
+    expect(mid).toMatchObject({ name: 'Maren Vael', aliases: [] });
+    expect(mid.links.get('r1')).toEqual({ typeId: 't-rival', notes: 'Since the feast.' });
+    expect(mid.links.get('r2')).toEqual({ ended: true });
+    const end = applyProgressions(named, [wed, feud, mend], pointAtScene(scenes, 's4')!, scenes);
+    expect(end.links.get('r2')).toEqual({ ended: false });
+  });
+
   it('can blank the summary on purpose', () => {
     const result = applyProgressions(
       base,

@@ -135,9 +135,20 @@ export function latestApplicable<T extends Anchored>(
   return sortProgressions(reached, scenes, point.sceneIndex !== null).at(-1) ?? null;
 }
 
+/** What progressions have done to one link by some point: the last word on each part. */
+export interface LinkState {
+  typeId?: string;
+  ended?: boolean;
+  notes?: string;
+}
+
 export interface ResolvedEntry {
   fields: Record<string, unknown>;
   summary: string;
+  name: string;
+  aliases: string[];
+  /** By relationship id; links no progression touches are absent. */
+  links: Map<string, LinkState>;
   /** In the order they took effect. */
   applied: Progression[];
   later: Progression[];
@@ -146,7 +157,7 @@ export interface ResolvedEntry {
 
 /** An entry's fields and summary as they stand at `point`, with each progression sorted out. */
 export function applyProgressions(
-  base: { fields: Record<string, unknown>; summary: string },
+  base: { fields: Record<string, unknown>; summary: string; name?: string; aliases?: string[] },
   progressions: readonly Progression[],
   point: StoryPoint,
   scenes: SceneIndex,
@@ -166,14 +177,35 @@ export function applyProgressions(
 
   const fields = { ...base.fields };
   let summary = base.summary;
+  let name = base.name ?? '';
+  let aliases = base.aliases ?? [];
+  const links = new Map<string, LinkState>();
   for (const progression of orderedApplied) {
     for (const [key, value] of Object.entries(progression.changes.fields ?? {})) {
       if (value === null || value === undefined) delete fields[key];
       else fields[key] = value;
     }
     if (progression.changes.summary !== undefined) summary = progression.changes.summary;
+    if (progression.changes.name !== undefined) name = progression.changes.name;
+    if (progression.changes.aliases !== undefined) aliases = progression.changes.aliases;
+    for (const change of progression.changes.relationships ?? []) {
+      const state = { ...links.get(change.relationshipId) };
+      if (change.typeId !== undefined) state.typeId = change.typeId;
+      if (change.notes !== undefined) state.notes = change.notes;
+      if (change.ended !== undefined) state.ended = change.ended;
+      links.set(change.relationshipId, state);
+    }
   }
-  return { fields, summary, applied: orderedApplied, later: orderedLater, unplaced };
+  return {
+    fields,
+    summary,
+    name,
+    aliases,
+    links,
+    applied: orderedApplied,
+    later: orderedLater,
+    unplaced,
+  };
 }
 
 /** Does a dated link (or life span) hold at `point`? With no day to go by, everything shows. */

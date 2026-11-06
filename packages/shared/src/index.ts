@@ -49,3 +49,4 @@ export * from './schemas/comments';
 export * from './word-check';
 export * from './schemas/word-check';
 export * from './manuscript-move';
+export * from './arc';

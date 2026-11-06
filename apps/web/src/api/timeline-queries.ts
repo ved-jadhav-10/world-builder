@@ -46,6 +46,15 @@ export const useProgressions = (worldId: string, entityId: string) =>
       api<Progression[]>('GET', `/worlds/${worldId}/entities/${entityId}/progressions`),
   });
 
+/** Every change in the world, for the arc tracker. GM only. */
+export const useWorldProgressions = (worldId: string) =>
+  useQuery({
+    queryKey: ['progressions', worldId, 'all'] as const,
+    queryFn: () => api<Progression[]>('GET', `/worlds/${worldId}/progressions`),
+    // Changes are written from entry pages, so always look again when the tracker opens.
+    staleTime: 0,
+  });
+
 export function useCreateProgression(worldId: string, entityId: string) {
   const qc = useQueryClient();
   return useMutation({

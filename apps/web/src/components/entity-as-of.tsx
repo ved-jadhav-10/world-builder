@@ -8,6 +8,7 @@ import { Badge, Spinner } from '@/components/ui/misc';
 import { Button } from '@/components/ui/button';
 import { useAnchorLabel, useScenes, useStoryPoint, type AsOf } from '@/lib/as-of';
 import { describeChanges } from '@/lib/progression-text';
+import { useLinkWords } from '@/lib/use-link-words';
 import { useDates } from '@/lib/use-dates';
 import { useWorld } from '@/lib/world-context';
 
@@ -27,6 +28,7 @@ export function EntityAsOfView({
   const { index, options } = useScenes();
   const dates = useDates();
   const anchorLabel = useAnchorLabel();
+  const words = useLinkWords(entity.id);
   const { point, missing } = useStoryPoint(asOf);
   const { data: progressions, isPending } = useProgressions(world.id, entity.id);
   const { data: images } = useImages(world.id, { entityId: entity.id });
@@ -62,7 +64,7 @@ export function EntityAsOfView({
   if (isPending || !progressions) return <Spinner />;
 
   const resolved = applyProgressions(
-    { fields: entity.fields, summary: entity.summary },
+    { fields: entity.fields, summary: entity.summary, name: entity.name, aliases: entity.aliases },
     progressions,
     point,
     index,
@@ -112,6 +114,19 @@ export function EntityAsOfView({
               {lifeStatus}
             </Badge>
           ) : null}
+          {resolved.name !== entity.name || resolved.aliases.join() !== entity.aliases.join() ? (
+            <div className="space-y-1">
+              <h2 className="text-sm font-semibold">
+                Name <Badge className="ml-1 align-middle">changed</Badge>
+              </h2>
+              <p className="text-lg font-semibold">{resolved.name}</p>
+              {resolved.aliases.length > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Also known as {resolved.aliases.join(', ')}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="space-y-1.5">
             <h2 className="text-sm font-semibold">
               Summary{' '}
@@ -135,7 +150,7 @@ export function EntityAsOfView({
             ) : (
               <ol className="space-y-2">
                 {resolved.applied.map((progression) => {
-                  const lines = describeChanges(type, progression.changes);
+                  const lines = describeChanges(type, progression.changes, words);
                   return (
                     <li key={progression.id} className="rounded-lg border bg-card p-3 text-sm">
                       <p className="font-medium">{progression.title}</p>
@@ -196,7 +211,7 @@ export function EntityAsOfView({
               </div>
             ))}
           </section>
-          <RelationshipsPanel entity={entity} asOf={point} readOnly />
+          <RelationshipsPanel entity={entity} asOf={point} readOnly linkStates={resolved.links} />
         </aside>
       </div>
     </div>

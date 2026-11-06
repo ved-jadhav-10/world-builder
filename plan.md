@@ -448,6 +448,12 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified in Chrome** (scripted with real drag and drop, 8 steps): a scene dropped before another, a scene dropped into a chapter, a chapter reordered, two refused drops changing nothing (a scene onto a book, a chapter onto a scene), the menu still working, and the order surviving a reload, with no 4xx or 5xx.
 - **Deferred:** dragging several items at once, drag handles and touch drag, scrolling the binder while dragging near its edge, and dragging between books.
 
+## Milestone 26 (Progressions for names and links, and the arc tracker): done
+
+- **Progressions** can now also change an entry's **name**, its **other names** (replacing the list) and its **links**: a link can end, become another kind, or get new notes. Link changes must name a live link of that entry (either end) and a kind from the same world (404 otherwise). The as-of view shows the new name and drops or relabels links. Shared rules: `applyProgressions` returns `name`, `aliases` and `links`.
+- **Arc tracker** (`packages/shared/src/arc.ts`, GM sidebar "Arc tracker", `GET /progressions` for every change in the world): pick an entry and see its name, summary, details and links at the end of each chapter or scene, with changed cells highlighted and a toggle for "only what changes". Only scene-placed changes are read, since columns are story order.
+- **Deferred:** the as-of Atlas (borders by year) and as-of manuscript; a chart view of the arc.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

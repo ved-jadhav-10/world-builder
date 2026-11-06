@@ -5,15 +5,26 @@ import {
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
+import {
+  currentAudience,
+  currentWorldId,
+  requireAudience,
+  requireRole,
+} from '../../plugins/auth-guard';
 import {
   createProgression,
   deleteProgression,
   listProgressions,
+  listWorldProgressions,
   updateProgression,
 } from './service';
 
 export const progressionRoutes: FastifyPluginAsyncZod = async (app) => {
+  // Every change in the world, for the arc tracker. Like the manuscript it reads, GM only.
+  app.get('/progressions', { onRequest: requireAudience('gm') }, async (request) =>
+    listWorldProgressions(db, currentWorldId(request)),
+  );
+
   app.get(
     '/entities/:id/progressions',
     { schema: { params: worldItemParamsSchema } },
