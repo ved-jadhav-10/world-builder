@@ -51,6 +51,7 @@ export function MapSettingsDialog({
   const [scaleUnit, setScaleUnit] = useState(map.scale?.unit ?? 'mi');
   const [modes, setModes] = useState<ModeRow[]>(() => modeRows(map));
   const [newImage, setNewImage] = useState<File | null>(null);
+  const [fog, setFog] = useState(map.fogEnabled);
   const updateMap = useUpdateMap(world.id);
   const replaceImage = useReplaceMapImage(world.id);
   const deleteMap = useDeleteMap(world.id);
@@ -107,6 +108,7 @@ export function MapSettingsDialog({
         description: String(form.get('description')),
         parentId: String(form.get('parentId')) || null,
         visibility,
+        fogEnabled: fog,
         ...(scale !== undefined ? { scale } : {}),
         ...(entity !== undefined ? { entityId: entity?.id ?? null } : {}),
       });
@@ -137,6 +139,7 @@ export function MapSettingsDialog({
           setScaleUnit(map.scale?.unit ?? 'mi');
           setModes(modeRows(map));
           setNewImage(null);
+          setFog(map.fogEnabled);
         }
       }}
     >
@@ -177,6 +180,22 @@ export function MapSettingsDialog({
               defaultValue={map.name}
             />
           </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={fog}
+              onChange={(event) => setFog(event.target.checked)}
+            />
+            <span>
+              Fog of war
+              <span className="block text-xs text-muted-foreground">
+                Players see only the areas you mark with the Reveal tool. The picture they are sent
+                is covered outside those areas, and pins outside them are not sent at all. You
+                always see everything.
+              </span>
+            </span>
+          </label>
           <div className="space-y-1.5">
             <Label htmlFor="settings-parent">Sits inside</Label>
             <NativeSelect id="settings-parent" name="parentId" defaultValue={map.parentId ?? ''}>

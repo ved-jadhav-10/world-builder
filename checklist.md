@@ -52,7 +52,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Time-aware map items** (borders, roads and anything else with a start and end) and an as-of date for the Atlas (M29). Still to do: an as-of view of the manuscript.
 - [x] **Map prep notes on pins** (GM-only notes, never sent to players) (M13).
 - [x] **Journey lines**, routes with dated stops that show how far along they are on any date (M29). **Pointcrawl or node maps** too: blank canvas maps and a route finder (M30).
-- [ ] **Fog of war** and reveals for players [v2]; light annotation tools: arrows and circles beside the pins, labels, paths and regions (M29).
+- [x] **Fog of war** and reveals for players (M31); light annotation tools: arrows and circles beside the pins, labels, paths and regions (M29).
 - [x] **Map art importers**: SVG exports are drawn into a map picture, and a GeoJSON file brings places, roads and areas in as items (M30). Still to do: hex and grid overlays and a vector map editor [v3], and Azgaar's own .map format.
 - [x] **Calendars:** several calendars per world, timeline tracks by tag as well as by type, and **calendar reminders** (a world "today" and a coming-up list with yearly anniversaries) (M28). Still to do: reminders as notifications, and showing a date in the other calendars on entry pages.
 - [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.

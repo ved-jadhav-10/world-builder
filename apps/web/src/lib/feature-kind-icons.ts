@@ -1,5 +1,6 @@
 import {
   Circle,
+  Eye,
   Footprints,
   MapPin,
   MoveUpRight,
@@ -19,4 +20,5 @@ export const FEATURE_KIND_ICONS: Record<FeatureKind, LucideIcon> = {
   journey: Footprints,
   arrow: MoveUpRight,
   circle: Circle,
+  reveal: Eye,
 };

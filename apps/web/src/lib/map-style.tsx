@@ -11,6 +11,7 @@ export const DEFAULT_COLORS: Record<FeatureKind, string> = {
   journey: '#be123c',
   arrow: '#dc2626',
   circle: '#dc2626',
+  reveal: '#eab308',
 };
 
 export const COLOR_PRESETS = [

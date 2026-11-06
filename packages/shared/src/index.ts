@@ -56,3 +56,4 @@ export * from './reminders';
 export * from './journey';
 export * from './map-route';
 export * from './geojson-import';
+export * from './fog';

@@ -225,6 +225,8 @@ export interface AtlasMap {
   imageVersion: number;
   /** What a distance on this map means; null until the GM sets one. */
   scale: MapScale | null;
+  /** True when players only see the areas the GM has revealed. */
+  fogEnabled: boolean;
   /** The entry this map shows, such as the Location it covers. */
   entityId: string | null;
   entity: MapEntityRef | null;

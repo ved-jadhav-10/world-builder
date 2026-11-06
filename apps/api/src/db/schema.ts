@@ -338,6 +338,8 @@ export const maps = pgTable(
     imageVersion: integer('image_version').notNull().default(1),
     /** Distance scale and travel paces; null until the GM sets one. */
     scale: jsonb('scale').$type<MapScale>(),
+    /** Fog of war: other audiences see only the areas of kind "reveal". */
+    fogEnabled: boolean('fog_enabled').notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

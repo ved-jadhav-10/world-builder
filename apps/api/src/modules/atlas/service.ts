@@ -7,10 +7,12 @@ import {
   eq,
   getTableColumns,
   gte,
+  inArray,
   ilike,
   isNotNull,
   isNull,
   lte,
+  ne,
   or,
   sql,
   type SQL,
@@ -18,6 +20,10 @@ import {
 import type { z } from 'zod';
 import {
   BLANK_MAP_SHAPES,
+  FOG_COLOR,
+  isUncovered,
+  revealMaskSvg,
+  TILE_SIZE,
   geojsonToItems,
   mapMaxZoom,
   pointCountProblem,
@@ -120,6 +126,7 @@ function toMap(
     height: map.height,
     imageVersion: map.imageVersion,
     scale: map.scale,
+    fogEnabled: map.fogEnabled,
     entityId: view ? (entity?.id ?? null) : map.entityId,
     entity,
     visibility: map.visibility,
@@ -158,11 +165,16 @@ export async function listMaps(
 
   const visibleIds = new Set(rows.map((row) => row.map.id));
   const counts = new Map<string, number>();
-  const features = await selectFeatures(db, audience).where(
-    and(eq(mapFeatures.worldId, worldId), featureVisible(audience)),
-  );
-  for (const { feature } of features)
+  const [features, fog] = await Promise.all([
+    selectFeatures(db, audience).where(
+      and(eq(mapFeatures.worldId, worldId), featureVisible(audience)),
+    ),
+    loadFog(db, worldId, audience),
+  ]);
+  for (const { feature } of features) {
+    if (hiddenByFog(fog, feature.mapId, feature.points)) continue;
     counts.set(feature.mapId, (counts.get(feature.mapId) ?? 0) + 1);
+  }
   return rows.map((row) =>
     toMap(row, {
       featureCount: counts.get(row.map.id) ?? 0,
@@ -368,10 +380,34 @@ export async function readTile(
   x: number,
   y: number,
   audience: Audience = 'gm',
-): Promise<Buffer> {
+): Promise<{ data: Buffer; fogged: boolean }> {
   const map = await getMapRow(db, worldId, mapId, audience);
   if (map.status !== 'ready' || z > mapMaxZoom(map.width, map.height)) throw notFound('Tile');
-  return readMapFile(tilePath(worldId, mapId, z, x, y));
+  const tile = await readMapFile(tilePath(worldId, mapId, z, x, y));
+  if (audience === 'gm' || !map.fogEnabled) return { data: tile, fogged: false };
+  const areas = (await loadFog(db, worldId, audience)).get(mapId) ?? [];
+  return { data: await fogTile(tile, areas, map, { z, x, y }), fogged: true };
+}
+
+/** Paints fog over everything in a tile that is not inside a revealed area. */
+async function fogTile(
+  tile: Buffer,
+  areas: MapPoint[][],
+  map: { width: number; height: number },
+  at: { z: number; x: number; y: number },
+): Promise<Buffer> {
+  const mask = Buffer.from(revealMaskSvg(areas, map, at));
+  const revealed = await sharp(tile)
+    .ensureAlpha()
+    .composite([{ input: mask, blend: 'dest-in' }])
+    .png()
+    .toBuffer();
+  return sharp({
+    create: { width: TILE_SIZE, height: TILE_SIZE, channels: 4, background: FOG_COLOR },
+  })
+    .composite([{ input: revealed }])
+    .webp({ quality: 80 })
+    .toBuffer();
 }
 
 export async function readThumbnail(
@@ -382,6 +418,12 @@ export async function readThumbnail(
 ): Promise<Buffer> {
   const map = await getMapRow(db, worldId, mapId, audience);
   if (map.status !== 'ready') throw notFound('Thumbnail');
+  // A fogged map's picture would show what is not yet uncovered, so players get plain fog.
+  if (audience !== 'gm' && map.fogEnabled) {
+    return sharp({ create: { width: 640, height: 400, channels: 3, background: FOG_COLOR } })
+      .webp({ quality: 60 })
+      .toBuffer();
+  }
   return readMapFile(thumbnailPath(worldId, mapId));
 }
 
@@ -409,9 +451,45 @@ function featureVisible(audience: Audience): SQL | undefined {
   if (audience === 'gm') return undefined;
   return and(
     visibleTo(mapFeatures.visibility, audience),
+    // Revealed areas are the GM's tool; players only see what they uncover.
+    ne(mapFeatures.kind, 'reveal'),
     or(isNull(mapFeatures.entityId), isNotNull(entities.id)),
   );
 }
+
+/** For each map with fog of war, the areas the GM has revealed. Empty for the GM. */
+type Fog = Map<string, MapPoint[][]>;
+
+async function loadFog(db: DbOrTx, worldId: string, audience: Audience): Promise<Fog> {
+  if (audience === 'gm') return new Map();
+  const fogged = await db
+    .select({ id: maps.id })
+    .from(maps)
+    .where(and(eq(maps.worldId, worldId), eq(maps.fogEnabled, true)));
+  if (fogged.length === 0) return new Map();
+  const areas = await db
+    .select({ mapId: mapFeatures.mapId, points: mapFeatures.points })
+    .from(mapFeatures)
+    .where(
+      and(
+        eq(mapFeatures.worldId, worldId),
+        eq(mapFeatures.kind, 'reveal'),
+        inArray(
+          mapFeatures.mapId,
+          fogged.map((m) => m.id),
+        ),
+      ),
+    );
+  const fog: Fog = new Map(fogged.map((m) => [m.id, []]));
+  for (const area of areas) fog.get(area.mapId)!.push(area.points);
+  return fog;
+}
+
+/** Is an item on a fogged map outside everything revealed? Then it must not be sent. */
+const hiddenByFog = (fog: Fog, mapId: string, points: MapPoint[]) => {
+  const areas = fog.get(mapId);
+  return areas !== undefined && !isUncovered(points, areas);
+};
 
 /** The maps an audience can open, so links to any other map can be left out. */
 async function visibleMapIds(db: DbOrTx, worldId: string, audience: Audience) {
@@ -485,8 +563,13 @@ export async function listFeatures(
     )
     .orderBy(asc(mapFeatures.createdAt));
   if (audience === 'gm') return rows.map((row) => toFeature(row));
-  const linkable = await visibleMapIds(db, worldId, audience);
-  return rows.map((row) => toFeature(row, linkable));
+  const [linkable, fog] = await Promise.all([
+    visibleMapIds(db, worldId, audience),
+    loadFog(db, worldId, audience),
+  ]);
+  return rows
+    .filter((row) => !hiddenByFog(fog, mapId, row.feature.points))
+    .map((row) => toFeature(row, linkable));
 }
 
 async function getFeature(
@@ -729,6 +812,7 @@ export async function listEntityMapLinks(
         mapName: maps.name,
         featureId: mapFeatures.id,
         kind: mapFeatures.kind,
+        points: mapFeatures.points,
       })
       .from(mapFeatures)
       .innerJoin(maps, eq(maps.id, mapFeatures.mapId))
@@ -742,9 +826,13 @@ export async function listEntityMapLinks(
       )
       .orderBy(asc(maps.name), asc(mapFeatures.createdAt)),
   ]);
+  const fog = await loadFog(db, worldId, audience);
   return [
     ...depicting.map((m) => ({ ...m, featureId: null, kind: null })),
-    ...pinned.map((p) => ({ ...p })),
+    ...pinned
+      .filter((p) => p.kind !== 'reveal' || audience === 'gm')
+      .filter((p) => !hiddenByFog(fog, p.mapId, p.points))
+      .map(({ points: _points, ...link }) => link),
   ];
 }
 
@@ -759,6 +847,7 @@ export async function searchAtlas(
   audience: Audience = 'gm',
 ): Promise<AtlasSearchResult[]> {
   const pattern = `%${escapeLike(q)}%`;
+  const fog = await loadFog(db, worldId, audience);
   const [mapRows, featureRows] = await Promise.all([
     db
       .select({ id: maps.id, name: maps.name })
@@ -779,6 +868,7 @@ export async function searchAtlas(
         mapName: maps.name,
         kind: mapFeatures.kind,
         label: mapFeatures.label,
+        points: mapFeatures.points,
       })
       .from(mapFeatures)
       .innerJoin(maps, eq(maps.id, mapFeatures.mapId))
@@ -810,14 +900,16 @@ export async function searchAtlas(
       kind: 'map' as const,
       label: m.name,
     })),
-    ...featureRows.map((f) => ({
-      id: f.id,
-      mapId: f.mapId,
-      mapName: f.mapName,
-      featureId: f.id,
-      kind: f.kind,
-      label: f.label,
-    })),
+    ...featureRows
+      .filter((f) => !hiddenByFog(fog, f.mapId, f.points))
+      .map((f) => ({
+        id: f.id,
+        mapId: f.mapId,
+        mapName: f.mapName,
+        featureId: f.id,
+        kind: f.kind,
+        label: f.label,
+      })),
   ];
   const lower = q.toLowerCase();
   const rank = (r: AtlasSearchResult) => (r.label.toLowerCase().startsWith(lower) ? 0 : 1);

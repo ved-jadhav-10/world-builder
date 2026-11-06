@@ -178,10 +178,11 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
         y,
         currentAudience(request),
       );
+      // What a player is sent depends on what has been revealed so far, so it can't be kept.
       return reply
         .header('content-type', 'image/webp')
-        .header('cache-control', TILE_CACHE)
-        .send(tile);
+        .header('cache-control', tile.fogged ? 'private, no-cache' : TILE_CACHE)
+        .send(tile.data);
     },
   );
 

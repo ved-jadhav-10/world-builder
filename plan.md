@@ -485,6 +485,17 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified against real files:** I had no real Azgaar or Watabou export to hand, so the GeoJSON path is tested against hand-made GeoJSON, not their actual output. Azgaar's own .map/JSON format is not read.
 - **Deferred:** hex and grid overlays, Azgaar's native format, snapping a path to a pin while drawing.
 
+## Milestone 31 (Fog of war): done
+
+- **Data:** `maps.fog_enabled` and a new map item kind **reveal** (an area of 3 to 500 points; migration 0023). Fog is switched on in the map settings; the **Reveal** tool outlines the areas players may see.
+- **What players are sent when fog is on** (the GM and co-GMs are unaffected, and "view as" previews follow the same rules):
+  - **Tiles** are cut on the fly: the picture shows inside revealed areas and plain fog (`#0f172a`) everywhere else (a mask from `revealMaskSvg`, composited with sharp). They are sent `private, no-cache` since reveals change; the GM's tiles stay immutable.
+  - **Thumbnails** are plain fog.
+  - **Items** (pins, labels, paths and so on) are dropped from the feature list, the map's item count, atlas search and an entry's "on the map" links unless at least one point is inside a revealed area. Reveal areas themselves are never sent to anyone but the GM.
+- **Rules** are in `packages/shared/src/fog.ts` (point in polygon, which tile pixels an area covers at each zoom level).
+- **Limits:** an item counts as revealed when any of its points is inside (a long road partly in view is shown whole); there is no automatic reveal by moving a token; a player who zoomed before a reveal sees the new area after reloading the tiles.
+- **Deferred:** brush-style uncovering, reveals tied to a session, soft fog edges.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

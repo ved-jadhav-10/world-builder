@@ -243,7 +243,7 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
     return buildJourneyAsOf(feature, latlngs, style.color, opts);
   }
 
-  const closed = feature.kind === 'region';
+  const closed = feature.kind === 'region' || feature.kind === 'reveal';
   const weight = closed ? Math.max(2, LINE_WEIGHT[feature.size] - 1) : LINE_WEIGHT[feature.size];
   const shapeOptions: L.PolylineOptions = {
     color: style.color,
@@ -266,7 +266,7 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
         ? L.polygon(latlngs, {
             ...shapeOptions,
             fillColor: style.color,
-            fillOpacity: selected ? 0.32 : 0.18,
+            fillOpacity: selected ? 0.32 : feature.kind === 'reveal' ? 0.08 : 0.18,
           })
         : L.polyline(latlngs, shapeOptions);
   if (style.name) {

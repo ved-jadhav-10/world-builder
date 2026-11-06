@@ -3,6 +3,7 @@ import {
   Check,
   ChevronRight,
   Circle,
+  Eye,
   Footprints,
   Maximize,
   MapPin,
@@ -71,6 +72,7 @@ const TOOLS: { tool: MapTool; label: string; icon: LucideIcon }[] = [
   { tool: 'journey', label: 'Journey', icon: Footprints },
   { tool: 'arrow', label: 'Arrow', icon: MoveUpRight },
   { tool: 'circle', label: 'Circle', icon: Circle },
+  { tool: 'reveal', label: 'Reveal', icon: Eye },
 ];
 
 /** Read the map at an in-world date: features that do not hold then drop away. */
@@ -112,13 +114,14 @@ function MapAsOf({
   );
 }
 
-type DrawingTool = 'path' | 'region' | 'journey' | 'arrow' | 'circle';
+type DrawingTool = 'path' | 'region' | 'journey' | 'arrow' | 'circle' | 'reveal';
 const isDrawing = (tool: MapTool): tool is DrawingTool =>
   tool === 'path' ||
   tool === 'region' ||
   tool === 'journey' ||
   tool === 'arrow' ||
-  tool === 'circle';
+  tool === 'circle' ||
+  tool === 'reveal';
 /** Shapes that are finished by their second click. */
 const isTwoPoint = (tool: MapTool) => tool === 'arrow' || tool === 'circle';
 

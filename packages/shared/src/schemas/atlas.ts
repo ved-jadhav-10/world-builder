@@ -17,6 +17,7 @@ export const FEATURE_KINDS = [
   'journey',
   'arrow',
   'circle',
+  'reveal',
 ] as const;
 export type FeatureKind = (typeof FEATURE_KINDS)[number];
 
@@ -28,6 +29,7 @@ export const FEATURE_KIND_LABELS: Record<FeatureKind, string> = {
   journey: 'Journey',
   arrow: 'Arrow',
   circle: 'Circle',
+  reveal: 'Reveal',
 };
 
 export const FEATURE_SIZES = ['sm', 'md', 'lg'] as const;
@@ -47,6 +49,8 @@ export const FEATURE_POINT_LIMITS: Record<FeatureKind, { min: number; max: numbe
   arrow: { min: 2, max: 2 },
   /** Centre and a point on the edge. */
   circle: { min: 2, max: 2 },
+  /** An area uncovered for players when the map has fog of war. GM-only; never sent to others. */
+  reveal: { min: 3, max: 500 },
 };
 
 /** Kinds drawn as a line through their points. */
@@ -140,6 +144,8 @@ export const mapUpdateSchema = z.object({
   visibility: visibilitySchema.optional(),
   /** Null removes the scale (and with it distances and travel times). */
   scale: mapScaleSchema.nullable().optional(),
+  /** With fog on, players see only the areas marked Reveal. */
+  fogEnabled: z.boolean().optional(),
 });
 export type MapUpdateInput = z.input<typeof mapUpdateSchema>;
 

@@ -558,3 +558,123 @@ describe('node maps and importers', () => {
     ).toBe(403);
   });
 });
+
+describe('fog of war', () => {
+  const square = [
+    [0.1, 0.1],
+    [0.5, 0.1],
+    [0.5, 0.5],
+    [0.1, 0.5],
+  ];
+
+  // WebP is lossy, so colours drift by a step or two.
+  const expectNear = (actual: (number | undefined)[], expected: number[]) => {
+    for (const [i, value] of expected.entries()) {
+      expect(Math.abs((actual[i] ?? 0) - value)).toBeLessThanOrEqual(3);
+    }
+  };
+
+  async function fogged() {
+    const ctx = await setup();
+    const { api, w, makeMap, feature } = ctx;
+    const map = await makeMap('Wilds', 512, 512);
+    await api.patch(`${w}/maps/${map.id}`, { visibility: 'player', fogEnabled: true });
+    const seen = await feature(map.id, {
+      label: 'Camp',
+      points: [[0.3, 0.3]],
+      visibility: 'player',
+    });
+    const unseen = await feature(map.id, {
+      label: 'Dragon lair',
+      points: [[0.8, 0.8]],
+      visibility: 'player',
+    });
+    await feature(map.id, { kind: 'reveal', points: square, label: 'Start' });
+    return { ...ctx, map, seen, unseen };
+  }
+
+  it('only sends players items inside revealed areas, and never the areas themselves', async () => {
+    const { api, w, map, player, seen } = await fogged();
+    const names = async (client: typeof api) =>
+      (await client.get(`${w}/maps/${map.id}/features`)).json<MapFeature[]>().map((f) => f.label);
+    expect((await names(api)).sort()).toEqual(['Camp', 'Dragon lair', 'Start']);
+    expect(await names(player.api)).toEqual(['Camp']);
+
+    const lists = (await player.api.get(`${w}/maps`)).json<AtlasMap[]>();
+    expect(lists.find((m) => m.id === map.id)).toMatchObject({ fogEnabled: true, featureCount: 1 });
+    // The Dragon lair does not turn up in search either.
+    const found = await player.api.get(`${w}/atlas/search?q=dragon`);
+    expect(found.json<unknown[]>()).toHaveLength(0);
+    expect((await player.api.get(`${w}/atlas/search?q=camp`)).json<unknown[]>()).toHaveLength(1);
+    expect(seen.id).toBeTruthy();
+  });
+
+  it('uncovers more as the GM reveals more', async () => {
+    const { api, w, map, player, feature } = await fogged();
+    await feature(map.id, {
+      kind: 'reveal',
+      points: [
+        [0.6, 0.6],
+        [0.95, 0.6],
+        [0.95, 0.95],
+        [0.6, 0.95],
+      ],
+    });
+    const names = (await player.api.get(`${w}/maps/${map.id}/features`))
+      .json<MapFeature[]>()
+      .map((f) => f.label)
+      .sort();
+    expect(names).toEqual(['Camp', 'Dragon lair']);
+    expect(api).toBeTruthy();
+  });
+
+  it('paints fog over unrevealed tiles for players but not for the GM', async () => {
+    const { api, w, map, player } = await fogged();
+    const pixel = async (res: { rawPayload: Buffer }, x: number, y: number) => {
+      const { data, info } = await sharp(res.rawPayload)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const i = (y * info.width + x) * info.channels;
+      return [data[i], data[i + 1], data[i + 2]];
+    };
+    // The 512 px map is two tiles across at its deepest zoom; the picture is green (#3a7a5a).
+    const gm = await api.get(`${w}/maps/${map.id}/tiles/1/1/1`);
+    const fog = await player.api.get(`${w}/maps/${map.id}/tiles/1/1/1`);
+    expect(gm.statusCode).toBe(200);
+    expectNear(await pixel(gm, 128, 128), [0x3a, 0x7a, 0x5a]);
+    // Tile (1,1) lies wholly outside the revealed square (0.1 to 0.5 of the map).
+    expectNear(await pixel(fog, 128, 128), [0x0f, 0x17, 0x2a]);
+    expect(fog.headers['cache-control']).toContain('no-cache');
+    // Tile (0,0) holds the revealed square: its middle shows the picture.
+    const open = await player.api.get(`${w}/maps/${map.id}/tiles/1/0/0`);
+    expectNear(await pixel(open, 100, 100), [0x3a, 0x7a, 0x5a]);
+    expectNear(await pixel(open, 20, 20), [0x0f, 0x17, 0x2a]);
+    // Tiles for the GM are cached for good as before.
+    expect(gm.headers['cache-control']).toContain('immutable');
+  });
+
+  it('gives players a plain thumbnail, and turns off cleanly', async () => {
+    const { api, w, map, player } = await fogged();
+    const thumb = await player.api.get(`${w}/maps/${map.id}/thumbnail`);
+    const gmThumb = await api.get(`${w}/maps/${map.id}/thumbnail`);
+    expect(thumb.statusCode).toBe(200);
+    expect(thumb.rawPayload.equals(gmThumb.rawPayload)).toBe(false);
+    await api.patch(`${w}/maps/${map.id}`, { fogEnabled: false });
+    const names = (await player.api.get(`${w}/maps/${map.id}/features`))
+      .json<MapFeature[]>()
+      .map((f) => f.label)
+      .sort();
+    expect(names).toEqual(['Camp', 'Dragon lair']);
+  });
+
+  it('keeps an area drawn on one map from revealing another', async () => {
+    const { api, w, player, makeMap, feature } = await fogged();
+    const other = await makeMap('Other', 512, 512);
+    await api.patch(`${w}/maps/${other.id}`, { visibility: 'player', fogEnabled: true });
+    await feature(other.id, { label: 'Elsewhere', points: [[0.3, 0.3]], visibility: 'player' });
+    expect(
+      (await player.api.get(`${w}/maps/${other.id}/features`)).json<MapFeature[]>(),
+    ).toHaveLength(0);
+  });
+});

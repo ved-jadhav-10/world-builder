@@ -75,7 +75,8 @@ const isDrawingTool = (tool: MapTool) =>
   tool === 'region' ||
   tool === 'journey' ||
   tool === 'arrow' ||
-  tool === 'circle';
+  tool === 'circle' ||
+  tool === 'reveal';
 /** Tools that build up a line one click at a time. */
 const isLineTool = (tool: MapTool) => isDrawingTool(tool) || tool === 'measure';
 const MEASURE_COLOR = '#e11d48';

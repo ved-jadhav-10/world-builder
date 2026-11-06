@@ -162,6 +162,13 @@
       "when": 1794498493234,
       "tag": "0022_map_features_upgrade",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794584893234,
+      "tag": "0023_fog_of_war",
+      "breakpoints": true
     }
   ]
 }
