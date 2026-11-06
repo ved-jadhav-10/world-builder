@@ -108,3 +108,45 @@ describe('redactWorldExport', () => {
     expect(out.atlas.maps).toEqual([]);
   });
 });
+
+describe('redactWorldExport and GM-only fields', () => {
+  it('drops the values and the definitions for everyone but the GM', () => {
+    const data = {
+      ...base,
+      entityTypes: [
+        {
+          id: 't1',
+          fieldSchema: [
+            { key: 'age', label: 'Age', type: 'number' },
+            { key: 'true_name', label: 'True name', type: 'text', gmOnly: true },
+          ],
+        },
+      ],
+      entities: [
+        {
+          id: 'e1',
+          typeId: 't1',
+          visibility: 'public',
+          body: null,
+          tagIds: [],
+          fields: { age: 9, true_name: 'Zarahel' },
+        },
+      ],
+      progressions: [
+        {
+          id: 'p1',
+          entityId: 'e1',
+          visibility: 'public',
+          changes: { fields: { age: 10, true_name: 'Zed' } },
+        },
+      ],
+    } as unknown as WorldExport;
+    const out = redactWorldExport(data, 'player');
+    expect(out.entities[0]!.fields).toEqual({ age: 9 });
+    expect(out.entityTypes[0]!.fieldSchema.map((f) => f.key)).toEqual(['age']);
+    expect(out.progressions[0]!.changes.fields).toEqual({ age: 10 });
+    expect(JSON.stringify(out)).not.toContain('Zarahel');
+    expect(JSON.stringify(out)).not.toContain('Zed');
+    expect(redactWorldExport(data, 'gm')).toBe(data);
+  });
+});

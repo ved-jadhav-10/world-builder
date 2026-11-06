@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { fieldSchemaFor, fieldValuesFor } from './fields';
 import { canSee, PREVIEW_AUDIENCES, type Audience } from './audience';
 import { stripSecretBlocks } from './secret-blocks';
 import type { WorldExport } from './types';
@@ -13,7 +14,8 @@ export const audienceExportQuerySchema = z.object({
  * beta reader their own version. The GM's export comes back unchanged.
  *
  * What goes: entries, maps, pictures, tables, handouts and progressions the audience may not
- * see; secret blocks inside the notes the audience may; links to entries they may not see; the
+ * see; secret blocks inside the notes the audience may, and fields marked GM-only (their values
+ * and their names); links to entries they may not see; the
  * map details of a fogged map (a player is only ever shown what the GM uncovered); GM notes on
  * map features. The manuscript, plot boards, to-dos, templates, comments and faction scores are
  * the author's own workspace and are always left out.
@@ -21,9 +23,14 @@ export const audienceExportQuerySchema = z.object({
 export function redactWorldExport(data: WorldExport, audience: Audience): WorldExport {
   if (audience === 'gm') return data;
 
+  const schemaByType = new Map(data.entityTypes.map((type) => [type.id, type.fieldSchema]));
   const entities = data.entities
     .filter((entity) => canSee(audience, entity.visibility))
-    .map((entity) => ({ ...entity, body: stripSecretBlocks(entity.body) }));
+    .map((entity) => ({
+      ...entity,
+      body: stripSecretBlocks(entity.body),
+      fields: fieldValuesFor(schemaByType.get(entity.typeId) ?? [], entity.fields, audience),
+    }));
   const entityIds = new Set(entities.map((entity) => entity.id));
   const usedTagIds = new Set(entities.flatMap((entity) => entity.tagIds));
 
@@ -47,6 +54,10 @@ export function redactWorldExport(data: WorldExport, audience: Audience): WorldE
 
   return {
     ...data,
+    entityTypes: data.entityTypes.map((type) => ({
+      ...type,
+      fieldSchema: fieldSchemaFor(type.fieldSchema, audience),
+    })),
     tags: data.tags.filter((tag) => usedTagIds.has(tag.id)),
     entities,
     relationships: data.relationships.filter(
@@ -58,9 +69,15 @@ export function redactWorldExport(data: WorldExport, audience: Audience): WorldE
       features,
       layers: data.atlas.layers.filter((layer) => openMapIds.has(layer.mapId)),
     },
-    progressions: data.progressions.filter(
-      (item) => entityIds.has(item.entityId) && canSee(audience, item.visibility),
-    ),
+    progressions: data.progressions
+      .filter((item) => entityIds.has(item.entityId) && canSee(audience, item.visibility))
+      .map((item) => {
+        const fields = item.changes.fields;
+        const entityTypeId = entities.find((e) => e.id === item.entityId)?.typeId;
+        if (!fields || !entityTypeId) return item;
+        const kept = fieldValuesFor(schemaByType.get(entityTypeId) ?? [], fields, audience);
+        return { ...item, changes: { ...item.changes, fields: kept } };
+      }),
     gallery: data.gallery.filter(
       (image) =>
         canSee(audience, image.visibility) &&

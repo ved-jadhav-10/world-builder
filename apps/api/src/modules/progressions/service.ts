@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
+  fieldValuesFor,
   buildFieldValuesSchema,
   type Audience,
   type Progression,
@@ -124,7 +125,7 @@ export async function listProgressions(
   entityId: string,
   audience: Audience = 'gm',
 ): Promise<Progression[]> {
-  await getEntityRow(db, worldId, entityId, audience);
+  const entity = await getEntityRow(db, worldId, entityId, audience);
   const rows = await db
     .select()
     .from(progressions)
@@ -137,7 +138,21 @@ export async function listProgressions(
       ),
     )
     .orderBy(asc(progressions.createdAt));
-  return rows.map(toProgression);
+  const list = rows.map(toProgression);
+  if (audience === 'gm') return list;
+  // A change to a GM-only field would give the field away, so it is left out for everyone else.
+  const { fieldSchema } = await getEntityTypeRow(db, worldId, entity.typeId);
+  return list.map((item) =>
+    item.changes.fields
+      ? {
+          ...item,
+          changes: {
+            ...item.changes,
+            fields: fieldValuesFor(fieldSchema, item.changes.fields, audience),
+          },
+        }
+      : item,
+  );
 }
 
 /** Every progression in the world, for the export. */

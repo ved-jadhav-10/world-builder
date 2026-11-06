@@ -47,6 +47,7 @@ interface FieldDraft {
   label: string;
   type: FieldType;
   options: string;
+  gmOnly: boolean;
 }
 
 const toDraft = (field: FieldDefinition): FieldDraft => ({
@@ -54,6 +55,7 @@ const toDraft = (field: FieldDefinition): FieldDraft => ({
   label: field.label,
   type: field.type,
   options: field.options?.join(', ') ?? '',
+  gmOnly: field.gmOnly === true,
 });
 
 /** Turns drafts into a field schema; new fields get keys derived from their labels. */
@@ -77,6 +79,7 @@ function buildFieldSchema(drafts: FieldDraft[]): FieldDefinition[] {
       label: draft.label.trim(),
       type: draft.type,
       ...(needsOptions ? { options } : {}),
+      ...(draft.gmOnly ? { gmOnly: true } : {}),
     };
   });
 }
@@ -301,6 +304,15 @@ function TypeEditor({
                   placeholder="Options, separated by commas"
                 />
               ) : null}
+              <label className="mt-2 flex items-center gap-2 text-[13px] text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-primary"
+                  checked={field.gmOnly}
+                  onChange={(e) => patchField(index, { gmOnly: e.target.checked })}
+                />
+                GM only (players and readers never see this field)
+              </label>
             </li>
           ))}
         </ul>
@@ -308,7 +320,10 @@ function TypeEditor({
           variant="outline"
           size="sm"
           onClick={() =>
-            setFields((all) => [...all, { key: null, label: '', type: 'text', options: '' }])
+            setFields((all) => [
+              ...all,
+              { key: null, label: '', type: 'text', options: '', gmOnly: false },
+            ])
           }
         >
           <Plus /> Add field

@@ -597,6 +597,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** API tests (save, update, clear, privacy between players, GM listing, entries a person can't see, readers, strangers, previews, length, not in the entry or export), the full suite, and Chrome with two real sessions (player writes, reload keeps it, GM reads it, no 4xx).
 - **Deferred:** notes on manuscript scenes, sharing a note with the whole party or the GM only on purpose (posts), rich text and mentions, and a page listing all of one's notes.
 
+## Milestone 45 (GM-only fields): done
+
+- **A `gmOnly` flag on a field definition**, set with a checkbox in the type editor ("GM only (players and readers never see this field)"). Works on any field type, built-in or custom.
+- **What changes for everyone but the GM** (players, readers, the public and a GM previewing): the entry's `fields` object leaves out the value (`GET /entities/:id`); the field's definition is missing from `GET /entity-types`, so no page lists its name (the web needed no change, since forms and sheets read the type); changes to it inside progressions are dropped; and the audience exports (M43) leave out the value, the definition and the progression changes.
+- **Search:** the words of a GM-only field are left out of an entry's search text for everyone, the GM included, like secret blocks. Flagging or un-flagging a field re-derives the search text of that type's entries, so old text can't linger.
+- **Not covered:** the session and quest lists read a few named fields (number, status, played on); flagging one of those as GM-only would not hide it there. History (revisions) and templates are editor-only already.
+- **Verified:** shared tests (helpers, search text, export redaction), API tests (entry, type list, previews, search before and after un-flagging, progressions, exports), the full suite, lint, and Chrome with a real GM and player (flag Age, the GM still sees it, the player does not, no 4xx).
+- **Deferred:** per-field visibility for one audience only (players but not readers), and revealing a field after a chapter or date.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

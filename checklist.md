@@ -84,7 +84,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 ## F. Sharing and publishing
 
 - [ ] **Hidden until chapter N** and **spoiler gating**: pages and fields revealed after a chosen chapter [v1; deferred in M5].
-- [ ] **Field-level and block-level visibility** inside an entry [deferred in M5].
+- [x] **Field-level visibility:** a field can be marked GM only in the type editor (M45); block-level visibility came with secret blocks (M37). Still to do: fields shown to players only after a date or chapter (see spoiler gating).
 - [ ] **Public reader wiki** for chosen pages [v1], with **password-protected pages** for beta readers or players [v1]; AI crawlers blocked.
 - [ ] **Progression-driven spoiler-safe wiki:** readers see only what is true up to their chapter [v2; nobody offers it].
 - [x] **Export only what players can see:** the JSON and Markdown exports take an audience (players, readers or the public) and hold only what that audience can see (M43). Still to do: the same for the story-bible PDF and the manuscript exports.

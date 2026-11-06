@@ -25,21 +25,29 @@ export interface SearchableEntity {
 }
 
 /** The text an entity is found by: name, aliases, summary, body and text-like field values. */
-export function deriveSearchText(entity: SearchableEntity): string {
-  const fieldText = Object.values(entity.fields).flatMap((value) => {
-    if (typeof value === 'string') return [value];
-    if (Array.isArray(value)) {
-      // Lists of abilities or questions are found by their words too.
-      return value.flatMap((item): string[] => {
-        if (typeof item === 'string') return [item];
-        if (item && typeof item === 'object') {
-          return Object.values(item).filter((v): v is string => typeof v === 'string');
-        }
-        return [];
-      });
-    }
-    return [];
-  });
+export function deriveSearchText(
+  entity: SearchableEntity,
+  /** Fields only the GM sees: their words are not searchable by anyone, like secret blocks. */
+  hiddenFieldKeys: readonly string[] = [],
+): string {
+  const hidden = new Set(hiddenFieldKeys);
+  const fieldText = Object.entries(entity.fields)
+    .filter(([key]) => !hidden.has(key))
+    .map(([, value]) => value)
+    .flatMap((value) => {
+      if (typeof value === 'string') return [value];
+      if (Array.isArray(value)) {
+        // Lists of abilities or questions are found by their words too.
+        return value.flatMap((item): string[] => {
+          if (typeof item === 'string') return [item];
+          if (item && typeof item === 'object') {
+            return Object.values(item).filter((v): v is string => typeof v === 'string');
+          }
+          return [];
+        });
+      }
+      return [];
+    });
   return [
     entity.name,
     ...entity.aliases,

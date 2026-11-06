@@ -14,6 +14,8 @@ import {
 import type { z } from 'zod';
 import {
   deriveSearchText,
+  fieldValuesFor,
+  gmOnlyFieldKeys,
   parseFieldValues,
   type Audience,
   type BulkEntityResult,
@@ -119,8 +121,14 @@ export async function getEntity(
 ): Promise<Entity> {
   const row = await getEntityRow(db, worldId, entityId, audience);
   const entity = toEntity(row, await tagsFor(db, row.id));
-  // Secret blocks are the GM's: everyone else is sent the article without them.
-  return audience === 'gm' ? entity : { ...entity, body: stripSecretBlocks(entity.body) };
+  if (audience === 'gm') return entity;
+  // Secret blocks and GM-only fields are the GM's: everyone else is sent the entry without them.
+  const type = await getEntityTypeRow(db, worldId, row.typeId);
+  return {
+    ...entity,
+    body: stripSecretBlocks(entity.body),
+    fields: fieldValuesFor(type.fieldSchema, entity.fields, audience),
+  };
 }
 
 /** The books an entry is scoped to must be books of this world; duplicates are dropped. */
@@ -164,7 +172,7 @@ export async function createEntity(
       startDay: input.startDay,
       endDay: input.endDay,
       scopeBookIds,
-      searchText: deriveSearchText({ ...input, fields }),
+      searchText: deriveSearchText({ ...input, fields }, gmOnlyFieldKeys(type.fieldSchema)),
       createdBy: userId,
     })
     .returning();
@@ -179,13 +187,9 @@ export async function updateEntity(
   input: z.output<typeof entityUpdateSchema>,
 ): Promise<Entity> {
   const existing = await getEntityRow(db, worldId, entityId);
+  const type = await getEntityTypeRow(db, worldId, existing.typeId);
   const fields =
-    input.fields === undefined
-      ? existing.fields
-      : parseFieldValues(
-          (await getEntityTypeRow(db, worldId, existing.typeId)).fieldSchema,
-          input.fields,
-        );
+    input.fields === undefined ? existing.fields : parseFieldValues(type.fieldSchema, input.fields);
 
   const merged = {
     name: input.name ?? existing.name,
@@ -206,7 +210,13 @@ export async function updateEntity(
       : await checkBooks(db, worldId, input.scopeBookIds);
   const [row] = await db
     .update(entities)
-    .set({ ...merged, startDay, endDay, scopeBookIds, searchText: deriveSearchText(merged) })
+    .set({
+      ...merged,
+      startDay,
+      endDay,
+      scopeBookIds,
+      searchText: deriveSearchText(merged, gmOnlyFieldKeys(type.fieldSchema)),
+    })
     .where(eq(entities.id, existing.id))
     .returning();
   // Names and aliases drive mention detection, so a rename means rescanning the manuscript.

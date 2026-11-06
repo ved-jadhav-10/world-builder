@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Audience } from './audience';
 import type { FieldDefinition } from './schemas/entity-type';
 
 /** How many colours a palette holds. */
@@ -183,4 +184,29 @@ export function parseFieldValues(
         value !== null && value !== undefined && !(Array.isArray(value) && value.length === 0),
     ),
   );
+}
+
+/** The keys of fields only the GM may see. */
+export function gmOnlyFieldKeys(fieldSchema: readonly FieldDefinition[]): string[] {
+  return fieldSchema.filter((field) => field.gmOnly).map((field) => field.key);
+}
+
+/** The field definitions an audience is told about: everyone but the GM misses the GM-only ones. */
+export function fieldSchemaFor(
+  fieldSchema: readonly FieldDefinition[],
+  audience: Audience,
+): FieldDefinition[] {
+  return audience === 'gm' ? [...fieldSchema] : fieldSchema.filter((field) => !field.gmOnly);
+}
+
+/** Field values without the GM-only ones, for anyone but the GM. */
+export function fieldValuesFor(
+  fieldSchema: readonly FieldDefinition[],
+  values: Record<string, unknown>,
+  audience: Audience,
+): Record<string, unknown> {
+  if (audience === 'gm') return values;
+  const hidden = new Set(gmOnlyFieldKeys(fieldSchema));
+  if (hidden.size === 0) return values;
+  return Object.fromEntries(Object.entries(values).filter(([key]) => !hidden.has(key)));
 }

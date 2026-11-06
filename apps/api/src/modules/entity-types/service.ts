@@ -1,10 +1,13 @@
 import { and, asc, count, eq, getTableColumns, isNull, max, sql } from 'drizzle-orm';
 import type { z } from 'zod';
-import type {
-  Audience,
-  EntityType,
-  entityTypeCreateSchema,
-  entityTypeUpdateSchema,
+import {
+  deriveSearchText,
+  fieldSchemaFor,
+  gmOnlyFieldKeys,
+  type Audience,
+  type EntityType,
+  type entityTypeCreateSchema,
+  type entityTypeUpdateSchema,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import { entities, entityTypes } from '../../db/schema';
@@ -13,6 +16,21 @@ import { uniqueKey } from '../../lib/keys';
 import { visibleTo } from '../../lib/visibility';
 
 type EntityTypeRow = typeof entityTypes.$inferSelect;
+
+const sameKeys = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((key) => b.includes(key));
+
+/** Re-derives the search text of a type's entries, after which of its fields are GM-only changed. */
+async function rebuildSearchTextForType(db: DbOrTx, type: EntityTypeRow): Promise<void> {
+  const hidden = gmOnlyFieldKeys(type.fieldSchema);
+  const rows = await db.select().from(entities).where(eq(entities.typeId, type.id));
+  for (const row of rows) {
+    await db
+      .update(entities)
+      .set({ searchText: deriveSearchText(row, hidden) })
+      .where(eq(entities.id, row.id));
+  }
+}
 
 function toEntityType(row: EntityTypeRow, entityCount = 0): EntityType {
   return {
@@ -50,7 +68,9 @@ export async function listEntityTypes(
     .where(eq(entityTypes.worldId, worldId))
     .groupBy(entityTypes.id)
     .orderBy(asc(entityTypes.sortOrder), asc(entityTypes.name));
-  return rows.map(({ entityCount, ...row }) => toEntityType(row, entityCount));
+  return rows.map(({ entityCount, ...row }) =>
+    toEntityType({ ...row, fieldSchema: fieldSchemaFor(row.fieldSchema, audience) }, entityCount),
+  );
 }
 
 /** Fetches a type and proves it belongs to the world. */
@@ -99,12 +119,20 @@ export async function updateEntityType(
   typeId: string,
   input: z.output<typeof entityTypeUpdateSchema>,
 ): Promise<EntityType> {
+  const [before] = await db
+    .select({ fieldSchema: entityTypes.fieldSchema })
+    .from(entityTypes)
+    .where(and(eq(entityTypes.id, typeId), eq(entityTypes.worldId, worldId)));
   const [row] = await db
     .update(entityTypes)
     .set(input)
     .where(and(eq(entityTypes.id, typeId), eq(entityTypes.worldId, worldId)))
     .returning();
   if (!row) throw notFound('Entity type');
+  // Making a field GM-only (or public again) changes what the entries' search text may hold.
+  if (before && !sameKeys(gmOnlyFieldKeys(before.fieldSchema), gmOnlyFieldKeys(row.fieldSchema))) {
+    await rebuildSearchTextForType(db, row);
+  }
   const [counted] = await db
     .select({ n: count() })
     .from(entities)

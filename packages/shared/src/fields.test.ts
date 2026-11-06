@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { fieldSchemaSchema, type FieldDefinition } from './schemas/entity-type';
-import { describeFieldValue, parseFieldValues } from './fields';
+import {
+  describeFieldValue,
+  fieldSchemaFor,
+  fieldValuesFor,
+  gmOnlyFieldKeys,
+  parseFieldValues,
+} from './fields';
+import { deriveSearchText } from './search';
 
 const schema: FieldDefinition[] = [
   { key: 'age', label: 'Age', type: 'number' },
@@ -178,5 +185,30 @@ describe('labelled links', () => {
         { label: '', url: 'https://b.example' },
       ]),
     ).toBe('Tavern (https://a.example); https://b.example');
+  });
+});
+
+describe('GM-only fields', () => {
+  const sheet: FieldDefinition[] = [
+    { key: 'age', label: 'Age', type: 'number' },
+    { key: 'true_name', label: 'True name', type: 'text', gmOnly: true },
+  ];
+  const values = { age: 30, true_name: 'Zarahel' };
+
+  it('are told apart, and hidden from everyone but the GM', () => {
+    expect(gmOnlyFieldKeys(sheet)).toEqual(['true_name']);
+    expect(fieldSchemaFor(sheet, 'gm')).toHaveLength(2);
+    expect(fieldSchemaFor(sheet, 'player').map((f) => f.key)).toEqual(['age']);
+    expect(fieldValuesFor(sheet, values, 'gm')).toBe(values);
+    for (const audience of ['player', 'reader', 'public'] as const) {
+      expect(fieldValuesFor(sheet, values, audience)).toEqual({ age: 30 });
+    }
+  });
+
+  it('are accepted by the type schema and left out of search text when asked', () => {
+    expect(fieldSchemaSchema.safeParse(sheet).success).toBe(true);
+    const entity = { name: 'Mira', aliases: [], summary: '', body: null, fields: values };
+    expect(deriveSearchText(entity)).toContain('Zarahel');
+    expect(deriveSearchText(entity, ['true_name'])).not.toContain('Zarahel');
   });
 });

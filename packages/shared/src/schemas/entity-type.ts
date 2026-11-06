@@ -45,6 +45,8 @@ export const fieldDefinitionSchema = z
     label: z.string().trim().min(1, 'Label is required').max(80),
     type: z.enum(FIELD_TYPES),
     options: z.array(z.string().trim().min(1).max(80)).max(100).optional(),
+    /** Only the GM sees this field; players and readers are never sent its value or its name. */
+    gmOnly: z.boolean().optional(),
   })
   .superRefine((field, ctx) => {
     const needsOptions = field.type === 'select' || field.type === 'multi_select';
