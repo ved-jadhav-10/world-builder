@@ -588,6 +588,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not covered:** map images and handout pictures are not in the JSON anyway; the redaction does not look inside entry field values (there is no field-level visibility yet, see F).
 - **Deferred:** an audience option for the story-bible PDF and for the manuscript exports (the manuscript would need per-chapter visibility first).
 
+## Milestone 44 (Player journals): done
+
+- **Private notes on entries** (`entity_journals`, migration 0029): one plain-text note (up to 10,000 characters) for each person and entry. `GET` and `PUT /entities/:id/journal` are the caller's own; `GET /entities/:id/journals` lists everyone else's for the GM (owner and co-GMs). An empty note deletes the row. The entry must be live and visible to the caller's audience (404 otherwise, so a hidden entry is not confirmed).
+- **Who:** players, commenters and GMs. Readers share a rank with players but are refused (403); previews are refused by the role guard, and the panel is hidden while previewing. Other players can never read a note.
+- **Kept out of everything else:** notes are not on the entry, in search, history, exports or the audience exports (tested), and are deleted with the entry or the account.
+- **Web:** a "My notes" panel under the entry's notes (autosaves 0.8 s after typing stops, shows Saved) and, for the GM, a "Players' notes" list under it.
+- **Verified:** API tests (save, update, clear, privacy between players, GM listing, entries a person can't see, readers, strangers, previews, length, not in the entry or export), the full suite, and Chrome with two real sessions (player writes, reload keeps it, GM reads it, no 4xx).
+- **Deferred:** notes on manuscript scenes, sharing a note with the whole party or the GM only on purpose (posts), rich text and mentions, and a page listing all of one's notes.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

@@ -916,6 +916,31 @@ export const comments = pgTable(
 );
 
 /**
+ * A player's private notes on an entry. One row for each person and entry, kept by that person
+ * and readable by the GM; other players never see them.
+ */
+export const entityJournals = pgTable(
+  'entity_journals',
+  {
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    body: text('body').notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.entityId, t.userId] }),
+    index('entity_journals_user_idx').on(t.worldId, t.userId),
+  ],
+);
+
+/**
  * How two entries stand with each other. A pair is stored once, with the smaller id first, so
  * A and B is the same row as B and A.
  */

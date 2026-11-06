@@ -15,6 +15,7 @@ import { revisionRoutes } from './modules/revisions/routes';
 import { handoutRoutes } from './modules/handouts/routes';
 import { wordCheckRoutes } from './modules/word-check/routes';
 import { commentRoutes } from './modules/comments/routes';
+import { journalRoutes } from './modules/journals/routes';
 import { templateRoutes } from './modules/templates/routes';
 import { diplomacyRoutes } from './modules/diplomacy/routes';
 import { todoRoutes } from './modules/todos/routes';
@@ -67,6 +68,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(diplomacyRoutes);
   await app.register(templateRoutes);
   await app.register(commentRoutes);
+  await app.register(journalRoutes);
   await app.register(wordCheckRoutes);
   await app.register(plotRoutes);
   await app.register(graphRoutes);

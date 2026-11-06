@@ -77,7 +77,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Hand over ownership** (M41). Still to do: several owners.
 - [x] **A notice when someone joins** (emailed to the owner) and **an audit trail** of joins, role changes, removals and handovers (M41). Still to do: inviting by name (looking up an existing user). (Emailing an invite link shipped in M7.)
 - [x] **Comments for the `commenter` role:** commenters can be invited and comment on what readers can see (M23).
-- [ ] **Player journals and posts**, so players add their own notes to entries [v1]; discussion boards [v2].
+- [x] **Player journals:** players keep private notes on any entry they can see, and the GM reads everyone's (M44). Still to do: shared posts and discussion boards [v2].
 - [ ] **Mobile companion** for character sheets and handouts [v2].
 - [ ] **Shared content library** across a party [v3].
 

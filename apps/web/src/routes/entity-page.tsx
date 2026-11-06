@@ -24,6 +24,7 @@ import { EntityAsOfView } from '@/components/entity-as-of';
 import { EntityGallery, EntityPortrait } from '@/components/entity-gallery';
 import { CommentsButton } from '@/components/comments-dialog';
 import { HistoryDialog } from '@/components/history-dialog';
+import { JournalPanel } from '@/components/journal-panel';
 import { ProgressionsPanel } from '@/components/progressions-panel';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
@@ -433,6 +434,7 @@ function EntityEditor({
               />
             </div>
             <ProgressionsPanel entity={entity} type={type} />
+            <JournalPanel entityId={entity.id} />
             <EntityGallery entity={entity} />
           </div>
 
