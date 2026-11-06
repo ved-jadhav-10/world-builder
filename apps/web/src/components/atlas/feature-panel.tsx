@@ -17,6 +17,7 @@ import {
 } from '@atlas/shared';
 import { UploadMapDialog } from '@/components/atlas/upload-map-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DateField } from '@/components/date-field';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker } from '@/components/entity-picker';
 import { Button } from '@/components/ui/button';
@@ -105,7 +106,7 @@ export function FeaturePanel({
   const entityType = feature.entity ? typeById.get(feature.entity.typeId) : undefined;
   const Icon = FEATURE_KIND_ICONS[feature.kind];
   const linkedMap = maps.find((m) => m.id === feature.linkMapId);
-  const hasLine = feature.kind === 'path' || feature.kind === 'region';
+  const hasLine = feature.kind !== 'pin' && feature.kind !== 'label';
 
   const commitLabel = () => {
     const next = label.trim();
@@ -356,6 +357,57 @@ export function FeaturePanel({
               ))}
             </NativeSelect>
           </Field>
+
+          <Field label="Holds from">
+            <DateField
+              label="Holds from"
+              value={feature.validFromDay}
+              onChange={(day) => onChange({ validFromDay: day })}
+            />
+          </Field>
+          <Field label="Holds until">
+            <DateField
+              label="Holds until"
+              value={feature.validToDay}
+              onChange={(day) => onChange({ validToDay: day })}
+            />
+          </Field>
+          <p className="-mt-3 text-xs text-muted-foreground">
+            Leave a side empty for no limit. Read the map “as of” a date and this only shows while
+            it holds, which is how borders and roads change over the years.
+          </p>
+
+          {feature.kind === 'journey' ? (
+            <Field label="Stops and dates">
+              <ol className="space-y-2">
+                {feature.points.map((_, index) => (
+                  <li key={index} className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      {index === 0
+                        ? 'Start'
+                        : index === feature.points.length - 1
+                          ? 'End'
+                          : `Stop ${index + 1}`}
+                    </p>
+                    <DateField
+                      label={`Date at stop ${index + 1}`}
+                      value={feature.pointDays?.[index] ?? null}
+                      onChange={(day) => {
+                        const next = feature.points.map((_, i) =>
+                          i === index ? day : (feature.pointDays?.[i] ?? null),
+                        );
+                        onChange({ pointDays: next });
+                      }}
+                    />
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                Dated stops let the map show where the party was on any day. Stops without a date
+                are passed along the way.
+              </p>
+            </Field>
+          ) : null}
 
           <Field label="Who can see it">
             <VisibilitySelect

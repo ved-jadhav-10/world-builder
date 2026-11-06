@@ -8,6 +8,9 @@ export const DEFAULT_COLORS: Record<FeatureKind, string> = {
   label: '#1f2937',
   path: '#b45309',
   region: '#2563eb',
+  journey: '#be123c',
+  arrow: '#dc2626',
+  circle: '#dc2626',
 };
 
 export const COLOR_PRESETS = [

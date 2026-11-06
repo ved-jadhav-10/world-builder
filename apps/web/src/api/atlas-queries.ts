@@ -49,10 +49,23 @@ export const useMap = (worldId: string, mapId: string) =>
     refetchInterval: (query) => (query.state.data?.status === 'processing' ? POLL_MS : false),
   });
 
-export const useMapFeatures = (worldId: string, mapId: string, enabled = true) =>
+/** With `asOf` (an in-world day) only the features that hold then; read-only, so no live edits. */
+export const useMapFeatures = (
+  worldId: string,
+  mapId: string,
+  enabled = true,
+  asOf: number | null = null,
+) =>
   useQuery({
-    queryKey: atlasKeys.features(worldId, mapId),
-    queryFn: () => api<MapFeature[]>('GET', `/worlds/${worldId}/maps/${mapId}/features`),
+    queryKey:
+      asOf === null
+        ? atlasKeys.features(worldId, mapId)
+        : [...atlasKeys.features(worldId, mapId), 'as-of', asOf],
+    queryFn: () =>
+      api<MapFeature[]>(
+        'GET',
+        `/worlds/${worldId}/maps/${mapId}/features${asOf === null ? '' : `?asOf=${asOf}`}`,
+      ),
     enabled,
   });
 

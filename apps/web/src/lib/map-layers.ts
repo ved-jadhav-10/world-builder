@@ -2,6 +2,7 @@ import L from 'leaflet';
 import {
   clusterPins,
   FEATURE_POINT_LIMITS,
+  journeyProgress,
   type EntityType,
   type MapFeature,
   type MapPoint,
@@ -65,6 +66,8 @@ export interface MapView {
   interactive: boolean;
   /** The line from the last point drawn to the cursor. */
   rubber: L.Polyline | null;
+  /** The in-world day the map is being read at; journeys show how far along they are. */
+  asOf: number | null;
 }
 
 interface BuildOptions {
@@ -76,6 +79,87 @@ interface BuildOptions {
   /** Whether the selected item can be dragged and reshaped. */
   editable: boolean;
   handlers: FeatureHandlers;
+}
+
+/** A triangle at the head of an arrow, turned to point along it. */
+function arrowHead(latlngs: L.LatLng[], color: string, weight: number): L.Marker {
+  const [from, to] = [latlngs[0]!, latlngs[1]!];
+  // The map's y axis grows upward, the screen's downward.
+  const angle = (-Math.atan2(to.lat - from.lat, to.lng - from.lng) * 180) / Math.PI;
+  const size = 10 + weight * 2;
+  return L.marker(to, {
+    interactive: false,
+    keyboard: false,
+    icon: L.divIcon({
+      className: 'atlas-arrow-wrap',
+      html: `<svg width="${size}" height="${size}" viewBox="0 0 10 10" style="transform:rotate(${angle}deg);display:block"><path d="M0 1 L10 5 L0 9 Z" fill="${color}"/></svg>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    }),
+  });
+}
+
+/** A small dot at a stop of a journey; filled when the stop has a date. */
+function stopDot(at: L.LatLng, color: string, index: number, dated: boolean): L.CircleMarker {
+  return L.circleMarker(at, {
+    radius: index === 0 ? 6 : 4,
+    color,
+    weight: 2,
+    fillColor: dated ? color : '#fff',
+    fillOpacity: 1,
+    interactive: false,
+  });
+}
+
+/** A journey read at a day: the part travelled solid, the rest faint, a marker where they are. */
+function buildJourneyAsOf(
+  feature: MapFeature,
+  latlngs: L.LatLng[],
+  color: string,
+  opts: BuildOptions,
+): FeatureEntry {
+  const { view, selected, interactive, handlers } = opts;
+  const progress = journeyProgress(feature.points, feature.pointDays, view.asOf!);
+  const toLatLngs = (points: MapPoint[]) => points.map((p) => project(p, view.size));
+  const parts: L.Layer[] = [];
+  const ahead = L.polyline(toLatLngs(progress.ahead), {
+    color,
+    weight: 3,
+    opacity: 0.3,
+    dashArray: '6 6',
+    interactive: false,
+  });
+  parts.push(ahead);
+  if (progress.travelled.length > 1) {
+    parts.push(
+      L.polyline(toLatLngs(progress.travelled), {
+        color,
+        weight: selected ? 5 : 4,
+        interactive: false,
+      }),
+    );
+  }
+  if (progress.position) {
+    parts.push(
+      L.circleMarker(project(progress.position, view.size), {
+        radius: 8,
+        color: '#fff',
+        weight: 3,
+        fillColor: color,
+        fillOpacity: 1,
+        interactive,
+      }),
+    );
+  }
+  const hit = L.polyline(latlngs, {
+    weight: 18,
+    opacity: 0,
+    interactive,
+    bubblingMouseEvents: false,
+  });
+  hit.on('click', () => handlers.select(feature.id));
+  parts.push(hit);
+  return { feature, layer: L.featureGroup(parts), shapes: [hit] };
 }
 
 function dashFor(lineStyle: MapFeature['lineStyle'], weight: number): string | undefined {
@@ -155,6 +239,10 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
     return { feature, layer: marker, shapes: [] };
   }
 
+  if (feature.kind === 'journey' && view.asOf !== null && feature.pointDays) {
+    return buildJourneyAsOf(feature, latlngs, style.color, opts);
+  }
+
   const closed = feature.kind === 'region';
   const weight = closed ? Math.max(2, LINE_WEIGHT[feature.size] - 1) : LINE_WEIGHT[feature.size];
   const shapeOptions: L.PolylineOptions = {
@@ -166,13 +254,21 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
     interactive,
     bubblingMouseEvents: false,
   };
-  const shape = closed
-    ? L.polygon(latlngs, {
-        ...shapeOptions,
-        fillColor: style.color,
-        fillOpacity: selected ? 0.32 : 0.18,
-      })
-    : L.polyline(latlngs, shapeOptions);
+  const shape =
+    feature.kind === 'circle'
+      ? L.circle(latlngs[0]!, {
+          ...shapeOptions,
+          radius: Math.hypot(latlngs[1]!.lat - latlngs[0]!.lat, latlngs[1]!.lng - latlngs[0]!.lng),
+          fillColor: style.color,
+          fillOpacity: selected ? 0.25 : 0.12,
+        })
+      : closed
+        ? L.polygon(latlngs, {
+            ...shapeOptions,
+            fillColor: style.color,
+            fillOpacity: selected ? 0.32 : 0.18,
+          })
+        : L.polyline(latlngs, shapeOptions);
   if (style.name) {
     shape.bindTooltip(style.name, {
       permanent: true,
@@ -182,9 +278,10 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
   }
 
   const parts: L.Layer[] = [];
-  const shapes: Shape[] = [shape];
+  // A circle has no corners to reshape live; its handles move the radius line below instead.
+  const shapes: Shape[] = shape instanceof L.Circle ? [] : [shape];
   // A pale outline marks the selection; a fat invisible line makes thin roads easy to hit.
-  if (selected) {
+  if (selected && feature.kind !== 'circle') {
     const haloOptions: L.PolylineOptions = {
       color: '#fff',
       weight: weight + 6,
@@ -197,8 +294,26 @@ export function buildFeature(feature: MapFeature, opts: BuildOptions): FeatureEn
     shapes.push(halo);
   }
   parts.push(shape);
-  const hitTargets: Shape[] = [shape];
-  if (!closed) {
+  const hitTargets: L.Path[] = [shape];
+  // A circle is dragged by two handles (centre and edge), which reshape this line between them.
+  if (feature.kind === 'circle') {
+    const radius = L.polyline(latlngs, {
+      weight: 1,
+      opacity: selected ? 0.8 : 0,
+      color: style.color,
+      dashArray: '4 4',
+      interactive: false,
+    });
+    parts.push(radius);
+    shapes.push(radius);
+  }
+  if (feature.kind === 'arrow') parts.push(arrowHead(latlngs, style.color, weight));
+  if (feature.kind === 'journey') {
+    for (const [index, stop] of latlngs.entries()) {
+      parts.push(stopDot(stop, style.color, index, feature.pointDays?.[index] != null));
+    }
+  }
+  if (!closed && feature.kind !== 'circle') {
     const hit = L.polyline(latlngs, {
       weight: 18,
       opacity: 0,

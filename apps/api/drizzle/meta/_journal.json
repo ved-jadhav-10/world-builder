@@ -155,6 +155,13 @@
       "when": 1794412093234,
       "tag": "0021_calendars",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794498493234,
+      "tag": "0022_map_features_upgrade",
+      "breakpoints": true
     }
   ]
 }

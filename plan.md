@@ -469,6 +469,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Timeline tracks by tag:** the timeline data carries each entry's tag ids and the page can run tracks by type (as before) or by tag (an entry with several tags appears in each track; untagged ones go in "No tag").
 - **Deferred:** pushing reminders as notifications, per-entry reminders that are not tied to its two dates, showing dates in other calendars on entry pages and the timeline, and fully custom tracks.
 
+## Milestone 29 (Journeys, annotations and time-aware maps): done
+
+- **New map item kinds** (migration 0022 adds them to the enum): **journey** (a route of 2 to 500 stops, each with an optional in-world day), **arrow** and **circle** (two points each: tail and head; centre and a point on the edge). Arrows and circles finish on the second click. A journey starts dashed.
+- **Dates on map items:** every item can have "holds from" and "holds until" days. `GET /maps/:id/features?asOf=<day>` returns only items that hold then, for every audience (so a player reading the map as of a date is never sent what does not hold). The map page has an "As of…" control; reading at a date is read-only (editing is off).
+- **Journeys on a date:** `journeyProgress` (shared, `journey.ts`) places the party between dated stops by the length of the line, and the map shows the part travelled solid, the rest faint, and a marker where they are. `reconcilePointDays` keeps stop dates with their stops when a line is reshaped (a stop added or removed shifts the ones after it).
+- **Deferred:** as-of for layers as a whole, a play button over the dates (see playback), journeys tied to an entry (the party), and the as-of manuscript.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

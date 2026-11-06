@@ -256,6 +256,11 @@ export interface MapFeature {
   lineStyle: LineStyle;
   /** Zoom levels in from the whole-map view before this feature appears. */
   minZoom: number;
+  /** For a journey: the day at each stop (null where a stop has no date). */
+  pointDays: (number | null)[] | null;
+  /** When the feature holds, as in-world days; null = no limit on that side. */
+  validFromDay: number | null;
+  validToDay: number | null;
   visibility: Visibility;
   updatedAt: string;
 }

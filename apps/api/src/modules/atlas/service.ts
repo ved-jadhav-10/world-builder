@@ -5,9 +5,11 @@ import {
   asc,
   eq,
   getTableColumns,
+  gte,
   ilike,
   isNotNull,
   isNull,
+  lte,
   or,
   sql,
   type SQL,
@@ -16,6 +18,7 @@ import type { z } from 'zod';
 import {
   mapMaxZoom,
   pointCountProblem,
+  reconcilePointDays,
   type Audience,
   type AtlasMap,
   type AtlasSearchResult,
@@ -388,21 +391,40 @@ function toFeature(
     size: feature.size,
     lineStyle: feature.lineStyle,
     minZoom: feature.minZoom,
+    pointDays: feature.pointDays,
+    validFromDay: feature.validFromDay,
+    validToDay: feature.validToDay,
     visibility: feature.visibility,
     updatedAt: feature.updatedAt.toISOString(),
   };
 }
 
+/** Features that hold on `day`; ones with no dates always do. */
+function holdsOn(day: number | undefined): SQL | undefined {
+  if (day === undefined) return undefined;
+  return and(
+    or(isNull(mapFeatures.validFromDay), lte(mapFeatures.validFromDay, day)),
+    or(isNull(mapFeatures.validToDay), gte(mapFeatures.validToDay, day)),
+  );
+}
+
+/** `asOf` is an in-world day: only features that hold then are returned. */
 export async function listFeatures(
   db: DbOrTx,
   worldId: string,
   mapId: string,
   audience: Audience = 'gm',
+  asOf?: number,
 ): Promise<MapFeature[]> {
   await getMapRow(db, worldId, mapId, audience);
   const rows = await selectFeatures(db, audience)
     .where(
-      and(eq(mapFeatures.mapId, mapId), eq(mapFeatures.worldId, worldId), featureVisible(audience)),
+      and(
+        eq(mapFeatures.mapId, mapId),
+        eq(mapFeatures.worldId, worldId),
+        featureVisible(audience),
+        holdsOn(asOf),
+      ),
     )
     .orderBy(asc(mapFeatures.createdAt));
   if (audience === 'gm') return rows.map((row) => toFeature(row));
@@ -452,7 +474,13 @@ export async function createFeature(
   await assertFeatureLinks(db, worldId, mapId, input);
   const [row] = await db
     .insert(mapFeatures)
-    .values({ ...input, worldId, mapId, points: roundPoints(input.points) })
+    .values({
+      ...input,
+      worldId,
+      mapId,
+      points: roundPoints(input.points),
+      pointDays: input.kind === 'journey' ? input.pointDays : null,
+    })
     .returning({ id: mapFeatures.id });
   return getFeature(db, worldId, mapId, row!.id);
 }
@@ -473,9 +501,32 @@ export async function updateFeature(
     throw badRequest('A text label needs some text');
   }
   await assertFeatureLinks(db, worldId, mapId, input);
+  if (input.pointDays && existing.kind !== 'journey') {
+    throw badRequest('Only a journey has dated stops');
+  }
+  const from = input.validFromDay === undefined ? existing.validFromDay : input.validFromDay;
+  const to = input.validToDay === undefined ? existing.validToDay : input.validToDay;
+  if (from !== null && to !== null && to < from) {
+    throw badRequest('The end cannot come before the start');
+  }
+  const points = input.points ? roundPoints(input.points) : existing.points;
+  // Stops keep their dates when a line is reshaped; asking for dates outright overrides that.
+  let pointDays: (number | null)[] | null | undefined = input.pointDays;
+  if (existing.kind === 'journey') {
+    if (pointDays === undefined && input.points) {
+      pointDays = reconcilePointDays(existing.points, existing.pointDays, points);
+    }
+    if (pointDays && pointDays.length !== points.length) {
+      throw badRequest('Give one date (or none) for each stop');
+    }
+  }
   await db
     .update(mapFeatures)
-    .set({ ...input, ...(input.points ? { points: roundPoints(input.points) } : {}) })
+    .set({
+      ...input,
+      ...(input.points ? { points } : {}),
+      ...(pointDays !== undefined ? { pointDays } : {}),
+    })
     .where(eq(mapFeatures.id, existing.id));
   return getFeature(db, worldId, mapId, featureId);
 }

@@ -394,6 +394,11 @@ export const mapFeatures = pgTable(
     size: featureSizeEnum('size').notNull().default('md'),
     lineStyle: lineStyleEnum('line_style').notNull().default('solid'),
     minZoom: integer('min_zoom').notNull().default(0),
+    /** For a journey: the in-world day at each stop (null where a stop has no date). */
+    pointDays: jsonb('point_days').$type<(number | null)[]>(),
+    /** When the feature holds, in-world days; an open end means no limit that side. */
+    validFromDay: bigint('valid_from_day', { mode: 'number' }),
+    validToDay: bigint('valid_to_day', { mode: 'number' }),
     visibility: visibilityEnum('visibility').notNull().default('gm'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

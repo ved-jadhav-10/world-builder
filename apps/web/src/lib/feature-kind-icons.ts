@@ -1,4 +1,13 @@
-import { MapPin, Pentagon, Route, Type, type LucideIcon } from 'lucide-react';
+import {
+  Circle,
+  Footprints,
+  MapPin,
+  MoveUpRight,
+  Pentagon,
+  Route,
+  Type,
+  type LucideIcon,
+} from 'lucide-react';
 import type { FeatureKind } from '@atlas/shared';
 
 /** Kept apart from map-style so the search palette can use them without loading the map code. */
@@ -7,4 +16,7 @@ export const FEATURE_KIND_ICONS: Record<FeatureKind, LucideIcon> = {
   label: Type,
   path: Route,
   region: Pentagon,
+  journey: Footprints,
+  arrow: MoveUpRight,
+  circle: Circle,
 };

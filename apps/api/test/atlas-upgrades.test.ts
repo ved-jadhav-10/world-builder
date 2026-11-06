@@ -363,3 +363,104 @@ describe('GM prep notes on map items', () => {
     expect(res.statusCode).toBe(400);
   });
 });
+
+describe('journeys, annotations and time-aware features', () => {
+  it('keeps a journey’s stop dates, and moves them with added and removed stops', async () => {
+    const { api, w, makeMap, feature } = await setup();
+    const map = await makeMap('World');
+    const trip = await feature(map.id, {
+      kind: 'journey',
+      points: [
+        [0.1, 0.1],
+        [0.3, 0.1],
+        [0.5, 0.4],
+      ],
+      pointDays: [10, null, 40],
+      label: 'The long march',
+    });
+    expect(trip.pointDays).toEqual([10, null, 40]);
+
+    const added = await api.patch(`${w}/maps/${map.id}/features/${trip.id}`, {
+      points: [
+        [0.1, 0.1],
+        [0.2, 0.15],
+        [0.3, 0.1],
+        [0.5, 0.4],
+      ],
+    });
+    expect(added.json<MapFeature>().pointDays).toEqual([10, null, null, 40]);
+
+    const dated = await api.patch(`${w}/maps/${map.id}/features/${trip.id}`, {
+      pointDays: [10, 15, null, 40],
+    });
+    expect(dated.json<MapFeature>().pointDays).toEqual([10, 15, null, 40]);
+    const wrongLength = await api.patch(`${w}/maps/${map.id}/features/${trip.id}`, {
+      pointDays: [10, 15],
+    });
+    expect(wrongLength.statusCode).toBe(400);
+  });
+
+  it('refuses dated stops on anything but a journey, or the wrong number of them', async () => {
+    const { api, w, makeMap } = await setup();
+    const map = await makeMap('World');
+    const post = (payload: object) => api.post(`${w}/maps/${map.id}/features`, payload);
+    const path = [
+      [0.1, 0.1],
+      [0.5, 0.5],
+    ];
+    expect((await post({ kind: 'path', points: path, pointDays: [1, 2] })).statusCode).toBe(400);
+    expect((await post({ kind: 'journey', points: path, pointDays: [1] })).statusCode).toBe(400);
+    expect((await post({ kind: 'journey', points: [[0.5, 0.5]] })).statusCode).toBe(400);
+  });
+
+  it('draws arrows and circles with exactly two points', async () => {
+    const { api, w, makeMap, feature } = await setup();
+    const map = await makeMap('World');
+    const two = [
+      [0.2, 0.2],
+      [0.4, 0.4],
+    ];
+    expect((await feature(map.id, { kind: 'arrow', points: two })).kind).toBe('arrow');
+    expect((await feature(map.id, { kind: 'circle', points: two })).kind).toBe('circle');
+    const three = [...two, [0.6, 0.6]];
+    expect(
+      (await api.post(`${w}/maps/${map.id}/features`, { kind: 'arrow', points: three })).statusCode,
+    ).toBe(400);
+    expect(
+      (await api.post(`${w}/maps/${map.id}/features`, { kind: 'circle', points: [[0.5, 0.5]] }))
+        .statusCode,
+    ).toBe(400);
+  });
+
+  it('lists only the features that hold on the day asked about, for everyone', async () => {
+    const { api, w, makeMap, feature, player } = await setup();
+    const map = await makeMap('World');
+    await api.patch(`${w}/maps/${map.id}`, { visibility: 'player' });
+    const open = { visibility: 'player' };
+    const always = await feature(map.id, { label: 'Always', ...open });
+    const early = await feature(map.id, { label: 'Early', validToDay: 99, ...open });
+    const late = await feature(map.id, { label: 'Late', validFromDay: 100, ...open });
+    const window = await feature(map.id, {
+      label: 'Window',
+      validFromDay: 50,
+      validToDay: 150,
+      ...open,
+    });
+    const ids = async (client: typeof api, query = '') =>
+      (await client.get(`${w}/maps/${map.id}/features${query}`))
+        .json<MapFeature[]>()
+        .map((f) => f.id)
+        .sort();
+    const sorted = (...list: MapFeature[]) => list.map((f) => f.id).sort();
+    expect(await ids(api)).toEqual(sorted(always, early, late, window));
+    expect(await ids(api, '?asOf=10')).toEqual(sorted(always, early));
+    expect(await ids(api, '?asOf=99')).toEqual(sorted(always, early, window));
+    expect(await ids(api, '?asOf=100')).toEqual(sorted(always, late, window));
+    expect(await ids(player.api, '?asOf=200')).toEqual(sorted(always, late));
+
+    const bad = await api.patch(`${w}/maps/${map.id}/features/${window.id}`, {
+      validFromDay: 200,
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+});

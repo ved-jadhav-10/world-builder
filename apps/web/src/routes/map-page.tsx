@@ -1,9 +1,13 @@
 import {
+  CalendarClock,
   Check,
   ChevronRight,
+  Circle,
+  Footprints,
   Maximize,
   MapPin,
   MousePointer2,
+  MoveUpRight,
   Pentagon,
   RotateCcw,
   Route,
@@ -45,23 +49,76 @@ import { MapCanvas, type FocusRequest, type MapTool } from '@/components/atlas/m
 import { MapInfoPanel } from '@/components/atlas/map-info-panel';
 import { MapSettingsDialog } from '@/components/atlas/map-settings-dialog';
 import { MeasurePanel } from '@/components/atlas/measure-panel';
+import { DateField } from '@/components/date-field';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/inputs';
 import { EmptyState, PageSpinner, Spinner } from '@/components/ui/misc';
 import { mapPath } from '@/lib/atlas-tree';
+import { useDates } from '@/lib/use-dates';
 import { useWorld } from '@/lib/world-context';
 
 const TOOLS: { tool: MapTool; label: string; icon: LucideIcon }[] = [
+  // Placed first so the list below reads from simple marks to richer shapes.
   { tool: 'select', label: 'Select', icon: MousePointer2 },
   { tool: 'pin', label: 'Pin', icon: MapPin },
   { tool: 'label', label: 'Label', icon: Type },
   { tool: 'path', label: 'Path', icon: Route },
   { tool: 'region', label: 'Region', icon: Pentagon },
+  { tool: 'journey', label: 'Journey', icon: Footprints },
+  { tool: 'arrow', label: 'Arrow', icon: MoveUpRight },
+  { tool: 'circle', label: 'Circle', icon: Circle },
 ];
 
-const isDrawing = (tool: MapTool): tool is 'path' | 'region' =>
-  tool === 'path' || tool === 'region';
+/** Read the map at an in-world date: features that do not hold then drop away. */
+function MapAsOf({
+  value,
+  onChange,
+}: {
+  value: number | null;
+  onChange: (day: number | null) => void;
+}) {
+  const dates = useDates();
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={value === null ? 'ghost' : 'default'}
+          size="sm"
+          title="Read the map at a date"
+        >
+          <CalendarClock />
+          <span className="hidden sm:inline">
+            {value === null ? 'As of…' : `As of ${dates.date(value)}`}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Borders, roads and journeys that hold on a date. Map items can be given a start and an
+          end; journeys show how far along they are.
+        </p>
+        <DateField label="Date" value={value} onChange={onChange} />
+        {value !== null ? (
+          <Button type="button" size="sm" variant="outline" onClick={() => onChange(null)}>
+            <X /> Back to now
+          </Button>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+type DrawingTool = 'path' | 'region' | 'journey' | 'arrow' | 'circle';
+const isDrawing = (tool: MapTool): tool is DrawingTool =>
+  tool === 'path' ||
+  tool === 'region' ||
+  tool === 'journey' ||
+  tool === 'arrow' ||
+  tool === 'circle';
+/** Shapes that are finished by their second click. */
+const isTwoPoint = (tool: MapTool) => tool === 'arrow' || tool === 'circle';
 
 /** Corners drawn almost on top of each other (the second click of a double-click) count once. */
 function dedupe(points: MapPoint[]): MapPoint[] {
@@ -122,9 +179,12 @@ function MapWorkspace({
   maps: AtlasMap[];
   initialFeatureId: string | null;
 }) {
-  const { world, typeById, canEdit, base } = useWorld();
+  const { world, typeById, canEdit: canEditWorld, base } = useWorld();
+  // Reading the map at a date is a view, not a place to draw.
+  const [asOf, setAsOf] = useState<number | null>(null);
+  const canEdit = canEditWorld && asOf === null;
   const navigate = useNavigate();
-  const featuresQuery = useMapFeatures(world.id, map.id);
+  const featuresQuery = useMapFeatures(world.id, map.id, true, asOf);
   const features = featuresQuery.data ?? [];
   const layers = useMapLayers(world.id, map.id).data ?? EMPTY_LAYERS;
   const [layerChoices, setLayerChoices] = useState(() => readLayerChoices(map.id));
@@ -176,7 +236,12 @@ function MapWorkspace({
 
   async function create(kind: FeatureKind, points: MapPoint[], label = '') {
     try {
-      const feature = await createFeature.mutateAsync({ kind, points, label });
+      const feature = await createFeature.mutateAsync({
+        kind,
+        points,
+        label,
+        ...(kind === 'journey' ? { lineStyle: 'dashed' as const } : {}),
+      });
       setPicked(feature.id);
       setNewlyCreated(feature.id);
       setTool('select');
@@ -184,6 +249,15 @@ function MapWorkspace({
     } catch (error) {
       toast.error(errorMessage(error));
     }
+  }
+
+  function addDraftPoint(point: MapPoint) {
+    // Arrows and circles take two points: the second click finishes them.
+    if (isDrawing(tool) && isTwoPoint(tool) && draft.length === 1) {
+      void create(tool, [draft[0]!, point]);
+      return;
+    }
+    setDraft((points) => [...points, point]);
   }
 
   function finishDraft() {
@@ -285,6 +359,7 @@ function MapWorkspace({
               <Ruler />
               <span className="hidden sm:inline">Measure</span>
             </Button>
+            <MapAsOf value={asOf} onChange={setAsOf} />
             <LayersMenu
               mapId={map.id}
               layers={layers}
@@ -325,11 +400,12 @@ function MapWorkspace({
             hiddenLayers={hiddenLayers}
             measureLabel={measureLabel}
             fitRequest={fitRequest}
+            asOfDay={asOf}
             onSelect={setPicked}
             onPlace={(kind, point) =>
               kind === 'pin' ? void create('pin', [point]) : setLabelAt(point)
             }
-            onDraftAdd={(point) => setDraft((points) => [...points, point])}
+            onDraftAdd={addDraftPoint}
             onDraftFinish={finishDraft}
             onMovePoints={(id, points) =>
               updateFeature.mutate(

@@ -47,6 +47,8 @@ export interface MapCanvasProps {
   hiddenLayers: Set<string>;
   /** The running length shown at the end of a measured line. */
   measureLabel: string | null;
+  /** The in-world day the map is read at, if any; journeys show how far along they are. */
+  asOfDay: number | null;
   /** Bump to return to the whole-map view. */
   fitRequest: number;
   onSelect: (id: string | null) => void;
@@ -66,7 +68,12 @@ function useLatest<T>(value: T) {
   return ref;
 }
 
-const isDrawingTool = (tool: MapTool) => tool === 'path' || tool === 'region';
+const isDrawingTool = (tool: MapTool) =>
+  tool === 'path' ||
+  tool === 'region' ||
+  tool === 'journey' ||
+  tool === 'arrow' ||
+  tool === 'circle';
 /** Tools that build up a line one click at a time. */
 const isLineTool = (tool: MapTool) => isDrawingTool(tool) || tool === 'measure';
 const MEASURE_COLOR = '#e11d48';
@@ -77,7 +84,7 @@ const MEASURE_COLOR = '#e11d48';
  */
 export function MapCanvas(props: MapCanvasProps) {
   const { worldId, map: atlasMap, features, typeById, tool, canEdit, selectedId, draft } = props;
-  const { hiddenLayers, measureLabel } = props;
+  const { hiddenLayers, measureLabel, asOfDay } = props;
   const { focus, fitRequest } = props;
   const { id: mapId, width, height, imageVersion } = atlasMap;
   const sceneKey = `${mapId}:${width}x${height}:${imageVersion}`;
@@ -141,6 +148,7 @@ export function MapCanvas(props: MapCanvasProps) {
       hiddenLayers: new Set<string>(),
       interactive: true,
       rubber: null,
+      asOf: null,
     };
     viewRef.current = view;
 
@@ -200,6 +208,7 @@ export function MapCanvas(props: MapCanvasProps) {
       move: (id, points) => latest.current.onMovePoints(id, points),
     };
     view.hiddenLayers = hiddenLayers;
+    view.asOf = asOfDay;
     view.interactive = tool === 'select';
     view.featureLayer.clearLayers();
     view.handleLayer.clearLayers();
@@ -220,7 +229,7 @@ export function MapCanvas(props: MapCanvasProps) {
       for (const handle of buildHandles(selected, view, handlers))
         view.handleLayer.addLayer(handle);
     }
-  }, [sceneKey, features, typeById, selectedId, tool, canEdit, hiddenLayers, latest]);
+  }, [sceneKey, features, typeById, selectedId, tool, canEdit, hiddenLayers, asOfDay, latest]);
 
   // The path or region being drawn, plus the line that follows the cursor.
   useEffect(() => {
@@ -229,7 +238,7 @@ export function MapCanvas(props: MapCanvasProps) {
     view.draftLayer.clearLayers();
     view.rubber = null;
     if (!isLineTool(tool) || draft.length === 0) return;
-    const color = tool === 'measure' ? MEASURE_COLOR : DEFAULT_COLORS[tool as 'path' | 'region'];
+    const color = tool === 'measure' ? MEASURE_COLOR : DEFAULT_COLORS[tool as FeatureKind];
     const corners = draft.map((p) => project(p, view.size));
     if (tool === 'region' && corners.length >= 3) {
       view.draftLayer.addLayer(

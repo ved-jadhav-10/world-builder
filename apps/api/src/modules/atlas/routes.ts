@@ -4,6 +4,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   atlasSearchQuerySchema,
   featureCreateSchema,
+  featureListQuerySchema,
   featureParamsSchema,
   featureUpdateSchema,
   layerCreateSchema,
@@ -168,8 +169,17 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
-  app.get('/maps/:id/features', { schema: { params: mapItemParamsSchema } }, async (request) =>
-    listFeatures(db, currentWorldId(request), request.params.id, currentAudience(request)),
+  app.get(
+    '/maps/:id/features',
+    { schema: { params: mapItemParamsSchema, querystring: featureListQuerySchema } },
+    async (request) =>
+      listFeatures(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        currentAudience(request),
+        request.query.asOf,
+      ),
   );
 
   app.post(

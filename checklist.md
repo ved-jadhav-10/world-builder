@@ -49,10 +49,10 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 - [x] **Maps:** replace a map's image without deleting it; pin clustering when zoomed out (M13).
 - [x] A **measure tool** with custom scale and travel times by foot, horse or ship, and **layers** (political, terrain, trade routes) (M13). Still to do: **drill-down transitions** (the child map visually opens from its spot on the parent) [v1].
-- [ ] **Time-aware layers** (borders by year) [v2] and as-of views for the Atlas and the manuscript (deferred in M4).
+- [x] **Time-aware map items** (borders, roads and anything else with a start and end) and an as-of date for the Atlas (M29). Still to do: an as-of view of the manuscript.
 - [x] **Map prep notes on pins** (GM-only notes, never sent to players) (M13).
-- [ ] **Journey lines** (the route taken, by date) and **pointcrawl or node maps** [v1].
-- [ ] **Fog of war** and reveals for players [v2]; light annotation tools beyond the current pins, labels, paths and regions [v1].
+- [x] **Journey lines**, routes with dated stops that show how far along they are on any date (M29). Still to do: **pointcrawl or node maps**.
+- [ ] **Fog of war** and reveals for players [v2]; light annotation tools: arrows and circles beside the pins, labels, paths and regions (M29).
 - [ ] **Map art importers** for Azgaar and Watabou output [MVP import is plain upload today]; hex and grid overlays and a vector map editor [v3].
 - [x] **Calendars:** several calendars per world, timeline tracks by tag as well as by type, and **calendar reminders** (a world "today" and a coming-up list with yearly anniversaries) (M28). Still to do: reminders as notifications, and showing a date in the other calendars on entry pages.
 - [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.

@@ -1,11 +1,23 @@
 import { z } from 'zod';
+import { dayNumberSchema } from './calendar';
 import { colorSchema, iconSchema, idSchema, visibilitySchema } from './common';
 
 export const MAP_STATUSES = ['processing', 'ready', 'failed'] as const;
 export type MapStatus = (typeof MAP_STATUSES)[number];
 
-/** Pins link to entries and maps, labels are plain text, paths are roads/rivers, regions are areas. */
-export const FEATURE_KINDS = ['pin', 'label', 'path', 'region'] as const;
+/**
+ * Pins link to entries and maps, labels are plain text, paths are roads/rivers, regions are
+ * areas, journeys are routes with dated stops, and arrows and circles are quick annotations.
+ */
+export const FEATURE_KINDS = [
+  'pin',
+  'label',
+  'path',
+  'region',
+  'journey',
+  'arrow',
+  'circle',
+] as const;
 export type FeatureKind = (typeof FEATURE_KINDS)[number];
 
 export const FEATURE_KIND_LABELS: Record<FeatureKind, string> = {
@@ -13,6 +25,9 @@ export const FEATURE_KIND_LABELS: Record<FeatureKind, string> = {
   label: 'Text label',
   path: 'Path',
   region: 'Region',
+  journey: 'Journey',
+  arrow: 'Arrow',
+  circle: 'Circle',
 };
 
 export const FEATURE_SIZES = ['sm', 'md', 'lg'] as const;
@@ -27,7 +42,15 @@ export const FEATURE_POINT_LIMITS: Record<FeatureKind, { min: number; max: numbe
   label: { min: 1, max: 1 },
   path: { min: 2, max: 500 },
   region: { min: 3, max: 500 },
+  journey: { min: 2, max: 500 },
+  /** Tail and head. */
+  arrow: { min: 2, max: 2 },
+  /** Centre and a point on the edge. */
+  circle: { min: 2, max: 2 },
 };
+
+/** Kinds drawn as a line through their points. */
+export const LINE_KINDS: readonly FeatureKind[] = ['path', 'journey', 'arrow'];
 
 /** The deepest "show from" level offered: how many zooms in from the whole-map view. */
 export const MAX_FEATURE_ZOOM = 6;
@@ -159,12 +182,42 @@ export const featureCreateSchema = z
     size: z.enum(FEATURE_SIZES).default('md'),
     lineStyle: z.enum(LINE_STYLES).default('solid'),
     minZoom: z.number().int().min(0).max(MAX_FEATURE_ZOOM).default(0),
+    /** For a journey: the in-world day at each stop, or null where a stop has no date. */
+    pointDays: z.array(dayNumberSchema.nullable()).max(500).nullable().default(null),
+    /** When the feature holds, as in-world days; an open end means no limit that side. */
+    validFromDay: dayNumberSchema.nullable().default(null),
+    validToDay: dayNumberSchema.nullable().default(null),
     /** Who can see it on the map. New pins are the GM's until revealed. */
     visibility: visibilitySchema.default('gm'),
   })
   .superRefine((feature, ctx) => {
     const problem = pointCountProblem(feature.kind, feature.points);
     if (problem) ctx.addIssue({ code: 'custom', path: ['points'], message: problem });
+    if (feature.pointDays && feature.kind !== 'journey') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['pointDays'],
+        message: 'Only a journey has dated stops',
+      });
+    }
+    if (feature.pointDays && feature.pointDays.length !== feature.points.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['pointDays'],
+        message: 'Give one date (or none) for each stop',
+      });
+    }
+    if (
+      feature.validFromDay !== null &&
+      feature.validToDay !== null &&
+      feature.validToDay < feature.validFromDay
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['validToDay'],
+        message: 'The end cannot come before the start',
+      });
+    }
     if (feature.kind === 'label' && !feature.label) {
       ctx.addIssue({ code: 'custom', path: ['label'], message: 'A text label needs some text' });
     }
@@ -185,9 +238,17 @@ export const featureUpdateSchema = z.object({
   size: z.enum(FEATURE_SIZES).optional(),
   lineStyle: z.enum(LINE_STYLES).optional(),
   minZoom: z.number().int().min(0).max(MAX_FEATURE_ZOOM).optional(),
+  pointDays: z.array(dayNumberSchema.nullable()).max(500).nullable().optional(),
+  validFromDay: dayNumberSchema.nullable().optional(),
+  validToDay: dayNumberSchema.nullable().optional(),
   visibility: visibilitySchema.optional(),
 });
 export type FeatureUpdateInput = z.input<typeof featureUpdateSchema>;
+
+/** Listing a map's features can ask for those that hold on one in-world day. */
+export const featureListQuerySchema = z.object({
+  asOf: z.coerce.number().int().min(-1_000_000_000).max(1_000_000_000).optional(),
+});
 
 export const atlasSearchQuerySchema = z.object({
   q: z.string().trim().min(1).max(100),
