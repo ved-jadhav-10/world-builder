@@ -606,6 +606,16 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** shared tests (helpers, search text, export redaction), API tests (entry, type list, previews, search before and after un-flagging, progressions, exports), the full suite, lint, and Chrome with a real GM and player (flag Age, the GM still sees it, the player does not, no 4xx).
 - **Deferred:** per-field visibility for one audience only (players but not readers), and revealing a field after a chapter or date.
 
+## Milestone 46 (Loot and party widgets): done
+
+- **Two more GM-screen widgets**, stored in the screen JSON like the initiative tracker (no migration, validated by `gmWidgetSchema`):
+  - **Loot and treasure:** up to 100 items with a quantity, a free-text value ("50 gp", "priceless") and who carries it, grouped by carrier with the party's pack under "Party".
+  - **Party XP and downtime:** up to 20 characters with XP and downtime days. Award XP to each, or split an amount evenly (the remainder goes to the first characters, so no points vanish; a loss splits the same way and never goes below 0), and give downtime days to everyone. Both are plain editable numbers too.
+- **Logic** in `party.ts` (shared, tested): `awardXp`, `awardDowntime`, `groupByHolder`.
+- **Fixed on the way:** widgets could push the GM screen wider than a phone (the grid item had no minimum width); frames now shrink and rows wrap.
+- **Verified:** shared tests, an API test (saved as is, refusals), Chrome (add loot and members, split 100 XP three ways as 34/33/33, days, reload keeps it, no 4xx) and a phone-width screenshot read back.
+- **Deferred:** XP thresholds and levels per rules system, coin purses with conversion, linking loot to Item entries and members to Character entries, and a log of awards.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

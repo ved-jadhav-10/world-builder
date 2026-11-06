@@ -1,11 +1,13 @@
 import {
   ArrowDown,
   ArrowUp,
+  Coins,
   Dices,
   LayoutDashboard,
   NotebookPen,
   Pin,
   Plus,
+  Users,
   StickyNote,
   Swords,
   Table2,
@@ -33,6 +35,7 @@ import { useGmScreen, useSaveGmScreen } from '@/api/gm-screen-queries';
 import { useSessions } from '@/api/gm-queries';
 import { useRollTable, useTables } from '@/api/table-queries';
 import { InitiativeWidget } from '@/components/initiative-widget';
+import { LootWidget, PartyWidget } from '@/components/party-widgets';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker, type PickedEntity } from '@/components/entity-picker';
 import { RollPanel, RollResult } from '@/components/roll-panel';
@@ -57,6 +60,8 @@ const WIDGET_ICONS: Record<GmWidgetType, ReactNode> = {
   clock: <Timer />,
   session: <NotebookPen />,
   initiative: <Swords />,
+  loot: <Coins />,
+  party: <Users />,
 };
 
 const newId = () => crypto.randomUUID().slice(0, 8);
@@ -78,6 +83,10 @@ function blankWidget(type: GmWidgetType): GmWidget {
       return { ...base, type };
     case 'initiative':
       return { ...base, type, combatants: [], round: 1, turn: 0 };
+    case 'loot':
+      return { ...base, type, items: [] };
+    case 'party':
+      return { ...base, type, members: [] };
   }
 }
 
@@ -374,7 +383,7 @@ function WidgetFrame({
   return (
     <section
       aria-label={widget.title || label}
-      className="space-y-3 rounded-xl border bg-card p-3 shadow-xs"
+      className="min-w-0 space-y-3 rounded-xl border bg-card p-3 shadow-xs"
     >
       <header className="flex items-center gap-1.5">
         <span className="text-muted-foreground [&_svg]:size-4">{WIDGET_ICONS[widget.type]}</span>
@@ -513,8 +522,8 @@ function ScreenEditor({ screen }: { screen: GmScreen }) {
       {widgets.length === 0 ? (
         <EmptyState icon={<LayoutDashboard />} title="An empty screen">
           <p>
-            Add dice, a table roller, pinned entries, a scratchpad, a clock, an initiative tracker
-            or the current session.
+            Add dice, a table roller, pinned entries, a scratchpad, a clock, an initiative tracker,
+            loot, party XP or the current session.
           </p>
         </EmptyState>
       ) : (
@@ -555,6 +564,12 @@ function ScreenEditor({ screen }: { screen: GmScreen }) {
                 <ClockWidget widget={widget} onChange={(patch) => change(widget.id, patch)} />
               ) : null}
               {widget.type === 'session' ? <SessionWidget /> : null}
+              {widget.type === 'loot' ? (
+                <LootWidget widget={widget} onChange={(patch) => change(widget.id, patch)} />
+              ) : null}
+              {widget.type === 'party' ? (
+                <PartyWidget widget={widget} onChange={(patch) => change(widget.id, patch)} />
+              ) : null}
               {widget.type === 'initiative' ? (
                 <InitiativeWidget widget={widget} onChange={(patch) => change(widget.id, patch)} />
               ) : null}

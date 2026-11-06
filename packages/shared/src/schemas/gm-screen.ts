@@ -9,6 +9,8 @@ export const GM_WIDGET_TYPES = [
   'clock',
   'session',
   'initiative',
+  'loot',
+  'party',
 ] as const;
 export type GmWidgetType = (typeof GM_WIDGET_TYPES)[number];
 
@@ -20,6 +22,8 @@ export const GM_WIDGET_LABELS: Record<GmWidgetType, string> = {
   clock: 'Clock',
   session: 'Current session',
   initiative: 'Initiative and HP',
+  loot: 'Loot and treasure',
+  party: 'Party XP and downtime',
 };
 
 export const MAX_GM_WIDGETS = 24;
@@ -27,6 +31,8 @@ export const MAX_PINNED_ENTRIES = 30;
 export const MAX_SCRATCHPAD = 20_000;
 export const MAX_COMBATANTS = 40;
 export const MAX_CONDITIONS = 10;
+export const MAX_LOOT_ITEMS = 100;
+export const MAX_PARTY_MEMBERS = 20;
 export const CLOCK_SEGMENT_CHOICES = [4, 6, 8, 10, 12] as const;
 
 export const combatantSchema = z
@@ -53,6 +59,26 @@ export interface InitiativeState {
   /** Index of the combatant whose turn it is. */
   turn: number;
 }
+
+/** One thing the party found. The value is free text so it can be "50 gp" or "priceless". */
+export const lootItemSchema = z.object({
+  id: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(1).max(80),
+  qty: z.number().int().min(1).max(99_999).default(1),
+  value: z.string().trim().max(40).default(''),
+  /** Who is carrying it; blank means the party's pack. */
+  holder: z.string().trim().max(80).default(''),
+});
+export type LootItem = z.infer<typeof lootItemSchema>;
+
+export const partyMemberSchema = z.object({
+  id: z.string().trim().min(1).max(40),
+  name: z.string().trim().min(1).max(80),
+  xp: z.number().int().min(0).max(99_999_999).default(0),
+  /** Downtime days available to spend between adventures. */
+  downtime: z.number().int().min(0).max(9_999).default(0),
+});
+export type PartyMember = z.infer<typeof partyMemberSchema>;
 
 const base = {
   /** Made by the browser; only has to be unique on one screen. */
@@ -87,6 +113,16 @@ export const gmWidgetSchema = z.discriminatedUnion('type', [
     combatants: z.array(combatantSchema).max(MAX_COMBATANTS).default([]),
     round: z.number().int().min(1).max(999).default(1),
     turn: z.number().int().min(0).max(MAX_COMBATANTS).default(0),
+  }),
+  z.object({
+    ...base,
+    type: z.literal('loot'),
+    items: z.array(lootItemSchema).max(MAX_LOOT_ITEMS).default([]),
+  }),
+  z.object({
+    ...base,
+    type: z.literal('party'),
+    members: z.array(partyMemberSchema).max(MAX_PARTY_MEMBERS).default([]),
   }),
 ]);
 export type GmWidget = z.infer<typeof gmWidgetSchema>;

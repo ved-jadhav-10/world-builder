@@ -153,6 +153,33 @@ describe('GM screen', () => {
     expect((await save([unnamed])).statusCode).toBe(400);
   });
 
+  it('keeps loot and party widgets as saved, and refuses nonsense', async () => {
+    const { save, get } = await setup();
+    const widgets = [
+      {
+        id: 'loot',
+        type: 'loot',
+        title: '',
+        items: [{ id: 'a', name: 'Silver dagger', qty: 2, value: '50 gp', holder: 'Mira' }],
+      },
+      {
+        id: 'party',
+        type: 'party',
+        title: '',
+        members: [{ id: 'm', name: 'Mira', xp: 1200, downtime: 4 }],
+      },
+    ];
+    expect((await save(widgets)).statusCode).toBe(200);
+    expect((await get()).widgets).toEqual(widgets);
+    const item = widgets[0]!.items![0]!;
+    const bad = async (w: object[]) => (await save(w)).statusCode;
+    expect(await bad([{ ...widgets[0], items: [{ ...item, qty: 0 }] }])).toBe(400);
+    expect(await bad([{ ...widgets[0], items: [{ ...item, name: ' ' }] }])).toBe(400);
+    const member = widgets[1]!.members![0]!;
+    expect(await bad([{ ...widgets[1], members: [{ ...member, xp: -1 }] }])).toBe(400);
+    expect(await bad([{ ...widgets[1], members: [{ ...member, downtime: 1.5 }] }])).toBe(400);
+  });
+
   it('refuses a screen that does not make sense', async () => {
     const { save } = await setup();
     const bad = async (widgets: object[]) => (await save(widgets)).statusCode;
