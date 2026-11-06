@@ -40,7 +40,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Manuscript drag-and-drop reordering** in the binder, with the menu moves kept for keyboard and touch (M25).
 - [x] **Character extras:** abilities with charges, a voice and dialogue sheet, an interview questionnaire, species trait inheritance and a colour palette field (M35). Still to do: turnaround sheet and stat blocks [v2].
 - [x] **Content tree** of all articles, **pop-out windows** for an entry, and **keyboard shortcuts** (M36).
-- [ ] **Lore wiki extras:** secret blocks inside an article, embedded maps and timelines [MVP/v1 in the research; see also field-level secrets in F].
+- [x] **Lore wiki extras:** secret blocks inside an article, embedded maps and timelines (M37). Field-level secrets are still F.
 - [x] **Manuscript export to Word (.docx)**, in a standard submission layout or a clean one (M17).
 - [x] **Manuscript export to EPUB** for e-readers (M18).
 - [ ] **More exports:** PDF and a story-bible PDF [v1]; screenplay and comic script formats [v3].

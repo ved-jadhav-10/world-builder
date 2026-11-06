@@ -427,6 +427,7 @@ function EntityEditor({
                     value={field.value}
                     onChange={field.onChange}
                     editable={canEdit}
+                    features={{ secret: audience === 'gm', embeds: true }}
                   />
                 )}
               />

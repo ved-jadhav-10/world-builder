@@ -532,6 +532,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified in a browser** (the pure routing of keys is unit-tested; the listener and pop-out window are not).
 - **Deferred:** pop-outs for the manuscript scene and map, a place hierarchy in the tree (by "located in"), and rebinding keys.
 
+## Milestone 37 (Secret blocks and embeds in articles): done
+
+- **Secret blocks** (`secret-blocks.ts`, shared; the padlock in an entry's notes toolbar, GM only): wrap any blocks in a `secretBlock`. `GET /entities/:id` strips them for every audience but the GM (so "view as" previews and players never get them), and `deriveSearchText` leaves them out, so the words are not searchable by anyone, the GM included. Editing an article for anything else leaves them alone. The Markdown export keeps them as a quote labelled "Secret". They are not hidden from the GM's own search, history or export.
+- **Embedded maps and timelines** (the map button in the toolbar): `mapEmbed` shows a map's picture and name and opens it; if the viewer can't open the map it reads "This map isn't available". `timelineEmbed` lists up to 10 dated entries (everything, or one type) and links to the full timeline. Both read live data through the viewer's own access, so they leak nothing the viewer couldn't already open. A read-only reader sees them too.
+- **Scope:** this is for entry notes; scene text in the manuscript does not offer these.
+- **Deferred:** field-level and block-level visibility for other audiences (F), timeline embeds filtered by tag or date range, and secret blocks revealed to players after a chapter.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

@@ -1,3 +1,5 @@
+import { stripSecretBlocks } from './secret-blocks';
+
 /** Postgres caps a tsvector at 1 MB; stay well under it. */
 const MAX_SEARCH_TEXT = 200_000;
 
@@ -42,7 +44,8 @@ export function deriveSearchText(entity: SearchableEntity): string {
     entity.name,
     ...entity.aliases,
     entity.summary,
-    richTextToPlainText(entity.body),
+    // Secret blocks are the GM's alone, so their words are not searchable by anyone.
+    richTextToPlainText(stripSecretBlocks(entity.body)),
     ...fieldText,
   ]
     .filter(Boolean)

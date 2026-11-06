@@ -102,6 +102,23 @@
 .prose-ink code {
   @apply rounded bg-muted px-1 py-0.5 text-[13px];
 }
+/* Parts of an article only the GM sees, and maps or timelines shown inside one */
+.prose-ink .secret-block {
+  @apply relative rounded-md border border-dashed border-amber-500/60 bg-amber-500/5 px-4 py-3;
+}
+.prose-ink .secret-block::before {
+  content: 'Secret: only you can see this';
+  @apply mb-1 block text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300;
+}
+.prose-ink .embed-block {
+  @apply rounded-lg border bg-muted/30 p-3;
+}
+.prose-ink .embed-block a {
+  @apply no-underline hover:underline;
+}
+.prose-ink .ProseMirror-selectednode.embed-block {
+  @apply ring-2 ring-ring;
+}
 .prose-ink p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   @apply pointer-events-none float-left h-0 text-muted-foreground;

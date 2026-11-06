@@ -20,6 +20,7 @@ import {
   type bulkEntitySchema,
   type Entity,
   type EntityIndexItem,
+  stripSecretBlocks,
   type entityCreateSchema,
   type entityListQuerySchema,
   type EntitySummary,
@@ -117,7 +118,9 @@ export async function getEntity(
   audience: Audience = 'gm',
 ): Promise<Entity> {
   const row = await getEntityRow(db, worldId, entityId, audience);
-  return toEntity(row, await tagsFor(db, row.id));
+  const entity = toEntity(row, await tagsFor(db, row.id));
+  // Secret blocks are the GM's: everyone else is sent the article without them.
+  return audience === 'gm' ? entity : { ...entity, body: stripSecretBlocks(entity.body) };
 }
 
 /** The books an entry is scoped to must be books of this world; duplicates are dropped. */

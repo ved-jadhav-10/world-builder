@@ -122,6 +122,17 @@ function block(node: Node): string | null {
     }
     case 'horizontalRule':
       return '---';
+    case 'secretBlock':
+      // The GM's own notes; in an export they read as a labelled quote.
+      return ['**Secret**', ...blocks(node.content)]
+        .join('\n\n')
+        .split('\n')
+        .map((line) => (line === '' ? '>' : `> ${line}`))
+        .join('\n');
+    case 'mapEmbed':
+      return '*[An embedded map]*';
+    case 'timelineEmbed':
+      return '*[An embedded timeline]*';
     case 'doc':
     case 'listItem':
       return blocks(node.content).join('\n\n');

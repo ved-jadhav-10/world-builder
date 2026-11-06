@@ -58,3 +58,4 @@ export * from './map-route';
 export * from './geojson-import';
 export * from './fog';
 export * from './vtt';
+export * from './secret-blocks';
