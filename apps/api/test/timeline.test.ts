@@ -3,6 +3,7 @@ import {
   dateToDay,
   DEFAULT_CALENDAR,
   GREGORIAN_CALENDAR,
+  MAX_EXTRA_CALENDARS,
   type Calendar,
   type Entity,
   type EntityRelationship,
@@ -14,7 +15,7 @@ import {
   type WorldExport,
 } from '@atlas/shared';
 import { buildApp } from '../src/app';
-import { signUp, signUpWithWorld, type TestApp } from './helpers';
+import { joinWorld, signUp, signUpWithWorld, type TestApp } from './helpers';
 
 let app: TestApp;
 beforeAll(async () => {
@@ -524,5 +525,69 @@ describe('progressions for names, aliases and links', () => {
     const { w } = await setup();
     const outsider = await signUp(app);
     expect((await outsider.api.get(`${w}/progressions`)).statusCode).toBeGreaterThanOrEqual(403);
+  });
+});
+
+describe('further calendars and today', () => {
+  it('keeps extra calendars beside the main one, and only editors change them', async () => {
+    const ctx = await setup();
+    const { api, w } = ctx;
+    const body = { name: 'Elvish count', definition: GREGORIAN_CALENDAR };
+    const made = await api.post(`${w}/calendars`, body);
+    expect(made.statusCode, made.body).toBe(201);
+    const { id } = made.json<{ id: string }>();
+    expect((await api.get(`${w}/calendars`)).json<{ name: string }[]>()).toHaveLength(1);
+    // The main calendar is unaffected.
+    expect((await api.get(`${w}/calendar`)).json<Calendar>().isDefault).toBe(true);
+
+    const renamed = await api.put(`${w}/calendars/${id}`, { ...body, name: 'Dwarven count' });
+    expect(renamed.json<{ name: string }>().name).toBe('Dwarven count');
+
+    const reader = await joinWorld(app, ctx.world.id, 'reader');
+    expect((await reader.api.get(`${w}/calendars`)).statusCode).toBe(200);
+    expect((await reader.api.post(`${w}/calendars`, body)).statusCode).toBe(403);
+    expect((await reader.api.delete(`${w}/calendars/${id}`)).statusCode).toBe(403);
+
+    expect((await api.delete(`${w}/calendars/${id}`)).statusCode).toBe(204);
+    expect((await api.delete(`${w}/calendars/${id}`)).statusCode).toBe(404);
+  });
+
+  it('keeps calendars apart between worlds and caps how many there can be', async () => {
+    const a = await setup();
+    const b = await setup();
+    const body = { name: 'Other', definition: DEFAULT_CALENDAR };
+    const made = (await a.api.post(`${a.w}/calendars`, body)).json<{ id: string }>();
+    expect((await b.api.put(`${b.w}/calendars/${made.id}`, body)).statusCode).toBe(404);
+    expect((await b.api.delete(`${b.w}/calendars/${made.id}`)).statusCode).toBe(404);
+    for (let i = 1; i < MAX_EXTRA_CALENDARS; i++) {
+      expect((await a.api.post(`${a.w}/calendars`, body)).statusCode).toBe(201);
+    }
+    expect((await a.api.post(`${a.w}/calendars`, body)).statusCode).toBe(409);
+  });
+
+  it('sets and clears the world today', async () => {
+    const { api, w } = await setup();
+    expect((await api.get(`${w}/calendar`)).json<Calendar>().today).toBeNull();
+    const set = await api.put(`${w}/calendar/today`, { day: 12345 });
+    expect(set.json<Calendar>().today).toBe(12345);
+    expect((await api.get(`${w}/calendar`)).json<Calendar>().today).toBe(12345);
+    expect((await api.put(`${w}/calendar/today`, { day: null })).json<Calendar>().today).toBeNull();
+    expect((await api.put(`${w}/calendar/today`, { day: 1.5 })).statusCode).toBe(400);
+  });
+});
+
+describe('timeline tags', () => {
+  it('carries each dated entry’s tags so the page can run a track per tag', async () => {
+    const { api, w, entity } = await setup();
+    const hero = await entity('character', 'Maren', { startDay: 10 });
+    const villain = await entity('character', 'Vask', { startDay: 20 });
+    const tag = (await api.post(`${w}/tags`, { name: 'Northern war', color: '#445566' })).json<{
+      id: string;
+    }>();
+    await api.put(`${w}/entities/${hero.id}/tags/${tag.id}`);
+    const timeline = (await api.get(`${w}/timeline`)).json<TimelineData>();
+    const byName = new Map(timeline.entities.map((e) => [e.name, e.tagIds]));
+    expect(byName.get('Maren')).toEqual([tag.id]);
+    expect(byName.get(villain.name)).toEqual([]);
   });
 });

@@ -2,15 +2,19 @@ import { CalendarDays, Maximize, Minus, Plus, Settings, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { dayToDate, formatYear } from '@atlas/shared';
+import { useTags } from '@/api/queries';
 import { useTimeline } from '@/api/timeline-queries';
+import { UpcomingPanel } from '@/components/upcoming-panel';
 import { TimelineChart, type TimelineItem, type TimelineLane } from '@/components/timeline-chart';
 import { Button } from '@/components/ui/button';
+import { NativeSelect } from '@/components/ui/inputs';
 import { Badge, EmptyState, PageSpinner } from '@/components/ui/misc';
 import { useDates } from '@/lib/use-dates';
 import { cn } from '@/lib/utils';
 import { useWorld } from '@/lib/world-context';
 
 const SCENE_LANE = 'scenes';
+const UNTAGGED_LANE = 'tag:none';
 const SCENE_COLOR = '#64748b';
 
 /** What the page shows for a selected item, and where it links (relative to the world). */
@@ -22,42 +26,52 @@ interface DetailInfo {
 }
 
 /** Everything with a date, as chart lanes and items; also the details shown for each. */
-function useTimelineModel() {
+function useTimelineModel(groupBy: 'type' | 'tag') {
   const { world, types, typeById, base } = useWorld();
   const { data, isPending } = useTimeline(world.id);
+  const { data: tagList } = useTags(world.id);
   const dates = useDates();
 
   return useMemo(() => {
     const items: TimelineItem[] = [];
     const details = new Map<string, DetailInfo>();
+    // Tracks by tag: an entry with several tags runs in each of their tracks.
+    const tracks = (entity: { typeId: string; tagIds: string[] }) =>
+      groupBy === 'type'
+        ? [{ lane: entity.typeId, suffix: '' }]
+        : entity.tagIds.length > 0
+          ? entity.tagIds.map((id) => ({ lane: `tag:${id}`, suffix: `@${id}` }))
+          : [{ lane: UNTAGGED_LANE, suffix: '@none' }];
 
     for (const entity of data?.entities ?? []) {
       const type = typeById.get(entity.typeId);
       const from = entity.startDay ?? entity.endDay!;
       const to = entity.endDay ?? entity.startDay!;
-      const key = `e:${entity.id}`;
-      items.push({
-        key,
-        laneKey: entity.typeId,
-        name: entity.name,
-        from,
-        to,
-        endOnly: entity.startDay === null,
-        color: type?.color ?? '#64748b',
-      });
-      details.set(key, {
-        title: entity.name,
-        lines: [
-          ...(entity.startDay !== null
-            ? [`${type?.startLabel ?? 'Starts'}: ${dates.date(entity.startDay)}`]
-            : []),
-          ...(entity.endDay !== null
-            ? [`${type?.endLabel ?? 'Ends'}: ${dates.date(entity.endDay)}`]
-            : []),
-        ],
-        path: `/e/${entity.id}`,
-        linkLabel: 'Open entry',
-      });
+      for (const track of tracks(entity)) {
+        const key = `e:${entity.id}${track.suffix}`;
+        items.push({
+          key,
+          laneKey: track.lane,
+          name: entity.name,
+          from,
+          to,
+          endOnly: entity.startDay === null,
+          color: type?.color ?? '#64748b',
+        });
+        details.set(key, {
+          title: entity.name,
+          lines: [
+            ...(entity.startDay !== null
+              ? [`${type?.startLabel ?? 'Starts'}: ${dates.date(entity.startDay)}`]
+              : []),
+            ...(entity.endDay !== null
+              ? [`${type?.endLabel ?? 'Ends'}: ${dates.date(entity.endDay)}`]
+              : []),
+          ],
+          path: `/e/${entity.id}`,
+          linkLabel: 'Open entry',
+        });
+      }
     }
     for (const scene of data?.scenes ?? []) {
       const key = `s:${scene.id}`;
@@ -81,16 +95,26 @@ function useTimelineModel() {
       });
     }
 
+    const used = (key: string) => items.some((i) => i.laneKey === key);
+    const entityLanes: TimelineLane[] =
+      groupBy === 'type'
+        ? types
+            .filter((type) => used(type.id))
+            .map((type) => ({ key: type.id, name: type.name, color: type.color }))
+        : [
+            ...(tagList ?? [])
+              .filter((tag) => used(`tag:${tag.id}`))
+              .map((tag) => ({ key: `tag:${tag.id}`, name: tag.name, color: tag.color })),
+            ...(used(UNTAGGED_LANE)
+              ? [{ key: UNTAGGED_LANE, name: 'No tag', color: SCENE_COLOR }]
+              : []),
+          ];
     const lanes: TimelineLane[] = [
-      ...types
-        .filter((type) => items.some((i) => i.laneKey === type.id))
-        .map((type) => ({ key: type.id, name: type.name, color: type.color })),
-      ...(items.some((i) => i.laneKey === SCENE_LANE)
-        ? [{ key: SCENE_LANE, name: 'Manuscript', color: SCENE_COLOR }]
-        : []),
+      ...entityLanes,
+      ...(used(SCENE_LANE) ? [{ key: SCENE_LANE, name: 'Manuscript', color: SCENE_COLOR }] : []),
     ];
     return { items, lanes, details, base, isPending };
-  }, [data, types, typeById, dates, base, isPending]);
+  }, [data, types, typeById, tagList, groupBy, dates, base, isPending]);
 }
 
 /** The same dated things as a plain chronological list, grouped by year. */
@@ -151,7 +175,8 @@ function TimelineList({
 export function TimelinePage() {
   const { world, base, canEdit } = useWorld();
   const dates = useDates();
-  const model = useTimelineModel();
+  const [groupBy, setGroupBy] = useState<'type' | 'tag'>('type');
+  const model = useTimelineModel(groupBy);
   const [view, setView] = useState<'chart' | 'list'>('chart');
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<string | null>(null);
@@ -220,6 +245,19 @@ export function TimelinePage() {
               </button>
             ))}
           </div>
+          <NativeSelect
+            aria-label="Group the timeline by"
+            className="h-8 w-auto text-[13px]"
+            value={groupBy}
+            onChange={(event) => {
+              setGroupBy(event.target.value === 'tag' ? 'tag' : 'type');
+              setHidden(new Set());
+              setSelected(null);
+            }}
+          >
+            <option value="type">Tracks by type</option>
+            <option value="tag">Tracks by tag</option>
+          </NativeSelect>
           {view === 'chart' ? (
             <div className="inline-flex items-center gap-0.5">
               <Button
@@ -252,6 +290,8 @@ export function TimelinePage() {
           ) : null}
         </div>
       </div>
+
+      <UpcomingPanel />
 
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Show">
         {model.lanes.map((lane) => {

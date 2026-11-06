@@ -296,6 +296,16 @@ export interface Calendar {
   /** True until the world saves a calendar of its own. */
   isDefault: boolean;
   updatedAt: string | null;
+  /** The world's "today" as a day number, which reminders count from; null if not set. */
+  today: number | null;
+}
+
+/** Another way of counting the same days, kept beside the world's main calendar. */
+export interface ExtraCalendar {
+  id: string;
+  name: string;
+  definition: CalendarDef;
+  updatedAt: string;
 }
 
 /** A change to an entry that takes effect at a scene (reading order) or an in-world day. */
@@ -316,6 +326,8 @@ export interface Progression {
 /** An entry with at least one date. With only one date it is a single point in time. */
 export interface TimelineEntity {
   id: string;
+  /** The tags on the entry, for grouping the timeline by tag. */
+  tagIds: string[];
   typeId: string;
   name: string;
   startDay: number | null;

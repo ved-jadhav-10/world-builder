@@ -54,7 +54,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Journey lines** (the route taken, by date) and **pointcrawl or node maps** [v1].
 - [ ] **Fog of war** and reveals for players [v2]; light annotation tools beyond the current pins, labels, paths and regions [v1].
 - [ ] **Map art importers** for Azgaar and Watabou output [MVP import is plain upload today]; hex and grid overlays and a vector map editor [v3].
-- [ ] **Calendars:** several calendars per world and parallel timeline tracks beyond lanes by type (deferred in M4); **calendar reminders** on entries [v1].
+- [x] **Calendars:** several calendars per world, timeline tracks by tag as well as by type, and **calendar reminders** (a world "today" and a coming-up list with yearly anniversaries) (M28). Still to do: reminders as notifications, and showing a date in the other calendars on entry pages.
 - [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.
 - [ ] **Timeline playback** and **chronicles playback** (animating events in place on the map) [v2].
 - [x] **Continuity checker:** warns when a dead character reappears, a narrator is outside their life, a parent is younger than a child, a link starts outside someone's life, an item has two owners or a narrator is in two places at once (M12). Still to do: travel feasibility from map distances, and age against species lifespan [v2].

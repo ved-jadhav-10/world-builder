@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from './common';
 
 /** Day numbers count from the first day of year 0, and can be negative (before it). */
 export const MAX_DAY = 1_000_000_000;
@@ -110,3 +111,12 @@ export const calendarUpdateSchema = z.object({
   definition: calendarDefSchema,
 });
 export type CalendarUpdateInput = z.input<typeof calendarUpdateSchema>;
+
+/** Other calendars a world keeps beside its main one, such as a culture's own way of counting. */
+export const MAX_EXTRA_CALENDARS = 8;
+
+export const extraCalendarParamsSchema = z.object({ worldId: idSchema, id: idSchema });
+
+/** The world's "today", which reminders count from; null clears it. */
+export const todaySchema = z.object({ day: dayNumberSchema.nullable() });
+export type TodayInput = z.input<typeof todaySchema>;

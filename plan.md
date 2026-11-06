@@ -462,6 +462,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Migration trap found:** the hand-written migrations 0017 to 0019 carry a `when` in the journal later than the clock, and Drizzle skips a migration whose `when` is earlier than the last applied one. After `drizzle-kit generate`, set the new entry's `when` above the highest one in `_journal.json`.
 - **Deferred:** standings that change over time (via progressions), a per-faction page section, and showing the web on a faction's own page.
 
+## Milestone 28 (Calendars, tracks and reminders): done
+
+- **Further calendars:** an `extra_calendars` table (migration 0021), up to 8 per world, edited with the same form as the main calendar (`/settings/calendar/:id`). The main calendar is unchanged, and every date is still one day count, so calendars always agree. `GET/POST /calendars`, `PUT/DELETE /calendars/:id` (read for everyone, write for editors). The calendar settings page lists them and has a "convert a date" tool that shows one day in every calendar.
+- **Today and reminders:** `worlds.current_day` set through `PUT /calendar/today` (the calendar response now carries `today`). `upcomingReminders` (shared, `reminders.ts`) turns entries' dates into what is coming up within 7, 30, 90 or 365 days: dates still ahead, and past dates returning each year as anniversaries (with years since; a 29 February skips to the next year that has one). The Timeline page shows the list as "Coming up".
+- **Timeline tracks by tag:** the timeline data carries each entry's tag ids and the page can run tracks by type (as before) or by tag (an entry with several tags appears in each track; untagged ones go in "No tag").
+- **Deferred:** pushing reminders as notifications, per-entry reminders that are not tied to its two dates, showing dates in other calendars on entry pages and the timeline, and fully custom tracks.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

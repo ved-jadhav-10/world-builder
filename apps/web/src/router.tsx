@@ -81,6 +81,12 @@ export const router = createBrowserRouter([
               { path: 'settings', element: <WorldSettingsPage /> },
               { path: 'settings/types', lazy: () => import('@/routes/types-settings-page') },
               { path: 'settings/calendar', lazy: () => import('@/routes/calendar-settings-page') },
+              {
+                path: 'settings/calendar/:calendarId',
+                lazy: async () => ({
+                  Component: (await import('@/routes/calendar-settings-page')).ExtraCalendarPage,
+                }),
+              },
               { path: 'settings/people', lazy: () => import('@/routes/people-page') },
               {
                 path: 'manuscript',

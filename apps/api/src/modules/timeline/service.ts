@@ -1,7 +1,7 @@
-import { and, asc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { Audience, TimelineData } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { entities } from '../../db/schema';
+import { entities, entityTags } from '../../db/schema';
 import { visibleTo } from '../../lib/visibility';
 import { listTree } from '../manuscript/service';
 
@@ -34,6 +34,23 @@ export async function getTimeline(
     audience === 'gm' ? listTree(db, worldId) : Promise.resolve([]),
   ]);
 
+  const tagRows =
+    entityRows.length === 0
+      ? []
+      : await db
+          .select({ entityId: entityTags.entityId, tagId: entityTags.tagId })
+          .from(entityTags)
+          .where(
+            inArray(
+              entityTags.entityId,
+              entityRows.map((e) => e.id),
+            ),
+          );
+  const tagsByEntity = new Map<string, string[]>();
+  for (const row of tagRows) {
+    tagsByEntity.set(row.entityId, [...(tagsByEntity.get(row.entityId) ?? []), row.tagId]);
+  }
+
   const byId = new Map(tree.map((node) => [node.id, node]));
   const ancestorTitle = (parentId: string | null, kind: 'chapter' | 'book') => {
     for (let node = parentId ? byId.get(parentId) : undefined; node;) {
@@ -44,7 +61,7 @@ export async function getTimeline(
   };
 
   return {
-    entities: entityRows,
+    entities: entityRows.map((e) => ({ ...e, tagIds: tagsByEntity.get(e.id) ?? [] })),
     scenes: tree
       .filter((node) => node.kind === 'scene' && node.inWorldDay !== null)
       .map((scene) => ({

@@ -1,18 +1,31 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import {
   CALENDAR_PRESETS,
   calendarUpdateSchema,
   dateToDay,
+  DEFAULT_CALENDAR,
   eraLabel,
+  MAX_EXTRA_CALENDARS,
   formatDate,
   yearLength,
   type CalendarDef,
+  type CalendarUpdateInput,
 } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
-import { useCalendar, useSaveCalendar } from '@/api/timeline-queries';
+import {
+  useCalendar,
+  useCreateExtraCalendar,
+  useDeleteExtraCalendar,
+  useExtraCalendars,
+  useSaveCalendar,
+  useSaveExtraCalendar,
+  useSetToday,
+} from '@/api/timeline-queries';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DateField } from '@/components/date-field';
 import { Button } from '@/components/ui/button';
 import { Input, Label, NativeSelect } from '@/components/ui/inputs';
 import { PageSpinner } from '@/components/ui/misc';
@@ -114,9 +127,22 @@ function Preview({ calendar }: { calendar: CalendarDef }) {
   );
 }
 
-function CalendarEditor({ initialName, initial }: { initialName: string; initial: CalendarDef }) {
-  const { world, base } = useWorld();
-  const save = useSaveCalendar(world.id);
+function CalendarEditor({
+  initialName,
+  initial,
+  heading,
+  back,
+  save,
+  saving,
+}: {
+  initialName: string;
+  initial: CalendarDef;
+  heading: string;
+  back: { to: string; label: string };
+  save: (input: CalendarUpdateInput) => Promise<unknown>;
+  saving: boolean;
+}) {
+  const { world } = useWorld();
   const [name, setName] = useState(initialName);
   const [draft, setDraft] = useState<Draft>(initial);
   const [dirty, setDirty] = useState(false);
@@ -137,7 +163,7 @@ function CalendarEditor({ initialName, initial }: { initialName: string; initial
   async function onSave() {
     if (!parsed.success) return;
     try {
-      await save.mutateAsync(parsed.data);
+      await save(parsed.data);
       setDirty(false);
       toast.success('Calendar saved');
     } catch (error) {
@@ -154,13 +180,10 @@ function CalendarEditor({ initialName, initial }: { initialName: string; initial
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link
-          to={`${base}/timeline`}
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Timeline
+        <Link to={back.to} className="text-sm text-muted-foreground hover:text-foreground">
+          ← {back.label}
         </Link>
-        <h1 className="mt-1 font-serif text-3xl font-semibold">Calendar</h1>
+        <h1 className="mt-1 font-serif text-3xl font-semibold">{heading}</h1>
         <p className="mt-1 text-muted-foreground">
           How time works in {world.name}. Every date in your world is stored as a day count, so
           changing month lengths or leap rules moves where existing dates fall in the calendar, but
@@ -642,7 +665,7 @@ function CalendarEditor({ initialName, initial }: { initialName: string; initial
       </Section>
 
       <div className="sticky bottom-0 -mx-1 flex flex-wrap items-center gap-3 border-t bg-background/95 px-1 py-3 backdrop-blur">
-        <Button onClick={onSave} disabled={!parsed.success || !dirty || save.isPending}>
+        <Button onClick={onSave} disabled={!parsed.success || !dirty || saving}>
           Save calendar
         </Button>
         {problem ? (
@@ -657,9 +680,133 @@ function CalendarEditor({ initialName, initial }: { initialName: string; initial
   );
 }
 
-export function CalendarSettingsPage() {
-  const { world } = useWorld();
+/** The world's today, the other calendars it keeps, and a converter between them. */
+function OtherCalendars() {
+  const { world, base, canEdit } = useWorld();
+  const { data: main } = useCalendar(world.id);
+  const { data: extras = [] } = useExtraCalendars(world.id);
+  const create = useCreateExtraCalendar(world.id);
+  const remove = useDeleteExtraCalendar(world.id);
+  const setToday = useSetToday(world.id);
+  const [converting, setConverting] = useState<number | null>(null);
+  if (!main) return null;
+
+  async function add() {
+    try {
+      await create.mutateAsync({ name: 'New calendar', definition: DEFAULT_CALENDAR });
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
+  }
+  const text = (calendar: CalendarDef, day: number) => formatDate(calendar, day, { weekday: true });
+
+  return (
+    <div className="space-y-6">
+      <Section
+        title="Today in your world"
+        hint="Set what day it is now in the story, and the timeline lists what is coming up: events ahead and the yearly return of past dates, like birthdays."
+      >
+        {canEdit ? (
+          <DateField
+            label="Today"
+            value={main.today}
+            onChange={(day) =>
+              setToday.mutateAsync(day).catch((error: unknown) => toast.error(errorMessage(error)))
+            }
+          />
+        ) : (
+          <p className="text-sm">
+            {main.today === null ? 'Not set.' : formatDate(main.definition, main.today)}
+          </p>
+        )}
+      </Section>
+
+      <Section
+        title="Other calendars"
+        hint="Elves, dwarves or a church may count the same days their own way. Dates stay one count underneath, so every calendar always agrees about when things happened."
+        action={
+          canEdit ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={add}
+              disabled={create.isPending || extras.length >= MAX_EXTRA_CALENDARS}
+            >
+              <Plus /> Add calendar
+            </Button>
+          ) : null
+        }
+      >
+        {extras.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No other calendars yet.</p>
+        ) : (
+          <ul className="divide-y rounded-lg border">
+            {extras.map((extra) => (
+              <li key={extra.id} className="flex items-center gap-2 p-2.5 text-sm">
+                <Link
+                  to={`${base}/settings/calendar/${extra.id}`}
+                  className="flex-1 font-medium hover:underline"
+                >
+                  {extra.name}
+                </Link>
+                <span className="text-muted-foreground">
+                  {extra.definition.months.length} months
+                </span>
+                {canEdit ? (
+                  <ConfirmDialog
+                    title="Delete this calendar?"
+                    description={`${extra.name} is removed. No dates change.`}
+                    onConfirm={() =>
+                      remove
+                        .mutateAsync(extra.id)
+                        .catch((error: unknown) => toast.error(errorMessage(error)))
+                    }
+                    trigger={
+                      <Button type="button" variant="ghost" size="icon-sm">
+                        <Trash2 />
+                        <span className="sr-only">Delete {extra.name}</span>
+                      </Button>
+                    }
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {extras.length > 0 ? (
+          <div className="space-y-2 border-t pt-3">
+            <p className="text-sm font-medium">Convert a date</p>
+            <DateField
+              label="Date in the main calendar"
+              value={converting}
+              onChange={setConverting}
+            />
+            {converting !== null ? (
+              <dl className="space-y-1 text-sm">
+                <div className="flex gap-2">
+                  <dt className="w-40 shrink-0 text-muted-foreground">{main.name}</dt>
+                  <dd>{text(main.definition, converting)}</dd>
+                </div>
+                {extras.map((extra) => (
+                  <div key={extra.id} className="flex gap-2">
+                    <dt className="w-40 shrink-0 text-muted-foreground">{extra.name}</dt>
+                    <dd>{text(extra.definition, converting)}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+          </div>
+        ) : null}
+      </Section>
+    </div>
+  );
+}
+
+function MainCalendar() {
+  const { world, base } = useWorld();
   const { data, isPending } = useCalendar(world.id);
+  const save = useSaveCalendar(world.id);
   if (isPending || !data) return <PageSpinner />;
   // Keyed on the saved version, so a save (or a preset) starts the form fresh from the server.
   return (
@@ -667,6 +814,50 @@ export function CalendarSettingsPage() {
       key={data.updatedAt ?? 'default'}
       initialName={data.name}
       initial={structuredClone(data.definition)}
+      heading="Calendar"
+      back={{ to: `${base}/timeline`, label: 'Timeline' }}
+      save={save.mutateAsync}
+      saving={save.isPending}
+    />
+  );
+}
+
+export function CalendarSettingsPage() {
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <MainCalendar />
+      <OtherCalendars />
+    </div>
+  );
+}
+
+/** One of the world's further calendars, edited with the same form as the main one. */
+export function ExtraCalendarPage() {
+  const { world, base } = useWorld();
+  const { calendarId = '' } = useParams();
+  const { data: extras, isPending } = useExtraCalendars(world.id);
+  const save = useSaveExtraCalendar(world.id, calendarId);
+  if (isPending) return <PageSpinner />;
+  const extra = extras?.find((e) => e.id === calendarId);
+  if (!extra) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        That calendar no longer exists.{' '}
+        <Link to={`${base}/settings/calendar`} className="underline">
+          Back to calendars
+        </Link>
+      </p>
+    );
+  }
+  return (
+    <CalendarEditor
+      key={extra.updatedAt}
+      initialName={extra.name}
+      initial={structuredClone(extra.definition)}
+      heading={extra.name}
+      back={{ to: `${base}/settings/calendar`, label: 'Calendars' }}
+      save={save.mutateAsync}
+      saving={save.isPending}
     />
   );
 }

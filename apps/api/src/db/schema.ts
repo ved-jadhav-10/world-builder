@@ -60,6 +60,8 @@ export const worlds = pgTable('worlds', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   description: text('description').notNull().default(''),
+  /** The in-world "today" as a day number, for calendar reminders. */
+  currentDay: bigint('current_day', { mode: 'number' }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
@@ -416,6 +418,22 @@ export const calendars = pgTable('calendars', {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+/** Further calendars beside the world's main one: other cultures count the same days differently. */
+export const extraCalendars = pgTable(
+  'extra_calendars',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    definition: jsonb('definition').$type<CalendarDef>().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('extra_calendars_world_idx').on(t.worldId)],
+);
 
 /**
  * A change to an entry that takes effect at a scene or on a day. If the scene is deleted the

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Calendar,
   CalendarUpdateInput,
+  ExtraCalendar,
   Progression,
   ProgressionCreateInput,
   ProgressionUpdateInput,
@@ -81,5 +82,49 @@ export function useDeleteProgression(worldId: string, entityId: string) {
     mutationFn: (id: string) => api<void>('DELETE', `/worlds/${worldId}/progressions/${id}`),
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: timelineKeys.progressions(worldId, entityId) }),
+  });
+}
+
+export const extraCalendarsKey = (worldId: string) => ['calendars', worldId] as const;
+
+export const useExtraCalendars = (worldId: string) =>
+  useQuery({
+    queryKey: extraCalendarsKey(worldId),
+    queryFn: () => api<ExtraCalendar[]>('GET', `/worlds/${worldId}/calendars`),
+  });
+
+export function useCreateExtraCalendar(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CalendarUpdateInput) =>
+      api<ExtraCalendar>('POST', `/worlds/${worldId}/calendars`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: extraCalendarsKey(worldId) }),
+  });
+}
+
+export function useSaveExtraCalendar(worldId: string, id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CalendarUpdateInput) =>
+      api<ExtraCalendar>('PUT', `/worlds/${worldId}/calendars/${id}`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: extraCalendarsKey(worldId) }),
+  });
+}
+
+export function useDeleteExtraCalendar(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api<void>('DELETE', `/worlds/${worldId}/calendars/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: extraCalendarsKey(worldId) }),
+  });
+}
+
+/** Sets or clears the world's "today". */
+export function useSetToday(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (day: number | null) =>
+      api<Calendar>('PUT', `/worlds/${worldId}/calendar/today`, { day }),
+    onSuccess: (calendar) => qc.setQueryData(timelineKeys.calendar(worldId), calendar),
   });
 }
