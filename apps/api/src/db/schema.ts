@@ -861,3 +861,34 @@ export const comments = pgTable(
     check('comments_one_subject_chk', sql`num_nonnulls(${t.entityId}, ${t.nodeId}) = 1`),
   ],
 );
+
+/**
+ * How two entries stand with each other. A pair is stored once, with the smaller id first, so
+ * A and B is the same row as B and A.
+ */
+export const diplomacyScores = pgTable(
+  'diplomacy_scores',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    lowId: uuid('low_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    highId: uuid('high_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull(),
+    notes: text('notes').notNull().default(''),
+    visibility: visibilityEnum('visibility').notNull().default('gm'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('diplomacy_scores_pair_uq').on(t.lowId, t.highId),
+    index('diplomacy_scores_world_idx').on(t.worldId),
+    check('diplomacy_scores_range', sql`${t.score} between -100 and 100`),
+    check('diplomacy_scores_order', sql`${t.lowId} < ${t.highId}`),
+  ],
+);

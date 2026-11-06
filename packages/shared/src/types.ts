@@ -145,6 +145,8 @@ export interface WorldExport {
   entryTemplates: EntryTemplate[];
   /** Every comment, flat; replies name their thread. */
   comments: Comment[];
+  /** How entries stand with each other. */
+  diplomacy: DiplomacyScore[];
 }
 
 export interface ApiErrorBody {
@@ -706,4 +708,16 @@ export interface WordCheckResult {
   /** What was checked: the whole manuscript (id null) or one part of it. */
   scope: { id: string | null; title: string; kind: NodeKind | null; scenes: number };
   check: WordCheck;
+}
+
+/** How two entries stand with each other, from −100 (open war) to +100 (sworn allies). */
+export interface DiplomacyScore {
+  id: string;
+  a: { id: string; name: string; typeId: string };
+  b: { id: string; name: string; typeId: string };
+  score: number;
+  notes: string;
+  visibility: Visibility;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -19,6 +19,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Handshake,
   SpellCheck,
   Spline,
   SlidersHorizontal,
@@ -157,6 +158,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
         </NavLink>
         <NavLink to={`${base}/graph`} className={navItem}>
           <Network /> Graph
+        </NavLink>
+        <NavLink to={`${base}/diplomacy`} className={navItem}>
+          <Handshake /> Diplomacy
         </NavLink>
         <NavLink to={`${base}/quests`} className={navItem}>
           <ScrollText /> Quests

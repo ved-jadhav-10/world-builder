@@ -50,3 +50,5 @@ export * from './word-check';
 export * from './schemas/word-check';
 export * from './manuscript-move';
 export * from './arc';
+export * from './schemas/diplomacy';
+export * from './diplomacy';

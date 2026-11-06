@@ -32,7 +32,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].
 - [x] **Arc tracker** showing how a name, details and links change across chapters or scenes, powered by progressions (M26).
 - [x] **Plot board** (a grid of beats by storylines with cards) and **structure templates** (Three-Act, Save the Cat, Hero's Journey, Kishōtenketsu) (M11). Still to do: the multi-thread timeline view over in-world time [v1].
-- [ ] **Faction diplomacy scores** (−100 to +100, shown as a web) [v1].
+- [x] **Faction diplomacy scores** (−100 to +100, shown as a web) (M27).
 - [x] **Version history** per entry and per scene with a word-level comparison, named versions and restore (M14). Still to do: history for chapters and other records, and partial restore [v1].
 - [x] **Comments** on entries and scenes, with replies, resolving and a comments page (M23). Still to do: notifications and mentions, comments on a passage of text [v1].
 - [x] **Goals, streaks and timed sprints:** a daily goal, a manuscript target and deadline, streaks, a heatmap and a sprint timer (M15).

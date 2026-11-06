@@ -454,6 +454,14 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Arc tracker** (`packages/shared/src/arc.ts`, GM sidebar "Arc tracker", `GET /progressions` for every change in the world): pick an entry and see its name, summary, details and links at the end of each chapter or scene, with changed cells highlighted and a toggle for "only what changes". Only scene-placed changes are read, since columns are story order.
 - **Deferred:** the as-of Atlas (borders by year) and as-of manuscript; a chart view of the arc.
 
+## Milestone 27 (Faction diplomacy): done
+
+- **Data:** a `diplomacy_scores` table (migration 0020): one row per pair of entries, stored with the smaller id first so A with B is the same as B with A. Score is a whole number from −100 to +100 (a check constraint backs the API), plus a note and its own visibility (GM-only by default). Setting a pair again replaces it. A world holds up to 2,000. It cascades with the entries and is part of the world export.
+- **API:** `GET /diplomacy` (everyone; others see only standings given to them between entries they can see, nothing that hints at a hidden entry), `PUT /diplomacy` and `DELETE /diplomacy/:id` (editors).
+- **Web:** a Diplomacy page in the sidebar: a ring "web" of the entries involved, lines coloured and sized by how they stand, and a list from enemies to allies with edit and remove, plus a slider form. Words come from `diplomacyLabel` (At war, Hostile, Tense, Neutral, Friendly, Close, Allied).
+- **Migration trap found:** the hand-written migrations 0017 to 0019 carry a `when` in the journal later than the clock, and Drizzle skips a migration whose `when` is earlier than the last applied one. After `drizzle-kit generate`, set the new entry's `when` above the highest one in `_journal.json`.
+- **Deferred:** standings that change over time (via progressions), a per-faction page section, and showing the web on a faction's own page.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
