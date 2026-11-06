@@ -1,6 +1,63 @@
 import { z } from 'zod';
 import type { FieldDefinition } from './schemas/entity-type';
 
+/** How many colours a palette holds. */
+export const MAX_PALETTE_COLORS = 12;
+
+/** One thing a character or species can do, with a limited number of uses if it has charges. */
+export const abilitySchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name the ability').max(80),
+    description: z.string().trim().max(1000).default(''),
+    charges: z
+      .object({
+        max: z.number().int().min(1).max(99),
+        current: z.number().int().min(0).max(99),
+        /** When the charges come back, such as "long rest" or "at dawn". */
+        recharge: z.string().trim().max(40).default(''),
+      })
+      .refine((c) => c.current <= c.max, { path: ['current'], message: 'More than the maximum' })
+      .nullable()
+      .default(null),
+  })
+  .strict();
+export type Ability = z.infer<typeof abilitySchema>;
+
+/** A question and the answer written for it, such as in a character interview. */
+export const qaSchema = z
+  .object({
+    question: z.string().trim().min(1, 'Write the question').max(200),
+    answer: z.string().trim().max(2000).default(''),
+  })
+  .strict();
+export type QaPair = z.infer<typeof qaSchema>;
+
+/** The classic character interview, to start a questionnaire from. */
+export const CHARACTER_INTERVIEW_QUESTIONS = [
+  'What is your earliest memory?',
+  'What do you want more than anything?',
+  'What are you most afraid of?',
+  'What would you never forgive?',
+  'Who do you trust, and why?',
+  'What is your worst habit?',
+  'What would you die for?',
+  'What lie do you tell yourself?',
+  'What do you do when no one is watching?',
+  'What secret would ruin you if it came out?',
+  'How do you speak to someone you look down on?',
+  'What is the best thing that ever happened to you?',
+  'What is the worst thing you have done?',
+  'What do you keep in your pockets?',
+  'Where do you go when you need to think?',
+  'How do you take your tea, or whatever you drink?',
+  'What would you change about yourself?',
+  'What do other people get wrong about you?',
+  'Who taught you the most, and what?',
+  'What does home smell like?',
+] as const;
+
+const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a #rrggbb colour');
+
 /** Empty form inputs arrive as '' — store them as "no value". */
 const emptyToNull = (value: unknown) => (value === '' ? null : value);
 
@@ -24,7 +81,44 @@ function valueSchemaFor(field: FieldDefinition): z.ZodType {
     case 'url':
       // http(s) only, so a stored link can never become a javascript: URL.
       return z.url({ protocol: /^https?$/ });
+    case 'palette':
+      return z.array(hexColorSchema.transform((c) => c.toLowerCase())).max(MAX_PALETTE_COLORS);
+    case 'abilities':
+      return z.array(abilitySchema).max(40);
+    case 'qa':
+      return z.array(qaSchema).max(60);
   }
+}
+
+/**
+ * A field value in words, for exports, history lists and the arc tracker. Empty values give an
+ * empty string. Lists of abilities and questions are written out one per entry.
+ */
+export function describeFieldValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (!Array.isArray(value)) return String(value);
+  const parts = value.flatMap((item): string[] => {
+    if (typeof item === 'string') return [item];
+    if (!item || typeof item !== 'object') return [];
+    const { name, charges, question, answer } = item as {
+      name?: unknown;
+      charges?: { max?: unknown } | null;
+      question?: unknown;
+      answer?: unknown;
+    };
+    if (typeof name === 'string') {
+      return [
+        charges && typeof charges.max === 'number' ? `${name} (${charges.max} charges)` : name,
+      ];
+    }
+    if (typeof question === 'string') {
+      return [typeof answer === 'string' && answer ? `${question} ${answer}` : question];
+    }
+    return [];
+  });
+  const objects = value.some((item) => item && typeof item === 'object');
+  return parts.join(objects ? '; ' : ', ');
 }
 
 /**

@@ -201,7 +201,12 @@ function ProgressionForm({
               if (!def) return;
               setFields({
                 ...fields,
-                [def.key]: def.type === 'boolean' ? false : def.type === 'multi_select' ? [] : '',
+                [def.key]:
+                  def.type === 'boolean'
+                    ? false
+                    : ['multi_select', 'palette', 'abilities', 'qa'].includes(def.type)
+                      ? []
+                      : '',
               });
             }}
           >

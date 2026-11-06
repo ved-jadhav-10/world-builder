@@ -1,12 +1,7 @@
-import type { EntityType, ProgressionChanges } from '@atlas/shared';
+import { describeFieldValue, type EntityType, type ProgressionChanges } from '@atlas/shared';
 
 /** A field value in words, for the history list. Empty means the change clears the field. */
-function valueText(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '';
-  if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  return String(value);
-}
+const valueText = describeFieldValue;
 
 /** What the lookups behind a link change can say: who it is with, and what kinds exist. */
 export interface LinkWords {

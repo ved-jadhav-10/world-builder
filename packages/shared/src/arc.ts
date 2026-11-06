@@ -5,6 +5,7 @@ import {
   type SceneIndex,
   type StoryPoint,
 } from './progressions';
+import { describeFieldValue } from './fields';
 import type { ManuscriptNode, Progression } from './types';
 
 /*
@@ -83,10 +84,7 @@ export interface ArcInput {
 }
 
 function valueText(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '—';
-  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '—';
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  return String(value);
+  return describeFieldValue(value) || '—';
 }
 
 /** Rows of what each part of the entry reads at each column. Only scene-placed changes count. */

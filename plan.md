@@ -517,6 +517,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Codex list:** `GET /entities?bookId=` returns the shared entries plus those scoped to that book. The list page has a "Filter by book" select (GM side, since the manuscript is the GM's). The entry page has "Used in books" checkboxes. The world export carries `scopeBookIds`.
 - **Deliberately not done:** search and mention detection ignore scope (a character from another book still links in prose), and scope is not part of saved filters or entry history.
 
+## Milestone 35 (Character extras): done
+
+- **Three new field types**, usable on any entry type (and so in the type editor): **Colour palette** (up to 12 `#rrggbb` colours, stored lowercase), **Abilities with charges** (a name, a description and, optionally, a maximum, charges left and when they come back; "Use one" and "Recharge" buttons; up to 40) and **Questions and answers** (up to 60; a button adds the 20 classic interview questions). They are validated in `fields.ts` like the others, are searchable by their words, and read in words in the Markdown export, the arc tracker and change history (`describeFieldValue`).
+- **Built-in Character type** gains Speech style, Verbal tics and catchphrases, Sample dialogue, Colour palette, Abilities and Interview (the existing Voice notes stays); **Species** gains Innate abilities. New worlds get them from the seed, and migration 0025 appends them to existing worlds' built-in types unless a field with that key is already there.
+- **Species trait inheritance:** an entry linked "of species" or "of culture" shows a read-only "From their species and culture" panel with the other end's filled-in details and abilities, so changing the species changes it. It is display, not copying: the character's own fields are not changed.
+- **Deferred:** a turnaround sheet and stat blocks (v2); spending a charge from a play screen rather than the entry page.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

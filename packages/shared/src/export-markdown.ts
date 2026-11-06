@@ -1,4 +1,5 @@
 import { DEFAULT_CALENDAR, dayToDate, formatDate, formatYear } from './calendar';
+import { describeFieldValue } from './fields';
 import { richTextToMarkdown } from './markdown';
 import type { CalendarDef } from './schemas/calendar';
 import type { FieldDefinition } from './schemas/entity-type';
@@ -94,8 +95,7 @@ const keyFor = (label: string, fallback: string) =>
 
 function fieldText(def: FieldDefinition, value: unknown): string {
   if (value === null || value === undefined || value === '') return '';
-  if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value) || typeof value === 'boolean') return describeFieldValue(value);
   if (def.type === 'url' && typeof value === 'string') return `<${value}>`;
   return String(value);
 }

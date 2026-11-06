@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fieldSchemaSchema, type FieldDefinition } from './schemas/entity-type';
-import { parseFieldValues } from './fields';
+import { describeFieldValue, parseFieldValues } from './fields';
 
 const schema: FieldDefinition[] = [
   { key: 'age', label: 'Age', type: 'number' },
@@ -56,5 +56,59 @@ describe('fieldSchemaSchema', () => {
       { key: 'age', label: 'Age again', type: 'text' },
     ]);
     expect(result.success).toBe(false);
+  });
+});
+
+describe('character extras', () => {
+  const extras: FieldDefinition[] = [
+    { key: 'palette', label: 'Palette', type: 'palette' },
+    { key: 'abilities', label: 'Abilities', type: 'abilities' },
+    { key: 'interview', label: 'Interview', type: 'qa' },
+  ];
+
+  it('keeps colours, abilities with charges and questions', () => {
+    const result = parseFieldValues(extras, {
+      palette: ['#AA0000', '#00ff00'],
+      abilities: [
+        { name: 'Second wind', charges: { max: 2, current: 1, recharge: 'long rest' } },
+        { name: 'Darkvision' },
+      ],
+      interview: [{ question: 'What do you fear?', answer: 'Deep water.' }],
+    });
+    expect(result.palette).toEqual(['#aa0000', '#00ff00']);
+    expect(result.abilities).toEqual([
+      {
+        name: 'Second wind',
+        description: '',
+        charges: { max: 2, current: 1, recharge: 'long rest' },
+      },
+      { name: 'Darkvision', description: '', charges: null },
+    ]);
+    expect(result.interview).toEqual([{ question: 'What do you fear?', answer: 'Deep water.' }]);
+  });
+
+  it('refuses bad colours, charges above the maximum, and unnamed abilities', () => {
+    expect(() => parseFieldValues(extras, { palette: ['red'] })).toThrow();
+    expect(() => parseFieldValues(extras, { palette: Array(13).fill('#000000') })).toThrow();
+    expect(() =>
+      parseFieldValues(extras, { abilities: [{ name: 'X', charges: { max: 1, current: 2 } }] }),
+    ).toThrow();
+    expect(() => parseFieldValues(extras, { abilities: [{ name: '  ' }] })).toThrow();
+    expect(() => parseFieldValues(extras, { interview: [{ question: '' }] })).toThrow();
+  });
+
+  it('describes the lists in words', () => {
+    expect(describeFieldValue(['#aa0000', '#00ff00'])).toBe('#aa0000, #00ff00');
+    expect(
+      describeFieldValue([
+        { name: 'Second wind', charges: { max: 2, current: 1 } },
+        { name: 'Darkvision', charges: null },
+      ]),
+    ).toBe('Second wind (2 charges); Darkvision');
+    expect(
+      describeFieldValue([{ question: 'Fear?', answer: 'Water.' }, { question: 'Hope?' }]),
+    ).toBe('Fear? Water.; Hope?');
+    expect(describeFieldValue([])).toBe('');
+    expect(describeFieldValue(true)).toBe('Yes');
   });
 });

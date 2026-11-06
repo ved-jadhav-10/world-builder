@@ -41,6 +41,12 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: 'goals', label: 'Goals', type: 'long_text' },
       { key: 'fears', label: 'Fears', type: 'long_text' },
       { key: 'voice', label: 'Voice notes', type: 'long_text' },
+      { key: 'speech_style', label: 'Speech style', type: 'long_text' },
+      { key: 'verbal_tics', label: 'Verbal tics and catchphrases', type: 'long_text' },
+      { key: 'sample_dialogue', label: 'Sample dialogue', type: 'long_text' },
+      { key: 'palette', label: 'Colour palette', type: 'palette' },
+      { key: 'abilities', label: 'Abilities', type: 'abilities' },
+      { key: 'interview', label: 'Interview', type: 'qa' },
     ],
   },
   {
@@ -124,6 +130,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
     fieldSchema: [
       { key: 'lifespan', label: 'Lifespan', type: 'text' },
       { key: 'traits', label: 'Traits', type: 'long_text' },
+      { key: 'innate_abilities', label: 'Innate abilities', type: 'abilities' },
       { key: 'habitat', label: 'Habitat', type: 'long_text' },
     ],
   },

@@ -26,7 +26,16 @@ export interface SearchableEntity {
 export function deriveSearchText(entity: SearchableEntity): string {
   const fieldText = Object.values(entity.fields).flatMap((value) => {
     if (typeof value === 'string') return [value];
-    if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string');
+    if (Array.isArray(value)) {
+      // Lists of abilities or questions are found by their words too.
+      return value.flatMap((item): string[] => {
+        if (typeof item === 'string') return [item];
+        if (item && typeof item === 'object') {
+          return Object.values(item).filter((v): v is string => typeof v === 'string');
+        }
+        return [];
+      });
+    }
     return [];
   });
   return [

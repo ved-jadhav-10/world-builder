@@ -10,6 +10,9 @@ export const FIELD_TYPES = [
   'multi_select',
   'boolean',
   'url',
+  'palette',
+  'abilities',
+  'qa',
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
@@ -22,6 +25,9 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   multi_select: 'Multiple choice',
   boolean: 'Yes / no',
   url: 'Link',
+  palette: 'Colour palette',
+  abilities: 'Abilities with charges',
+  qa: 'Questions and answers',
 };
 
 export const fieldDefinitionSchema = z

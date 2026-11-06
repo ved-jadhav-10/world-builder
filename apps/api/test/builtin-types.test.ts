@@ -77,3 +77,63 @@ describe('built-in entry types', () => {
     expect(theirs.find((t) => t.key === 'religion')!.name).toBe('Religion');
   });
 });
+
+describe('character extras', () => {
+  it('give characters a speech sheet, palette, abilities with charges and an interview', async () => {
+    const ctx = await signUpWithWorld(app);
+    const { api, w } = ctx;
+    const types = (await api.get(`${w}/entity-types`)).json<EntityType[]>();
+    const keys = (key: string) => types.find((t) => t.key === key)!.fieldSchema.map((f) => f.key);
+    expect(keys('character')).toEqual(
+      expect.arrayContaining([
+        'speech_style',
+        'verbal_tics',
+        'sample_dialogue',
+        'palette',
+        'abilities',
+        'interview',
+      ]),
+    );
+    expect(keys('species')).toContain('innate_abilities');
+
+    const res = await api.post(`${w}/entities`, {
+      typeId: ctx.typeId('character'),
+      name: 'Maren',
+      fields: {
+        palette: ['#AA0000', '#223344'],
+        abilities: [
+          { name: 'Second wind', charges: { max: 2, current: 2, recharge: 'long rest' } },
+        ],
+        interview: [{ question: 'What do you fear?', answer: 'Deep water.' }],
+        speech_style: 'Clipped and formal.',
+      },
+    });
+    expect(res.statusCode, res.body).toBe(201);
+    const maren = res.json<Entity>();
+    expect(maren.fields.palette).toEqual(['#aa0000', '#223344']);
+    expect(maren.fields.abilities).toEqual([
+      {
+        name: 'Second wind',
+        description: '',
+        charges: { max: 2, current: 2, recharge: 'long rest' },
+      },
+    ]);
+
+    // Spending a charge is an ordinary edit, and the words are searchable.
+    const spent = await api.patch(`${w}/entities/${maren.id}`, {
+      fields: {
+        abilities: [
+          { name: 'Second wind', charges: { max: 2, current: 1, recharge: 'long rest' } },
+        ],
+      },
+    });
+    expect(spent.statusCode, spent.body).toBe(200);
+    const found = await api.get(`${w}/search?q=${encodeURIComponent('Second')}`);
+    expect(found.json<{ name: string }[]>().map((r) => r.name)).toContain('Maren');
+
+    const bad = await api.patch(`${w}/entities/${maren.id}`, {
+      fields: { abilities: [{ name: 'Over', charges: { max: 1, current: 5 } }] },
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+});

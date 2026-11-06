@@ -30,6 +30,7 @@ import { EntityIcon } from '@/components/entity-icon';
 import { EntityMaps } from '@/components/entity-maps';
 import { FieldRenderer } from '@/components/field-renderer';
 import { SaveTemplateDialog } from '@/components/save-template-dialog';
+import { InheritedTraits } from '@/components/inherited-traits';
 import { RelationshipsPanel } from '@/components/relationships-panel';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { TagsEditor } from '@/components/tags-editor';
@@ -485,6 +486,7 @@ function EntityEditor({
             </section>
 
             <RelationshipsPanel entity={entity} />
+            <InheritedTraits entity={entity} />
             <TagsEditor entity={entity} />
             <AppearsIn entityId={entity.id} />
             <EntityMaps entityId={entity.id} />
