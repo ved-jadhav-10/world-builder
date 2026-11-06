@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { WorldExport } from '@atlas/shared';
+import { redactWorldExport, type Audience, type WorldExport } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import {
   entities,
@@ -25,8 +25,19 @@ import { listWorldProgressions } from '../progressions/service';
 import { listAllBoards } from '../plot/service';
 import { listAllTables } from '../tables/service';
 
-/** Everything in a world as one JSON document. Trashed entities are left out. */
-export async function exportWorld(db: DbOrTx, worldId: string): Promise<WorldExport> {
+/**
+ * Everything in a world as one JSON document. Trashed entities are left out. For an audience other
+ * than the GM, only what that audience can see (see `redactWorldExport`).
+ */
+export async function exportWorld(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<WorldExport> {
+  return redactWorldExport(await exportEverything(db, worldId), audience);
+}
+
+async function exportEverything(db: DbOrTx, worldId: string): Promise<WorldExport> {
   const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId));
   if (!world) throw notFound('World');
 

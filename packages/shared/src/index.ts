@@ -62,3 +62,4 @@ export * from './secret-blocks';
 export * from './pdf-text';
 export * from './script-export';
 export * from './initiative';
+export * from './export-redact';

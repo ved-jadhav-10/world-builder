@@ -87,7 +87,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Field-level and block-level visibility** inside an entry [deferred in M5].
 - [ ] **Public reader wiki** for chosen pages [v1], with **password-protected pages** for beta readers or players [v1]; AI crawlers blocked.
 - [ ] **Progression-driven spoiler-safe wiki:** readers see only what is true up to their chapter [v2; nobody offers it].
-- [ ] **Export only what players can see** (the current exports include GM-only content, so they are editor-only) [deferred in M5].
+- [x] **Export only what players can see:** the JSON and Markdown exports take an audience (players, readers or the public) and hold only what that audience can see (M43). Still to do: the same for the story-bible PDF and the manuscript exports.
 - [ ] **Later publishing:** per-world analytics, white-label, followers and notifications, featured worlds, challenges and prompts [v2]; custom domains, supporter tiers, a reading storefront [v3].
 
 ## G. Collaboration and platform

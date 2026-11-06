@@ -25,6 +25,7 @@ import type {
   RelationshipUpdateInput,
   SearchResult,
   Tag,
+  PreviewAudience,
   TagCreateInput,
   TrashedEntity,
   World,
@@ -377,9 +378,18 @@ async function download(path: string, filename: string) {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** Who an export is for. Anything but the GM's own copy holds only what that audience can see. */
+export type ExportAudience = 'gm' | PreviewAudience;
+const audienceQuery = (audience: ExportAudience) =>
+  audience === 'gm' ? '' : `?audience=${audience}`;
+const audienceSuffix = (audience: ExportAudience) => (audience === 'gm' ? '' : `-${audience}`);
+
 /** Downloads the world's JSON export via the browser. */
-export const downloadExport = (world: World) =>
-  download(`/worlds/${world.id}/export`, `${world.slug}-${today()}.json`);
+export const downloadExport = (world: World, audience: ExportAudience = 'gm') =>
+  download(
+    `/worlds/${world.id}/export${audienceQuery(audience)}`,
+    `${world.slug}${audienceSuffix(audience)}-${today()}.json`,
+  );
 
 /** Downloads the manuscript as a Word document. */
 export const downloadManuscriptDocx = (
@@ -455,8 +465,11 @@ export const downloadManuscriptEpub = (
 };
 
 /** Downloads the world as a zip of Markdown notes, pictures and JSON. */
-export const downloadMarkdownExport = (world: World) =>
-  download(`/worlds/${world.id}/export/markdown`, `${world.slug}-markdown-${today()}.zip`);
+export const downloadMarkdownExport = (world: World, audience: ExportAudience = 'gm') =>
+  download(
+    `/worlds/${world.id}/export/markdown${audienceQuery(audience)}`,
+    `${world.slug}-markdown${audienceSuffix(audience)}-${today()}.zip`,
+  );
 
 /** Downloads a map as a Universal VTT file for tabletop apps. */
 export const downloadMapVtt = (world: World, map: { id: string; name: string }, grid: number) =>

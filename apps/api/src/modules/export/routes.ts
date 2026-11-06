@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
+  audienceExportQuerySchema,
   epubExportQuerySchema,
   manuscriptExportQuerySchema,
   scriptExportQuerySchema,
@@ -18,12 +19,21 @@ export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
   // Exports include GM-only content, so they need edit rights.
   app.get(
     '/export',
-    { onRequest: requireRole('editor'), config: limits.export },
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: audienceExportQuerySchema },
+    },
     async (request, reply) => {
-      const data = await exportWorld(db, currentWorldId(request));
+      const audience = request.query.audience ?? 'gm';
+      const data = await exportWorld(db, currentWorldId(request), audience);
       const date = data.exportedAt.slice(0, 10);
+      const suffix = audience === 'gm' ? '' : `-${audience}`;
       return reply
-        .header('content-disposition', `attachment; filename="${data.world.slug}-${date}.json"`)
+        .header(
+          'content-disposition',
+          `attachment; filename="${data.world.slug}${suffix}-${date}.json"`,
+        )
         .send(data);
     },
   );
@@ -31,9 +41,17 @@ export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
   // The same world as Markdown notes (for Obsidian and other note apps), with pictures and JSON.
   app.get(
     '/export/markdown',
-    { onRequest: requireRole('editor'), config: limits.export },
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: audienceExportQuerySchema },
+    },
     async (request, reply) => {
-      const { filename, data } = await buildMarkdownZip(db, currentWorldId(request));
+      const { filename, data } = await buildMarkdownZip(
+        db,
+        currentWorldId(request),
+        request.query.audience,
+      );
       return reply
         .header('content-type', 'application/zip')
         .header('content-disposition', `attachment; filename="${filename}"`)

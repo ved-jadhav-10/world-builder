@@ -579,6 +579,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** shared and API tests (validation, unsafe schemes, the three types), full suite, Chrome (add, save, reload).
 - **Deferred:** links on manuscript scenes (scenes are not entries), embedding a player, and a "now playing" widget on the GM screen.
 
+## Milestone 43 (Export for an audience): done
+
+- **`redactWorldExport(data, audience)`** (shared, tested) returns a copy of a world export holding only what that audience can see, reusing `canSee`: entries, maps, map features, pictures, tables, handouts and progressions by their visibility; secret blocks removed from the notes of entries that stay; relationships only when both ends stay; tags only when a kept entry uses them. A fogged map keeps its name and details but nothing drawn on it; GM notes on features are blanked; map and feature links to hidden entries are cut. The manuscript, plot boards, to-dos, templates, comments and faction scores are the author's own workspace and are always left out.
+- **API:** `GET /export` and `GET /export/markdown` take `?audience=player|reader|public` (editors only, as before; `gm` is not a value, leave it out for the full copy). `exportWorld` takes the audience, and the Markdown zip's `world.json` and pictures follow it. File names carry the audience.
+- **Web:** World settings › Export has an "Export for" select (Me, Players, Readers, The public) that applies to the JSON and Markdown downloads. The story bible and manuscript exports stay GM-only and say so.
+- **Verified:** shared unit tests (fog, notes, workspace), API tests (entries by audience, secrets, relationships, tags, manuscript, handouts, editor-only, bad value), full suite, and Chrome (select Players, download, only the public entry in the file).
+- **Not covered:** map images and handout pictures are not in the JSON anyway; the redaction does not look inside entry field values (there is no field-level visibility yet, see F).
+- **Deferred:** an audience option for the story-bible PDF and for the manuscript exports (the manuscript would need per-chapter visibility first).
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

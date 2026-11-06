@@ -3,17 +3,19 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
+import type { World } from '@atlas/shared';
 import {
   downloadExport,
   downloadMarkdownExport,
   downloadStoryBible,
+  type ExportAudience,
   useDeleteWorld,
   useUpdateWorld,
 } from '@/api/queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ManuscriptExportDialog } from '@/components/manuscript-export-dialog';
 import { Button } from '@/components/ui/button';
-import { Input, Label, Textarea } from '@/components/ui/inputs';
+import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { useWorld } from '@/lib/world-context';
 
 export function WorldSettingsPage() {
@@ -23,6 +25,7 @@ export function WorldSettingsPage() {
   const deleteWorld = useDeleteWorld(world.id);
   const navigate = useNavigate();
   const [exporting, setExporting] = useState(false);
+  const [audience, setAudience] = useState<ExportAudience>('gm');
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,10 +41,10 @@ export function WorldSettingsPage() {
     }
   }
 
-  async function onExport(download: typeof downloadExport) {
+  async function onExport(download: (world: World, audience: ExportAudience) => Promise<void>) {
     setExporting(true);
     try {
-      await download(world);
+      await download(world, audience);
     } catch (error) {
       toast.error(errorMessage(error));
     } finally {
@@ -117,6 +120,20 @@ export function WorldSettingsPage() {
           Download everything in this world (entries, types, relationships, tags, the manuscript,
           maps, calendar and timeline) as one JSON file. Your work is always yours to take with you.
         </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Label htmlFor="export-audience">Export for</Label>
+          <NativeSelect
+            id="export-audience"
+            className="h-9 w-auto"
+            value={audience}
+            onChange={(event) => setAudience(event.target.value as ExportAudience)}
+          >
+            <option value="gm">Me (everything)</option>
+            <option value="player">Players</option>
+            <option value="reader">Readers</option>
+            <option value="public">The public</option>
+          </NativeSelect>
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => onExport(downloadExport)} disabled={exporting}>
             <Download /> Download JSON
@@ -130,7 +147,7 @@ export function WorldSettingsPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => onExport(downloadStoryBible)}
+            onClick={() => onExport((w) => downloadStoryBible(w))}
             disabled={exporting}
           >
             <FileText /> Story bible (PDF)
@@ -145,7 +162,10 @@ export function WorldSettingsPage() {
         </div>
         <p className="text-xs text-muted-foreground">
           The Markdown zip is one note per entry with links between them, ready to open in Obsidian,
-          plus your pictures and the JSON. Both include GM-only content.
+          plus your pictures and the JSON. By default both include GM-only content; pick Players,
+          Readers or The public to get a copy with only what they can see (no secret blocks, no
+          manuscript, no GM notes). The story bible and manuscript exports are always the full, GM
+          version.
         </p>
       </section>
 
