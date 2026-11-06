@@ -1,7 +1,15 @@
 import { z } from 'zod';
 import { idSchema } from './common';
 
-export const GM_WIDGET_TYPES = ['dice', 'table', 'entries', 'notes', 'clock', 'session'] as const;
+export const GM_WIDGET_TYPES = [
+  'dice',
+  'table',
+  'entries',
+  'notes',
+  'clock',
+  'session',
+  'initiative',
+] as const;
 export type GmWidgetType = (typeof GM_WIDGET_TYPES)[number];
 
 export const GM_WIDGET_LABELS: Record<GmWidgetType, string> = {
@@ -11,12 +19,40 @@ export const GM_WIDGET_LABELS: Record<GmWidgetType, string> = {
   notes: 'Scratchpad',
   clock: 'Clock',
   session: 'Current session',
+  initiative: 'Initiative and HP',
 };
 
 export const MAX_GM_WIDGETS = 24;
 export const MAX_PINNED_ENTRIES = 30;
 export const MAX_SCRATCHPAD = 20_000;
+export const MAX_COMBATANTS = 40;
+export const MAX_CONDITIONS = 10;
 export const CLOCK_SEGMENT_CHOICES = [4, 6, 8, 10, 12] as const;
+
+export const combatantSchema = z
+  .object({
+    id: z.string().trim().min(1).max(40),
+    name: z.string().trim().min(1).max(80),
+    /** Null until rolled. */
+    initiative: z.number().int().min(-99).max(999).nullable().default(null),
+    hp: z.number().int().min(0).max(99_999).nullable().default(null),
+    maxHp: z.number().int().min(1).max(99_999).nullable().default(null),
+    conditions: z.array(z.string().trim().min(1).max(40)).max(MAX_CONDITIONS).default([]),
+    /** A pinned character or monster entry this combatant came from. */
+    entityId: idSchema.nullable().default(null),
+  })
+  .refine((c) => c.hp === null || c.maxHp === null || c.hp <= c.maxHp, {
+    path: ['hp'],
+    message: 'HP cannot be above the maximum',
+  });
+export type Combatant = z.infer<typeof combatantSchema>;
+
+export interface InitiativeState {
+  combatants: Combatant[];
+  round: number;
+  /** Index of the combatant whose turn it is. */
+  turn: number;
+}
 
 const base = {
   /** Made by the browser; only has to be unique on one screen. */
@@ -45,6 +81,13 @@ export const gmWidgetSchema = z.discriminatedUnion('type', [
       message: 'A clock cannot be filled past its segments',
     }),
   z.object({ ...base, type: z.literal('session') }),
+  z.object({
+    ...base,
+    type: z.literal('initiative'),
+    combatants: z.array(combatantSchema).max(MAX_COMBATANTS).default([]),
+    round: z.number().int().min(1).max(999).default(1),
+    turn: z.number().int().min(0).max(MAX_COMBATANTS).default(0),
+  }),
 ]);
 export type GmWidget = z.infer<typeof gmWidgetSchema>;
 

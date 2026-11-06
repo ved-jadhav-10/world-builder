@@ -61,3 +61,4 @@ export * from './vtt';
 export * from './secret-blocks';
 export * from './pdf-text';
 export * from './script-export';
+export * from './initiative';

@@ -68,7 +68,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Shops and merchants** (a location's inventory doubles as a priced shop) [v1].
 - [x] **Rollable tables:** weighted rows and dice ranges, chained tables, dice expressions in results, pasted-row import, and a **dice roller and roll log** (M8). Still to do: an embeddable roller inside notes [v1].
 - [ ] **Entry-aware generators** that read your own world and save results as entries, input variables, culture-based name generators, encounter templates [v2].
-- [ ] **Initiative and HP tracker**, condition tracking, loot and treasure tracker, downtime and XP tracker [v2]; session scheduling [v2, or integrate].
+- [x] **Initiative and HP tracker** with conditions, as a GM-screen widget (M39). Still to do: loot and treasure tracker, downtime and XP tracker [v2]; session scheduling [v2, or integrate].
 - [ ] **System packs** (optional, never in the core): an encounter builder, a custom stat-block builder, system-styled sheets, an opt-in SRD 5.2 compendium with automatic attribution, ORC for Pathfinder, Daggerheart only after legal review [v2].
 - [ ] **Homebrew publisher** (Markdown to rulebook-style pages and PDF) with a **licence attribution helper**, and **world variables** (flags such as `war_started = true` for conditional text) [v2].
 

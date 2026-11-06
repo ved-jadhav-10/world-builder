@@ -548,6 +548,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified:** PDFs were checked by reading their text back and by page counts in tests, not opened in a viewer; Fountain was not opened in a screenwriting app.
 - **Deferred:** an embedded Unicode font, a table of contents with page numbers, images in the story bible, and speaker detection for dialogue.
 
+## Milestone 39 (Initiative and HP tracker): done
+
+- **Widget:** a new "Initiative and HP" GM-screen widget (`initiative` in `gm-screen.ts`, stored in the screen JSON, so no migration). Combatants have a name, initiative, optional HP and max HP, and conditions (a picker of the common ones). Add them with name, initiative and HP; they slot into order without stealing the current turn. Next turn skips anyone at 0 HP and a full lap starts a new round; "Sort and restart" sorts and returns to round 1. Damage and Heal keep HP between 0 and max. Combatants, round and turn autosave with the rest of the screen.
+- **Logic:** pure functions in `initiative.ts` (shared, tested); the schema refuses HP above max and blank names.
+- **Verified in Chrome:** adding, ordering, damage to 0 HP, turn skipping, round wrap, a condition, persistence across reload, phone width, no 4xx or 5xx.
+- **Deferred:** re-sorting when an initiative number is edited, adding a pinned character or a rolled encounter straight into the fight (`entityId` is in the schema, unused), HP and conditions shown to players, custom conditions, and a loot or XP tracker.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

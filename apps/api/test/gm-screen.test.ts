@@ -116,6 +116,43 @@ describe('GM screen', () => {
     expect((await mine.get()).entries).toEqual([]);
   });
 
+  it('keeps an initiative tracker as it was saved', async () => {
+    const { save, get } = await setup();
+    const widget = {
+      id: 'fight',
+      type: 'initiative',
+      title: '',
+      round: 3,
+      turn: 1,
+      combatants: [
+        {
+          id: 'a',
+          name: 'Mira',
+          initiative: 18,
+          hp: 22,
+          maxHp: 30,
+          conditions: ['Prone'],
+          entityId: null,
+        },
+        {
+          id: 'b',
+          name: 'Ogre',
+          initiative: null,
+          hp: null,
+          maxHp: null,
+          conditions: [],
+          entityId: null,
+        },
+      ],
+    };
+    expect((await save([widget])).statusCode).toBe(200);
+    expect((await get()).widgets).toEqual([widget]);
+    const withHpOverMax = { ...widget, combatants: [{ ...widget.combatants[0], hp: 31 }] };
+    expect((await save([withHpOverMax])).statusCode).toBe(400);
+    const unnamed = { ...widget, combatants: [{ ...widget.combatants[0], name: ' ' }] };
+    expect((await save([unnamed])).statusCode).toBe(400);
+  });
+
   it('refuses a screen that does not make sense', async () => {
     const { save } = await setup();
     const bad = async (widgets: object[]) => (await save(widgets)).statusCode;
