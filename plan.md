@@ -554,7 +554,7 @@ The to-do list is in [checklist.md](checklist.md): every feature not built yet, 
 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
-1. **The rest of B, C, D, E and G**: version history, comments, map layers and measuring, the continuity checker, co-editing and so on, as the checklist lists them.
+1. **The rest of D, E and G** (B and C are done as of M38): GM tools, players and membership, co-editing and so on, as the checklist lists them.
 2. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
 3. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
