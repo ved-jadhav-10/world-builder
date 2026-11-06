@@ -1,5 +1,5 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   idSchema,
@@ -7,12 +7,13 @@ import {
   inviteTokenSchema,
   memberUpdateSchema,
   ROLE_LABELS,
+  transferOwnershipSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
-import { worlds } from '../../db/schema';
+import { user, worldMembers, worlds } from '../../db/schema';
 import { env } from '../../env';
 import { badRequest } from '../../errors';
-import { inviteEmail } from '../../lib/email-templates';
+import { inviteEmail, memberJoinedEmail } from '../../lib/email-templates';
 import { sendMailSoon } from '../../lib/mailer';
 import { limits } from '../../lib/rate-limits';
 import { currentUser, currentWorldId, requireRole, requireSession } from '../../plugins/auth-guard';
@@ -21,9 +22,11 @@ import {
   createInvite,
   deleteInvite,
   listInvites,
+  listMemberEvents,
   listMembers,
   previewInvite,
   removeMember,
+  transferOwnership,
   updateMemberRole,
 } from './service';
 
@@ -42,7 +45,13 @@ export const memberRoutes: FastifyPluginAsyncZod = async (app) => {
     '/members/:userId',
     { onRequest: ownerOnly, schema: { params: memberParams, body: memberUpdateSchema } },
     async (request, reply) => {
-      await updateMemberRole(db, currentWorldId(request), request.params.userId, request.body.role);
+      await updateMemberRole(
+        db,
+        currentWorldId(request),
+        request.params.userId,
+        request.body.role,
+        currentUser(request).id,
+      );
       return reply.status(204).send();
     },
   );
@@ -53,7 +62,8 @@ export const memberRoutes: FastifyPluginAsyncZod = async (app) => {
     if (request.world?.role === 'owner') {
       throw badRequest("The owner can't leave. Delete the world instead.");
     }
-    await removeMember(db, currentWorldId(request), currentUser(request).id);
+    const me = currentUser(request).id;
+    await removeMember(db, currentWorldId(request), me, me);
     return reply.status(204).send();
   });
 
@@ -61,7 +71,30 @@ export const memberRoutes: FastifyPluginAsyncZod = async (app) => {
     '/members/:userId',
     { onRequest: ownerOnly, schema: { params: memberParams } },
     async (request, reply) => {
-      await removeMember(db, currentWorldId(request), request.params.userId);
+      await removeMember(
+        db,
+        currentWorldId(request),
+        request.params.userId,
+        currentUser(request).id,
+      );
+      return reply.status(204).send();
+    },
+  );
+
+  app.get('/member-events', { onRequest: ownerOnly }, async (request) =>
+    listMemberEvents(db, currentWorldId(request)),
+  );
+
+  app.post(
+    '/transfer-ownership',
+    { onRequest: ownerOnly, schema: { body: transferOwnershipSchema } },
+    async (request, reply) => {
+      await transferOwnership(
+        db,
+        currentWorldId(request),
+        currentUser(request).id,
+        request.body.userId,
+      );
       return reply.status(204).send();
     },
   );
@@ -131,7 +164,27 @@ export const inviteRoutes: FastifyPluginAsyncZod = async (app) => {
     '/:token/accept',
     { onRequest: requireSession, config: limits.inviteUse, schema: { params } },
     async (request, reply) => {
-      const result = await acceptInvite(db, request.params.token, currentUser(request).id);
+      const joiner = currentUser(request);
+      const result = await acceptInvite(db, request.params.token, joiner.id);
+      if (result.joined) {
+        // Tell the owner someone came in. A failed send never blocks the join.
+        const [owner] = await db
+          .select({ email: user.email })
+          .from(worldMembers)
+          .innerJoin(user, eq(user.id, worldMembers.userId))
+          .where(and(eq(worldMembers.worldId, result.world.id), eq(worldMembers.role, 'owner')));
+        if (owner) {
+          sendMailSoon(
+            memberJoinedEmail(owner.email, {
+              memberName: joiner.name,
+              worldName: result.world.name,
+              roleLabel: ROLE_LABELS[result.world.role],
+              note: '',
+              url: `${env.WEB_ORIGIN}/w/${result.world.slug}/settings/people`,
+            }),
+          );
+        }
+      }
       return reply.header('cache-control', 'no-store').send(result);
     },
   );

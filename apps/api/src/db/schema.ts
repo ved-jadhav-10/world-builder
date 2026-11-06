@@ -115,6 +115,29 @@ export const worldInvites = pgTable(
   ],
 );
 
+/**
+ * Who joined, changed role, left, was removed, or took over a world. Names are copied in, so the
+ * trail still reads right after an account is renamed or deleted.
+ */
+export const worldMemberEvents = pgTable(
+  'world_member_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+    userName: text('user_name').notNull(),
+    role: text('role'),
+    /** The invite link's note for a join, or "Player to Co-GM" for a role change. */
+    detail: text('detail').notNull().default(''),
+    actorName: text('actor_name'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('world_member_events_world_idx').on(t.worldId, t.createdAt)],
+);
+
 export const entityTypes = pgTable(
   'entity_types',
   {

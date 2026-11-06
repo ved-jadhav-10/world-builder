@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { and, asc, desc, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 import {
   INVITE_STATUS_MESSAGES,
+  ROLE_LABELS,
   inviteStatus,
   type CreatedInvite,
   type Invite,
@@ -10,11 +11,13 @@ import {
   type InviteRole,
   type JoinResult,
   type Member,
+  type MemberEvent,
+  type MemberEventKind,
   type Role,
 } from '@atlas/shared';
 import type { z } from 'zod';
 import type { DbOrTx } from '../../db/client';
-import { user, worldInvites, worldMembers, worlds } from '../../db/schema';
+import { user, worldInvites, worldMemberEvents, worldMembers, worlds } from '../../db/schema';
 import { badRequest, gone, HttpError, notFound } from '../../errors';
 import { toWorld } from '../worlds/service';
 
@@ -75,11 +78,60 @@ async function findMember(db: DbOrTx, worldId: string, userId: string) {
   return row;
 }
 
+const MAX_EVENTS = 100;
+
+async function nameOf(db: DbOrTx, userId: string): Promise<string> {
+  const [row] = await db.select({ name: user.name }).from(user).where(eq(user.id, userId));
+  return row?.name ?? 'Someone';
+}
+
+/** One line in the trail of who came, went and changed. */
+async function recordEvent(
+  db: DbOrTx,
+  worldId: string,
+  event: {
+    kind: MemberEventKind;
+    userId: string;
+    role?: Role | null;
+    detail?: string;
+    actorId?: string | null;
+  },
+): Promise<void> {
+  await db.insert(worldMemberEvents).values({
+    worldId,
+    kind: event.kind,
+    userId: event.userId,
+    userName: await nameOf(db, event.userId),
+    role: event.role ?? null,
+    detail: event.detail ?? '',
+    actorName: event.actorId ? await nameOf(db, event.actorId) : null,
+  });
+}
+
+export async function listMemberEvents(db: DbOrTx, worldId: string): Promise<MemberEvent[]> {
+  const rows = await db
+    .select()
+    .from(worldMemberEvents)
+    .where(eq(worldMemberEvents.worldId, worldId))
+    .orderBy(desc(worldMemberEvents.createdAt))
+    .limit(MAX_EVENTS);
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind as MemberEventKind,
+    userName: row.userName,
+    role: row.role as Role | null,
+    detail: row.detail,
+    actorName: row.actorName,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
 export async function updateMemberRole(
   db: DbOrTx,
   worldId: string,
   userId: string,
   role: InviteRole,
+  actorId: string,
 ): Promise<void> {
   const member = await findMember(db, worldId, userId);
   if (member.role === 'owner') throw badRequest("The owner's role can't be changed");
@@ -87,10 +139,56 @@ export async function updateMemberRole(
     .update(worldMembers)
     .set({ role })
     .where(and(eq(worldMembers.worldId, worldId), eq(worldMembers.userId, userId)));
+  if (member.role !== role) {
+    await recordEvent(db, worldId, {
+      kind: 'role_changed',
+      userId,
+      role,
+      detail: `${ROLE_LABELS[member.role]} to ${ROLE_LABELS[role]}`,
+      actorId,
+    });
+  }
+}
+
+/**
+ * Hands the world to another member. They become the owner and the old owner a co-GM, in one
+ * transaction so the world is never without an owner.
+ */
+export async function transferOwnership(
+  db: DbOrTx,
+  worldId: string,
+  fromUserId: string,
+  toUserId: string,
+): Promise<void> {
+  if (toUserId === fromUserId) throw badRequest('You already own this world');
+  await db.transaction(async (tx) => {
+    await findMember(tx, worldId, toUserId);
+    await tx.update(worlds).set({ ownerId: toUserId }).where(eq(worlds.id, worldId));
+    await tx
+      .update(worldMembers)
+      .set({ role: 'owner' })
+      .where(and(eq(worldMembers.worldId, worldId), eq(worldMembers.userId, toUserId)));
+    await tx
+      .update(worldMembers)
+      .set({ role: 'editor' })
+      .where(and(eq(worldMembers.worldId, worldId), eq(worldMembers.userId, fromUserId)));
+    await recordEvent(tx, worldId, {
+      kind: 'ownership_transferred',
+      userId: toUserId,
+      role: 'owner',
+      detail: 'Became the owner',
+      actorId: fromUserId,
+    });
+  });
 }
 
 /** Removes someone from a world. The owner can remove others; anyone can remove themselves. */
-export async function removeMember(db: DbOrTx, worldId: string, userId: string): Promise<void> {
+export async function removeMember(
+  db: DbOrTx,
+  worldId: string,
+  userId: string,
+  actorId: string,
+): Promise<void> {
   const member = await findMember(db, worldId, userId);
   if (member.role === 'owner') {
     throw badRequest("The owner can't be removed. Delete the world instead.");
@@ -98,6 +196,12 @@ export async function removeMember(db: DbOrTx, worldId: string, userId: string):
   await db
     .delete(worldMembers)
     .where(and(eq(worldMembers.worldId, worldId), eq(worldMembers.userId, userId)));
+  await recordEvent(db, worldId, {
+    kind: actorId === userId ? 'left' : 'removed',
+    userId,
+    role: member.role,
+    actorId: actorId === userId ? null : actorId,
+  });
 }
 
 // ---- Invites (managed by the owner) ----------------------------------------------------------
@@ -213,6 +317,12 @@ export async function acceptInvite(db: DbOrTx, token: string, userId: string): P
       const status = inviteStatus(invite, now);
       throw gone(INVITE_STATUS_MESSAGES[status === 'active' ? 'used_up' : status]);
     }
+    await recordEvent(tx, world.id, {
+      kind: 'joined',
+      userId,
+      role: invite.role,
+      detail: invite.label,
+    });
     return { world: toWorld(world, invite.role), joined: true };
   });
 }

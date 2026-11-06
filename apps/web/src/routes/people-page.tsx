@@ -1,4 +1,4 @@
-import { ChevronLeft, Copy, Link2, Plus, Trash2, UserMinus } from 'lucide-react';
+import { ChevronLeft, Copy, Crown, Link2, Plus, Trash2, UserMinus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import {
   type Invite,
   type InviteRole,
   type Member,
+  type MemberEvent,
 } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import {
@@ -17,8 +18,10 @@ import {
   useCreateInvite,
   useDeleteInvite,
   useInvites,
+  useMemberEvents,
   useMembers,
   useRemoveMember,
+  useTransferOwnership,
   useUpdateMember,
 } from '@/api/member-queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -48,6 +51,7 @@ function MemberRow({ member, isYou }: { member: Member; isYou: boolean }) {
   const { world } = useWorld();
   const update = useUpdateMember(world.id);
   const remove = useRemoveMember(world.id);
+  const transfer = useTransferOwnership(world.id);
   const isOwner = member.role === 'owner';
 
   return (
@@ -90,6 +94,26 @@ function MemberRow({ member, isYou }: { member: Member; isYou: boolean }) {
               <option value={member.role}>{ROLE_LABELS[member.role]}</option>
             ) : null}
           </NativeSelect>
+          <ConfirmDialog
+            title={`Make ${member.name} the owner?`}
+            description={`${member.name} will own ${world.name} and manage its people. You stay on as a Co-GM and can't take ownership back unless they hand it to you.`}
+            confirmLabel="Make owner"
+            destructive={false}
+            onConfirm={async () => {
+              try {
+                await transfer.mutateAsync(member.userId);
+                toast.success(`${member.name} now owns ${world.name}`);
+              } catch (error) {
+                toast.error(errorMessage(error));
+              }
+            }}
+            trigger={
+              <Button variant="ghost" size="icon-sm" title={`Make ${member.name} the owner`}>
+                <Crown />
+                <span className="sr-only">Make {member.name} the owner</span>
+              </Button>
+            }
+          />
           <ConfirmDialog
             title={`Remove ${member.name}?`}
             description={`${member.name} will lose access to ${world.name}. They can come back with a new invite link.`}
@@ -341,20 +365,70 @@ function InviteRow({ invite }: { invite: Invite }) {
   );
 }
 
-export function PeoplePage() {
-  const { world, base } = useWorld();
-  const { data: session } = useSession();
-  const isOwner = world.role === 'owner';
-  const members = useMembers(world.id);
-  const invites = useInvites(world.id);
+function describeEvent(event: MemberEvent): string {
+  switch (event.kind) {
+    case 'joined':
+      return `${event.userName} joined as ${ROLE_LABELS[event.role ?? 'player']}${
+        event.detail ? ` with the link "${event.detail}"` : ''
+      }`;
+    case 'role_changed':
+      return `${event.actorName ?? 'The owner'} changed ${event.userName} from ${event.detail}`;
+    case 'removed':
+      return `${event.actorName ?? 'The owner'} removed ${event.userName}`;
+    case 'left':
+      return `${event.userName} left`;
+    case 'ownership_transferred':
+      return `${event.actorName ?? 'The owner'} made ${event.userName} the owner`;
+  }
+}
 
-  if (!isOwner) {
+function ActivitySection({ worldId }: { worldId: string }) {
+  const events = useMemberEvents(worldId);
+  if (events.isPending) return <PageSpinner />;
+  if (events.isError)
+    return <p className="text-sm text-destructive">{errorMessage(events.error)}</p>;
+  if (events.data.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Nothing yet. Joins and role changes show up here.
+      </p>
+    );
+  }
+  return (
+    <ul className="divide-y rounded-xl border bg-card">
+      {events.data.map((event) => (
+        <li
+          key={event.id}
+          className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2.5 text-sm"
+        >
+          <span>{describeEvent(event)}</span>
+          <time dateTime={event.createdAt} className="text-xs text-muted-foreground">
+            {new Date(event.createdAt).toLocaleString()}
+          </time>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function PeoplePage() {
+  const { world } = useWorld();
+  // The people queries live in a child, so a co-GM (or an owner who just handed over) never asks.
+  if (world.role !== 'owner') {
     return (
       <EmptyState title="Only the owner manages people">
         <p>Ask the owner of {world.name} if you need to change who is in it.</p>
       </EmptyState>
     );
   }
+  return <OwnerPeople />;
+}
+
+function OwnerPeople() {
+  const { world, base } = useWorld();
+  const { data: session } = useSession();
+  const members = useMembers(world.id);
+  const invites = useInvites(world.id);
 
   return (
     <div className="max-w-3xl space-y-10">
@@ -417,6 +491,11 @@ export function PeoplePage() {
           cancel it at any time. Everyone you invite sees nothing until you share it with their
           role: new entries, maps and pictures start out GM-only.
         </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-serif text-lg font-semibold">Activity</h2>
+        <ActivitySection worldId={world.id} />
       </section>
     </div>
   );

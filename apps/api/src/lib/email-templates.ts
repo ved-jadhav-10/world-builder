@@ -54,6 +54,21 @@ export function passwordResetEmail(to: string, name: string, url: string): Mail 
   });
 }
 
+export function memberJoinedEmail(
+  to: string,
+  options: { memberName: string; worldName: string; roleLabel: string; note: string; url: string },
+): Mail {
+  const { memberName, worldName, roleLabel, note, url } = options;
+  return layout({
+    to,
+    subject: `${memberName} joined ${worldName}`,
+    intro: `${memberName} joined "${worldName}" as ${roleLabel}${note ? ` with your link "${note}"` : ''}.`,
+    buttonLabel: 'See who is in your world',
+    url,
+    outro: "If you don't recognise them, remove them from the People page and cancel the link.",
+  });
+}
+
 export function inviteEmail(
   to: string,
   options: { inviterName: string; worldName: string; roleLabel: string; url: string },

@@ -6,6 +6,7 @@ import type {
   InvitePreview,
   JoinResult,
   Member,
+  MemberEvent,
   MemberUpdateInput,
 } from '@atlas/shared';
 import { api } from './client';
@@ -14,6 +15,7 @@ import { keys } from './queries';
 export const memberKeys = {
   members: (worldId: string) => ['members', worldId] as const,
   invites: (worldId: string) => ['invites', worldId] as const,
+  events: (worldId: string) => ['member-events', worldId] as const,
   invite: (token: string) => ['invite', token] as const,
 };
 
@@ -30,7 +32,10 @@ export function useUpdateMember(worldId: string) {
   return useMutation({
     mutationFn: ({ userId, ...input }: MemberUpdateInput & { userId: string }) =>
       api<void>('PATCH', `/worlds/${worldId}/members/${encodeURIComponent(userId)}`, input),
-    onSettled: () => qc.invalidateQueries({ queryKey: memberKeys.members(worldId) }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: memberKeys.members(worldId) });
+      void qc.invalidateQueries({ queryKey: memberKeys.events(worldId) });
+    },
   });
 }
 
@@ -39,7 +44,33 @@ export function useRemoveMember(worldId: string) {
   return useMutation({
     mutationFn: (userId: string) =>
       api<void>('DELETE', `/worlds/${worldId}/members/${encodeURIComponent(userId)}`),
-    onSettled: () => qc.invalidateQueries({ queryKey: memberKeys.members(worldId) }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: memberKeys.members(worldId) });
+      void qc.invalidateQueries({ queryKey: memberKeys.events(worldId) });
+    },
+  });
+}
+
+export const useMemberEvents = (worldId: string) =>
+  useQuery({
+    queryKey: memberKeys.events(worldId),
+    queryFn: () => api<MemberEvent[]>('GET', `/worlds/${worldId}/member-events`),
+  });
+
+export function useTransferOwnership(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) =>
+      api<void>('POST', `/worlds/${worldId}/transfer-ownership`, { userId }),
+    onSettled: () => {
+      // The old owner can no longer read these, so forget them rather than refetch (a 403).
+      qc.removeQueries({ queryKey: memberKeys.members(worldId) });
+      qc.removeQueries({ queryKey: memberKeys.events(worldId) });
+      qc.removeQueries({ queryKey: memberKeys.invites(worldId) });
+      void qc.invalidateQueries({ queryKey: keys.worlds });
+      // The world page reads the role from its own by-slug entry.
+      void qc.invalidateQueries({ queryKey: ['world'] });
+    },
   });
 }
 

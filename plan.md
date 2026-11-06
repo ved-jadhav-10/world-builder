@@ -563,6 +563,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** shared and API tests (validation, search, edit), the full suite, and Chrome (add, limit, restock, sell, save, reload).
 - **Deferred:** a read-only shop card for players, buying into a character's inventory, wares linked to Item entries, and price conversion between currencies.
 
+## Milestone 41 (Ownership handover and the member trail): done
+
+- **Handover** (`POST /transfer-ownership`, owner only, People page crown button): the chosen member becomes the owner and the old owner a co-GM, in one transaction (so there is never a world without an owner); `worlds.owner_id` moves too, so account deletion follows the new owner. The target must already be a member.
+- **Trail** (`world_member_events`, migration 0027; `GET /member-events`, owner only, newest 100): joined (with the link's note), role changed ("Player to Reader", by whom), removed, left, and ownership transferred. Names are copied in, so the trail survives renames and deleted accounts. A repeat use of a link and a no-op role change record nothing. The People page has an Activity list.
+- **Join notice:** the owner is emailed when someone joins ("Pippa joined X as Player"), through the existing mailer and in the background so a failure never blocks the join.
+- **Web:** the People page's data queries moved into a child component, so a co-GM or a just-demoted owner never requests data they can't read (it showed up as 403s in the Chrome check). The handover also refreshes the by-slug world entry, where the page reads the role.
+- **Verified:** API tests (handover, refusals, owner-only, join mail, trail order, leaving), the full suite, and Chrome with two real browser sessions (join via link, activity shown, handover, old owner refused, new owner sees the trail, no 4xx).
+- **Deferred:** several owners at once, inviting by name (looking up a user is a privacy question: exact email only would be the safe version), and a link's note in the join email.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

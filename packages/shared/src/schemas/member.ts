@@ -25,6 +25,28 @@ export type InviteCreateInput = z.input<typeof inviteCreateSchema>;
 export const memberUpdateSchema = z.object({ role: inviteRoleSchema });
 export type MemberUpdateInput = z.input<typeof memberUpdateSchema>;
 
+/** Handing the world to another member; the old owner becomes a co-GM. */
+export const transferOwnershipSchema = z.object({ userId: z.string().min(1).max(200) });
+
+export const MEMBER_EVENT_KINDS = [
+  'joined',
+  'role_changed',
+  'removed',
+  'left',
+  'ownership_transferred',
+] as const;
+export type MemberEventKind = (typeof MEMBER_EVENT_KINDS)[number];
+
+export interface MemberEvent {
+  id: string;
+  kind: MemberEventKind;
+  userName: string;
+  role: Role | null;
+  detail: string;
+  actorName: string | null;
+  createdAt: string;
+}
+
 /** The secret in an invite link. Generated as 32 random bytes, base64url-encoded. */
 export const inviteTokenSchema = z
   .string()
