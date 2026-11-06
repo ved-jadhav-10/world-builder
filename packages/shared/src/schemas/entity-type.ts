@@ -13,6 +13,7 @@ export const FIELD_TYPES = [
   'palette',
   'abilities',
   'qa',
+  'inventory',
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
@@ -28,6 +29,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   palette: 'Colour palette',
   abilities: 'Abilities with charges',
   qa: 'Questions and answers',
+  inventory: 'Wares for sale',
 };
 
 export const fieldDefinitionSchema = z

@@ -23,6 +23,18 @@ export const abilitySchema = z
   .strict();
 export type Ability = z.infer<typeof abilitySchema>;
 
+/** One thing a shop or merchant sells. A price is free text so it can be "5 gp" or "a favour". */
+export const shopItemSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name the item').max(80),
+    price: z.string().trim().max(40).default(''),
+    /** How many are left; null means there is no limit. */
+    stock: z.number().int().min(0).max(99_999).nullable().default(null),
+    description: z.string().trim().max(500).default(''),
+  })
+  .strict();
+export type ShopItem = z.infer<typeof shopItemSchema>;
+
 /** A question and the answer written for it, such as in a character interview. */
 export const qaSchema = z
   .object({
@@ -87,6 +99,8 @@ function valueSchemaFor(field: FieldDefinition): z.ZodType {
       return z.array(abilitySchema).max(40);
     case 'qa':
       return z.array(qaSchema).max(60);
+    case 'inventory':
+      return z.array(shopItemSchema).max(100);
   }
 }
 
@@ -101,12 +115,19 @@ export function describeFieldValue(value: unknown): string {
   const parts = value.flatMap((item): string[] => {
     if (typeof item === 'string') return [item];
     if (!item || typeof item !== 'object') return [];
-    const { name, charges, question, answer } = item as {
+    const { name, charges, question, answer, price, stock } = item as {
       name?: unknown;
+      price?: unknown;
+      stock?: unknown;
       charges?: { max?: unknown } | null;
       question?: unknown;
       answer?: unknown;
     };
+    if (typeof name === 'string' && typeof price === 'string') {
+      const stocked = typeof stock === 'number' ? `${stock} in stock` : '';
+      const detail = [price, stocked].filter(Boolean).join(', ');
+      return [detail ? `${name} (${detail})` : name];
+    }
     if (typeof name === 'string') {
       return [
         charges && typeof charges.max === 'number' ? `${name} (${charges.max} charges)` : name,

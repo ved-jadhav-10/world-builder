@@ -112,3 +112,34 @@ describe('character extras', () => {
     expect(describeFieldValue(true)).toBe('Yes');
   });
 });
+
+describe('shop wares', () => {
+  const shop: FieldDefinition[] = [{ key: 'wares', label: 'Wares', type: 'inventory' }];
+
+  it('keeps items with a price and optional stock, and fills the blanks', () => {
+    const result = parseFieldValues(shop, {
+      wares: [{ name: 'Rope', price: ' 1 gp ', stock: 3 }, { name: 'Lantern' }],
+    });
+    expect(result.wares).toEqual([
+      { name: 'Rope', price: '1 gp', stock: 3, description: '' },
+      { name: 'Lantern', price: '', stock: null, description: '' },
+    ]);
+  });
+
+  it('refuses unnamed items, negative stock and fractions', () => {
+    expect(() => parseFieldValues(shop, { wares: [{ name: ' ' }] })).toThrow();
+    expect(() => parseFieldValues(shop, { wares: [{ name: 'A', stock: -1 }] })).toThrow();
+    expect(() => parseFieldValues(shop, { wares: [{ name: 'A', stock: 1.5 }] })).toThrow();
+    expect(() => parseFieldValues(shop, { wares: Array(101).fill({ name: 'A' }) })).toThrow();
+  });
+
+  it('describes wares with price and stock', () => {
+    expect(
+      describeFieldValue([
+        { name: 'Rope', price: '1 gp', stock: 3 },
+        { name: 'Lantern', price: '', stock: null },
+        { name: 'Map', price: '5 sp', stock: 0 },
+      ]),
+    ).toBe('Rope (1 gp, 3 in stock); Lantern; Map (5 sp, 0 in stock)');
+  });
+});

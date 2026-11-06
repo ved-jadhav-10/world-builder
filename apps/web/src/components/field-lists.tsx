@@ -3,6 +3,7 @@ import {
   CHARACTER_INTERVIEW_QUESTIONS,
   MAX_PALETTE_COLORS,
   type Ability,
+  type ShopItem,
   type QaPair,
 } from '@atlas/shared';
 import { Button } from '@/components/ui/button';
@@ -290,6 +291,133 @@ export function QaField({ id, value, onChange, disabled }: ListProps<QaPair>) {
             </Button>
           ) : null}
         </div>
+      )}
+    </div>
+  );
+}
+
+const newShopItem = (): ShopItem => ({ name: '', price: '', stock: null, description: '' });
+
+/** What a shop or merchant sells: a price, how many are left (or no limit) and a note. */
+export function InventoryField({ id, value, onChange, disabled }: ListProps<ShopItem>) {
+  const items = asList<ShopItem>(value);
+  const patch = (index: number, next: Partial<ShopItem>) =>
+    onChange(items.map((item, i) => (i === index ? { ...item, ...next } : item)));
+
+  return (
+    <div id={id} className="space-y-2">
+      {items.map((item, index) => {
+        const label = item.name || `item ${index + 1}`;
+        return (
+          <div key={index} className="space-y-1.5 rounded-lg border bg-card p-2.5">
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label={`Name of ${label}`}
+                placeholder="Item"
+                maxLength={80}
+                disabled={disabled}
+                value={item.name}
+                onChange={(event) => patch(index, { name: event.target.value })}
+              />
+              <Input
+                aria-label={`Price of ${label}`}
+                placeholder="Price, e.g. 5 gp"
+                maxLength={40}
+                className="w-36 shrink-0"
+                disabled={disabled}
+                value={item.price}
+                onChange={(event) => patch(index, { price: event.target.value })}
+              />
+              {disabled ? null : (
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => onChange(items.filter((_, i) => i !== index))}
+                >
+                  <Trash2 />
+                  <span className="sr-only">Remove {label}</span>
+                </Button>
+              )}
+            </div>
+            <Input
+              aria-label={`Note on ${label}`}
+              placeholder="Note (optional)"
+              maxLength={500}
+              disabled={disabled}
+              value={item.description}
+              onChange={(event) => patch(index, { description: event.target.value })}
+            />
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+              {item.stock === null ? (
+                <>
+                  <span>No limit</span>
+                  {disabled ? null : (
+                    <button
+                      type="button"
+                      className="underline"
+                      onClick={() => patch(index, { stock: 1 })}
+                    >
+                      Limit the stock
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {disabled ? null : (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="outline"
+                      disabled={item.stock <= 0}
+                      onClick={() => patch(index, { stock: Math.max(0, (item.stock ?? 0) - 1) })}
+                    >
+                      <Minus />
+                      <span className="sr-only">Sell one {label}</span>
+                    </Button>
+                  )}
+                  <span className="tabular-nums">
+                    {item.stock === 0 ? 'Sold out' : `${item.stock} in stock`}
+                  </span>
+                  {disabled ? null : (
+                    <>
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        onClick={() => patch(index, { stock: (item.stock ?? 0) + 1 })}
+                      >
+                        <Plus />
+                        <span className="sr-only">Restock {label}</span>
+                      </Button>
+                      <button
+                        type="button"
+                        className="underline"
+                        onClick={() => patch(index, { stock: null })}
+                      >
+                        No limit
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      {disabled ? (
+        items.length === 0 ? (
+          <span className="text-sm text-muted-foreground">—</span>
+        ) : null
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...items, newShopItem()])}
+        >
+          <Plus /> Add an item
+        </Button>
       )}
     </div>
   );

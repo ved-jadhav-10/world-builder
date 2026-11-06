@@ -183,6 +183,13 @@
       "when": 1794757693234,
       "tag": "0025_character_extras",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794844093234,
+      "tag": "0026_shop_wares",
+      "breakpoints": true
     }
   ]
 }

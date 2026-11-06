@@ -137,3 +137,32 @@ describe('character extras', () => {
     expect(bad.statusCode).toBe(400);
   });
 });
+
+describe('shop wares', () => {
+  it('lets locations and characters list wares, searchable and editable', async () => {
+    const ctx = await signUpWithWorld(app);
+    const { api, w } = ctx;
+    const types = (await api.get(`${w}/entity-types`)).json<EntityType[]>();
+    for (const key of ['location', 'character']) {
+      expect(types.find((t) => t.key === key)!.fieldSchema.map((f) => f.key)).toContain('wares');
+    }
+    const res = await api.post(`${w}/entities`, {
+      typeId: ctx.typeId('location'),
+      name: 'The Gilded Eel',
+      fields: { wares: [{ name: 'Smoked eel', price: '3 sp', stock: 4 }] },
+    });
+    expect(res.statusCode, res.body).toBe(201);
+    const shop = res.json<Entity>();
+    const sold = await api.patch(`${w}/entities/${shop.id}`, {
+      fields: { wares: [{ name: 'Smoked eel', price: '3 sp', stock: 3 }] },
+    });
+    expect(sold.statusCode, sold.body).toBe(200);
+    expect((sold.json<Entity>().fields.wares as { stock: number }[])[0]!.stock).toBe(3);
+    const found = await api.get(`${w}/search?q=${encodeURIComponent('Smoked')}`);
+    expect(found.json<{ name: string }[]>().map((r) => r.name)).toContain('The Gilded Eel');
+    const bad = await api.patch(`${w}/entities/${shop.id}`, {
+      fields: { wares: [{ name: 'Eel', stock: -2 }] },
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+});

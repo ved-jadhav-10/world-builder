@@ -47,6 +47,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: 'palette', label: 'Colour palette', type: 'palette' },
       { key: 'abilities', label: 'Abilities', type: 'abilities' },
       { key: 'interview', label: 'Interview', type: 'qa' },
+      { key: 'wares', label: 'Wares for sale', type: 'inventory' },
     ],
   },
   {
@@ -76,6 +77,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: 'population', label: 'Population', type: 'text' },
       { key: 'climate', label: 'Climate', type: 'text' },
       { key: 'notable_features', label: 'Notable features', type: 'long_text' },
+      { key: 'wares', label: 'Wares for sale', type: 'inventory' },
     ],
   },
   {

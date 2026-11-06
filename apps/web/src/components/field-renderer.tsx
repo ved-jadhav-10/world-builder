@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import type { FieldDefinition } from '@atlas/shared';
-import { AbilitiesField, PaletteField, QaField } from '@/components/field-lists';
+import { AbilitiesField, InventoryField, PaletteField, QaField } from '@/components/field-lists';
 import { Input, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { cn } from '@/lib/utils';
 
@@ -130,6 +130,8 @@ export function FieldRenderer({
       return <PaletteField id={id} value={value} onChange={onChange} disabled={disabled} />;
     case 'abilities':
       return <AbilitiesField id={id} value={value} onChange={onChange} disabled={disabled} />;
+    case 'inventory':
+      return <InventoryField id={id} value={value} onChange={onChange} disabled={disabled} />;
     case 'qa':
       return <QaField id={id} value={value} onChange={onChange} disabled={disabled} />;
     case 'date':

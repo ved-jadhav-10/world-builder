@@ -555,6 +555,14 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified in Chrome:** adding, ordering, damage to 0 HP, turn skipping, round wrap, a condition, persistence across reload, phone width, no 4xx or 5xx.
 - **Deferred:** re-sorting when an initiative number is edited, adding a pinned character or a rolled encounter straight into the fight (`entityId` is in the schema, unused), HP and conditions shown to players, custom conditions, and a loot or XP tracker.
 
+## Milestone 40 (Shops and merchants): done
+
+- **New field type `inventory`** ("Wares for sale"): a list of items with a name, a free-text price ("5 gp", "a favour"), optional stock (blank means no limit) and a note, up to 100 items. It is a normal field, so search, history, exports, "as of" views and field visibility all work with no new machinery; the words are searchable and `describeFieldValue` writes items as "Rope (1 gp, 3 in stock)".
+- **Built in:** Location and Character get a `wares` field, so any location is a shop and any character a merchant. Migration 0026 adds it to existing worlds (skipping any that already have a `wares` field). A custom type can use the field type too.
+- **Web:** the entry form shows the list with Sell one (stock down), Restock, "Limit the stock" and "No limit"; stock is saved with the entry like any edit.
+- **Verified:** shared and API tests (validation, search, edit), the full suite, and Chrome (add, limit, restock, sell, save, reload).
+- **Deferred:** a read-only shop card for players, buying into a character's inventory, wares linked to Item entries, and price conversion between currencies.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
