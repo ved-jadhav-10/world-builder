@@ -6,6 +6,7 @@ import { errorMessage } from '@/api/client';
 import {
   downloadExport,
   downloadMarkdownExport,
+  downloadStoryBible,
   useDeleteWorld,
   useUpdateWorld,
 } from '@/api/queries';
@@ -127,10 +128,17 @@ export function WorldSettingsPage() {
           >
             <FileText /> Download Markdown (zip)
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => onExport(downloadStoryBible)}
+            disabled={exporting}
+          >
+            <FileText /> Story bible (PDF)
+          </Button>
           <ManuscriptExportDialog
             trigger={
               <Button variant="outline">
-                <FileText /> Manuscript as Word (.docx)
+                <FileText /> Manuscript (Word, PDF, e-book)
               </Button>
             }
           />

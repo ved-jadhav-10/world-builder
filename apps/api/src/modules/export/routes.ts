@@ -1,11 +1,17 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { epubExportQuerySchema, manuscriptExportQuerySchema } from '@atlas/shared';
+import {
+  epubExportQuerySchema,
+  manuscriptExportQuerySchema,
+  scriptExportQuerySchema,
+} from '@atlas/shared';
 import { db } from '../../db/client';
 import { limits } from '../../lib/rate-limits';
 import { currentUser, currentWorldId, requireRole } from '../../plugins/auth-guard';
 import { buildManuscriptDocx } from './docx';
 import { buildManuscriptEpub } from './epub';
 import { buildMarkdownZip } from './markdown';
+import { buildManuscriptPdf, buildStoryBiblePdf } from './pdf';
+import { buildScriptExport } from './script';
 import { exportWorld } from './service';
 
 export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -81,6 +87,72 @@ export const exportRoutes: FastifyPluginAsyncZod = async (app) => {
             encodeURIComponent(filename),
         )
         .send(Buffer.from(data));
+    },
+  );
+
+  // The manuscript as a PDF, in the same two layouts as the Word export.
+  app.get(
+    '/export/manuscript.pdf',
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: manuscriptExportQuerySchema },
+    },
+    async (request, reply) => {
+      const { filename, data } = await buildManuscriptPdf(db, currentWorldId(request), {
+        ...request.query,
+        author: request.query.author ?? currentUser(request).name,
+      });
+      return reply
+        .header('content-type', 'application/pdf')
+        .header(
+          'content-disposition',
+          'attachment; filename="manuscript.pdf"; filename*=UTF-8\'\'' +
+            encodeURIComponent(filename),
+        )
+        .send(data);
+    },
+  );
+
+  // The manuscript as a screenplay (Fountain) or a comic script: structure to adapt, not a rewrite.
+  app.get(
+    '/export/manuscript-script',
+    {
+      onRequest: requireRole('editor'),
+      config: limits.export,
+      schema: { querystring: scriptExportQuerySchema },
+    },
+    async (request, reply) => {
+      const { filename, data, contentType } = await buildScriptExport(db, currentWorldId(request), {
+        kind: request.query.kind,
+        bookId: request.query.bookId,
+        author: request.query.author ?? currentUser(request).name,
+      });
+      return reply
+        .header('content-type', `${contentType}; charset=utf-8`)
+        .header(
+          'content-disposition',
+          `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        )
+        .send(data);
+    },
+  );
+
+  // Every entry, the timeline and the manuscript outline as a printable reference. It holds
+  // GM-only material, so it needs edit rights.
+  app.get(
+    '/export/story-bible.pdf',
+    { onRequest: requireRole('editor'), config: limits.export },
+    async (request, reply) => {
+      const { filename, data } = await buildStoryBiblePdf(db, currentWorldId(request));
+      return reply
+        .header('content-type', 'application/pdf')
+        .header(
+          'content-disposition',
+          'attachment; filename="story-bible.pdf"; filename*=UTF-8\'\'' +
+            encodeURIComponent(filename),
+        )
+        .send(data);
     },
   );
 };

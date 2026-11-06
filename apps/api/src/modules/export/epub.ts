@@ -1,4 +1,3 @@
-import { eq } from 'drizzle-orm';
 import { strToU8, zipSync, type Zippable } from 'fflate';
 import {
   blocksToXhtml,
@@ -10,9 +9,8 @@ import {
   type RichTextDoc,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { worlds } from '../../db/schema';
-import { badRequest, notFound } from '../../errors';
-import { getSceneBodies, listTree } from '../manuscript/service';
+import { badRequest } from '../../errors';
+import { loadManuscriptSource } from './manuscript-source';
 
 const XHTML_HEAD = `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
@@ -100,21 +98,14 @@ export async function buildManuscriptEpub(
   worldId: string,
   options: { bookId?: string; author: string },
 ): Promise<{ filename: string; data: Uint8Array }> {
-  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId));
-  if (!world) throw notFound('World');
-  const tree = await listTree(db, worldId);
-  const bodies = await getSceneBodies(db, worldId);
-  const children = new Map<string | null, ManuscriptNode[]>();
-  for (const node of tree) {
-    children.set(node.parentId, [...(children.get(node.parentId) ?? []), node]);
-  }
-  const books = (children.get(null) ?? []).filter((n) => n.kind === 'book');
-  const chosen = options.bookId ? books.filter((b) => b.id === options.bookId) : books;
-  if (options.bookId && chosen.length === 0) throw notFound('Book');
-  if (chosen.length === 0) throw badRequest('There is no manuscript to export yet.');
+  const { worldName, children, bodies, chosen } = await loadManuscriptSource(
+    db,
+    worldId,
+    options.bookId,
+  );
 
   const author = options.author.trim() || 'Author';
-  const title = chosen.length === 1 ? chosen[0]!.title : world.name;
+  const title = chosen.length === 1 ? chosen[0]!.title : worldName;
   const chapters: Chapter[] = [];
   const state = { words: 0 };
   for (const book of chosen) {
@@ -130,7 +121,7 @@ export async function buildManuscriptEpub(
   }
   if (state.words === 0) throw badRequest('The manuscript has no text yet. Write a scene first.');
 
-  const identifier = `urn:uuid:${chosen.length === 1 ? chosen[0]!.id : world.id}`;
+  const identifier = `urn:uuid:${chosen.length === 1 ? chosen[0]!.id : worldId}`;
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const files: Zippable = {

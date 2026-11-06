@@ -400,6 +400,46 @@ export const downloadManuscriptDocx = (
   );
 };
 
+/** Downloads the manuscript as a PDF. */
+export const downloadManuscriptPdf = (
+  world: World,
+  options: {
+    bookId?: string;
+    format: 'manuscript' | 'clean';
+    paper: 'letter' | 'a4';
+    author?: string;
+  },
+) => {
+  const query = new URLSearchParams({ format: options.format, paper: options.paper });
+  if (options.bookId) query.set('bookId', options.bookId);
+  if (options.author) query.set('author', options.author);
+  return download(
+    `/worlds/${world.id}/export/manuscript.pdf?${query}`,
+    `${world.slug}-manuscript-${today()}.pdf`,
+  );
+};
+
+/** Downloads the manuscript laid out as a screenplay (Fountain) or a comic script. */
+export const downloadManuscriptScript = (
+  world: World,
+  options: { kind: 'screenplay' | 'comic'; bookId?: string; author?: string },
+) => {
+  const query = new URLSearchParams({ kind: options.kind });
+  if (options.bookId) query.set('bookId', options.bookId);
+  if (options.author) query.set('author', options.author);
+  return download(
+    `/worlds/${world.id}/export/manuscript-script?${query}`,
+    `${world.slug}-${options.kind === 'screenplay' ? 'screenplay.fountain' : 'comic-script.txt'}`,
+  );
+};
+
+/** Downloads the whole world as a printable story bible (PDF). */
+export const downloadStoryBible = (world: World) =>
+  download(
+    `/worlds/${world.id}/export/story-bible.pdf`,
+    `${world.slug}-story-bible-${today()}.pdf`,
+  );
+
 /** Downloads the manuscript as an EPUB for e-readers. */
 export const downloadManuscriptEpub = (
   world: World,

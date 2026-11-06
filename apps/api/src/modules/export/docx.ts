@@ -23,10 +23,8 @@ import {
   type TextRun as Run,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
-import { badRequest, notFound } from '../../errors';
-import { getSceneBodies, listTree } from '../manuscript/service';
-import { worlds } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { badRequest } from '../../errors';
+import { loadManuscriptSource } from './manuscript-source';
 
 type Format = ManuscriptExportQuery['format'];
 
@@ -304,18 +302,11 @@ export async function buildManuscriptDocx(
   worldId: string,
   options: ManuscriptExportQuery & { author: string },
 ): Promise<{ filename: string; data: Buffer }> {
-  const [world] = await db.select().from(worlds).where(eq(worlds.id, worldId));
-  if (!world) throw notFound('World');
-  const tree = await listTree(db, worldId);
-  const bodies = await getSceneBodies(db, worldId);
-  const children = new Map<string | null, ManuscriptNode[]>();
-  for (const node of tree) {
-    children.set(node.parentId, [...(children.get(node.parentId) ?? []), node]);
-  }
-  const books = (children.get(null) ?? []).filter((n) => n.kind === 'book');
-  const chosen = options.bookId ? books.filter((b) => b.id === options.bookId) : books;
-  if (options.bookId && chosen.length === 0) throw notFound('Book');
-  if (chosen.length === 0) throw badRequest('There is no manuscript to export yet.');
+  const { worldName, children, bodies, chosen } = await loadManuscriptSource(
+    db,
+    worldId,
+    options.bookId,
+  );
 
   const author = options.author.trim() || 'Author';
   const parts: BookParts[] = chosen.map((book) => {
@@ -330,7 +321,7 @@ export async function buildManuscriptDocx(
   const look = STYLES[options.format];
   const doc = new Document({
     creator: author,
-    title: chosen.length === 1 ? chosen[0]!.title : world.name,
+    title: chosen.length === 1 ? chosen[0]!.title : worldName,
     styles: {
       default: {
         document: { run: { font: look.font, size: look.size } },
@@ -353,6 +344,6 @@ export async function buildManuscriptDocx(
     sections: parts.flatMap((book) => bookSections(book, author, options.format, options.paper)),
   });
   const data = await Packer.toBuffer(doc);
-  const name = chosen.length === 1 ? chosen[0]!.title : world.name;
+  const name = chosen.length === 1 ? chosen[0]!.title : worldName;
   return { filename: `${safeName(name, 'manuscript')}.docx`, data };
 }

@@ -43,7 +43,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Lore wiki extras:** secret blocks inside an article, embedded maps and timelines (M37). Field-level secrets are still F.
 - [x] **Manuscript export to Word (.docx)**, in a standard submission layout or a clean one (M17).
 - [x] **Manuscript export to EPUB** for e-readers (M18).
-- [ ] **More exports:** PDF and a story-bible PDF [v1]; screenplay and comic script formats [v3].
+- [x] **More exports:** the manuscript as a PDF, a story-bible PDF, and screenplay (Fountain) and comic-script scaffolds (M38). The script formats lay out structure and leave the writing to adapt.
 
 ## C. Atlas, timeline and continuity
 

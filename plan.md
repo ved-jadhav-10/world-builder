@@ -539,6 +539,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Scope:** this is for entry notes; scene text in the manuscript does not offer these.
 - **Deferred:** field-level and block-level visibility for other audiences (F), timeline embeds filtered by tag or date range, and secret blocks revealed to players after a chapter.
 
+## Milestone 38 (More exports): done
+
+- **Manuscript PDF** (`GET /export/manuscript.pdf`, same options as the Word export): a title page, a chapter on each new page, scene breaks, a running header ("Surname / Title / page", from page 1 after the title page) and PDF bookmarks for books, parts and chapters. Two looks: standard manuscript (12 pt Times, double spaced, indented) and a clean reading layout; Letter or A4. Built with `pdfkit` on the standard fonts, so text outside Western European letters is turned into the nearest plain letter or "?" (`toWinAnsi`, tested); an embedded Unicode font is the way to lift that.
+- **Story bible PDF** (`GET /export/story-bible.pdf`, editors): a cover, every entry by type (aliases, summary, dates, fields, connections, notes), a timeline and a manuscript outline with scene summaries, page-numbered, with bookmarks. It includes GM-only material (secret blocks too), like the other exports.
+- **Script formats** (`GET /export/manuscript-script?kind=screenplay|comic`, `script-export.ts`): honest scaffolds, not conversions. Screenplay (Fountain, opens in Final Draft, Highland, Fade In and others): each scene gets a heading from its place and date ("INT./EXT. VAEL HARBOUR - DAWN", or its title when it has no place), its summary as a synopsis, its viewpoint as a note, narration as action and a whole-paragraph quotation as dialogue under `@SPEAKER` to fill in. Comic script: a PAGE for each scene, a Panel for each stretch of action and `SPEAKER:` lines for speech.
+- **Refactor:** the Word, EPUB, PDF and script exports share `loadManuscriptSource`.
+- **Not verified:** PDFs were checked by reading their text back and by page counts in tests, not opened in a viewer; Fountain was not opened in a screenwriting app.
+- **Deferred:** an embedded Unicode font, a table of contents with page numbers, images in the story bible, and speaker detection for dialogue.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

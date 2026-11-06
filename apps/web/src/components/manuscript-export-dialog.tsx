@@ -1,7 +1,12 @@
 import { Download } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { downloadManuscriptDocx, downloadManuscriptEpub } from '@/api/queries';
+import {
+  downloadManuscriptDocx,
+  downloadManuscriptEpub,
+  downloadManuscriptPdf,
+  downloadManuscriptScript,
+} from '@/api/queries';
 import { errorMessage } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -9,6 +14,8 @@ import { Input, Label, NativeSelect } from '@/components/ui/inputs';
 import { useSession } from '@/lib/auth-client';
 import { useManuscriptTree } from '@/lib/manuscript-tree';
 import { useWorld } from '@/lib/world-context';
+
+type ExportKind = 'docx' | 'pdf' | 'epub' | 'screenplay' | 'comic';
 
 /** Download the manuscript as a Word document or an e-book: which book, the layout and the name. */
 export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
@@ -18,7 +25,7 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
   const books = tree.childrenOf(null).filter((n) => n.kind === 'book');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [kind, setKind] = useState<'docx' | 'epub'>('docx');
+  const [kind, setKind] = useState<ExportKind>('docx');
   const [bookId, setBookId] = useState('');
   const [format, setFormat] = useState<'manuscript' | 'clean'>('manuscript');
   const [paper, setPaper] = useState<'letter' | 'a4'>('letter');
@@ -30,6 +37,9 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
     const common = { bookId: bookId || undefined, author: author.trim() || undefined };
     try {
       if (kind === 'epub') await downloadManuscriptEpub(world, common);
+      else if (kind === 'screenplay' || kind === 'comic') {
+        await downloadManuscriptScript(world, { ...common, kind });
+      } else if (kind === 'pdf') await downloadManuscriptPdf(world, { ...common, format, paper });
       else await downloadManuscriptDocx(world, { ...common, format, paper });
       setOpen(false);
     } catch (error) {
@@ -44,7 +54,7 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         title="Export the manuscript"
-        description="Your scenes in reading order, as a Word document or an e-book. It includes every scene, so it is for you to share, not for players."
+        description="Your scenes in reading order, as a Word document, a PDF, an e-book, or laid out as a screenplay or comic script to adapt. It includes every scene, so it is for you to share, not for players."
       >
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
@@ -52,10 +62,13 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
             <NativeSelect
               id="export-kind"
               value={kind}
-              onChange={(event) => setKind(event.target.value as 'docx' | 'epub')}
+              onChange={(event) => setKind(event.target.value as ExportKind)}
             >
               <option value="docx">Word document (.docx)</option>
+              <option value="pdf">PDF (.pdf)</option>
               <option value="epub">E-book (.epub)</option>
+              <option value="screenplay">Screenplay outline (.fountain)</option>
+              <option value="comic">Comic script (.txt)</option>
             </NativeSelect>
           </div>
           {books.length > 1 ? (
@@ -75,7 +88,7 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
               </NativeSelect>
             </div>
           ) : null}
-          {kind === 'docx' ? (
+          {kind === 'docx' || kind === 'pdf' ? (
             <>
               <div className="space-y-1.5">
                 <Label htmlFor="export-format">Layout</Label>
@@ -115,7 +128,10 @@ export function ManuscriptExportDialog({ trigger }: { trigger: ReactNode }) {
           </div>
           <DialogFooter className="mt-0">
             <Button type="submit" disabled={busy}>
-              <Download /> {busy ? 'Preparing…' : `Download .${kind}`}
+              <Download />{' '}
+              {busy
+                ? 'Preparing…'
+                : `Download ${kind === 'screenplay' ? '.fountain' : kind === 'comic' ? '.txt' : `.${kind}`}`}
             </Button>
           </DialogFooter>
         </form>

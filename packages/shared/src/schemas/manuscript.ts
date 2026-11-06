@@ -60,6 +60,13 @@ export type SceneBodyInput = z.input<typeof sceneBodySchema>;
 export const MANUSCRIPT_FORMATS = ['manuscript', 'clean'] as const;
 export const MANUSCRIPT_PAPERS = ['letter', 'a4'] as const;
 
+/** The manuscript as a script: a screenplay (Fountain) or a comic script. */
+export const scriptExportQuerySchema = z.object({
+  kind: z.enum(['screenplay', 'comic']).default('screenplay'),
+  bookId: idSchema.optional(),
+  author: z.string().trim().max(100).optional(),
+});
+
 export const manuscriptExportQuerySchema = z.object({
   /** One book; every book when left out. */
   bookId: idSchema.optional(),

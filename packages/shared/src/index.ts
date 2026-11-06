@@ -59,3 +59,5 @@ export * from './geojson-import';
 export * from './fog';
 export * from './vtt';
 export * from './secret-blocks';
+export * from './pdf-text';
+export * from './script-export';
