@@ -35,6 +35,16 @@ export const shopItemSchema = z
   .strict();
 export type ShopItem = z.infer<typeof shopItemSchema>;
 
+/** A web link with a name, such as a soundtrack track on Spotify, YouTube or Tabletop Audio. */
+export const labelledLinkSchema = z
+  .object({
+    label: z.string().trim().max(80).default(''),
+    // http(s) only, so a stored link can never become a javascript: URL.
+    url: z.url({ protocol: /^https?$/ }).max(2000),
+  })
+  .strict();
+export type LabelledLink = z.infer<typeof labelledLinkSchema>;
+
 /** A question and the answer written for it, such as in a character interview. */
 export const qaSchema = z
   .object({
@@ -101,6 +111,8 @@ function valueSchemaFor(field: FieldDefinition): z.ZodType {
       return z.array(qaSchema).max(60);
     case 'inventory':
       return z.array(shopItemSchema).max(100);
+    case 'links':
+      return z.array(labelledLinkSchema).max(40);
   }
 }
 
@@ -115,7 +127,9 @@ export function describeFieldValue(value: unknown): string {
   const parts = value.flatMap((item): string[] => {
     if (typeof item === 'string') return [item];
     if (!item || typeof item !== 'object') return [];
-    const { name, charges, question, answer, price, stock } = item as {
+    const { name, charges, question, answer, price, stock, label, url } = item as {
+      label?: unknown;
+      url?: unknown;
       name?: unknown;
       price?: unknown;
       stock?: unknown;
@@ -123,6 +137,9 @@ export function describeFieldValue(value: unknown): string {
       question?: unknown;
       answer?: unknown;
     };
+    if (typeof url === 'string') {
+      return [typeof label === 'string' && label ? `${label} (${url})` : url];
+    }
     if (typeof name === 'string' && typeof price === 'string') {
       const stocked = typeof stock === 'number' ? `${stock} in stock` : '';
       const detail = [price, stocked].filter(Boolean).join(', ');

@@ -166,3 +166,31 @@ describe('shop wares', () => {
     expect(bad.statusCode).toBe(400);
   });
 });
+
+describe('soundtrack links', () => {
+  it('are on locations, characters and sessions, and refuse unsafe addresses', async () => {
+    const ctx = await signUpWithWorld(app);
+    const { api, w } = ctx;
+    const types = (await api.get(`${w}/entity-types`)).json<EntityType[]>();
+    for (const key of ['location', 'character', 'session']) {
+      const field = types
+        .find((t) => t.key === key)!
+        .fieldSchema.find((f) => f.key === 'soundtrack');
+      expect(field?.type, key).toBe('links');
+    }
+    const ok = await api.post(`${w}/entities`, {
+      typeId: ctx.typeId('location'),
+      name: 'Vael Harbour',
+      fields: {
+        soundtrack: [{ label: 'Harbour at dawn', url: 'https://www.youtube.com/watch?v=abc' }],
+      },
+    });
+    expect(ok.statusCode, ok.body).toBe(201);
+    const bad = await api.post(`${w}/entities`, {
+      typeId: ctx.typeId('location'),
+      name: 'Bad Harbour',
+      fields: { soundtrack: [{ label: 'x', url: 'javascript:alert(1)' }] },
+    });
+    expect(bad.statusCode).toBe(400);
+  });
+});

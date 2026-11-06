@@ -95,7 +95,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Real-time co-editing** (Yjs with Hocuspocus), live editing indicators, an activity feed [v2].
 - [ ] **Offline drafting** (y-indexeddb, cached tiles) [v2]; a Tauri **desktop app** [v3].
 - [ ] **Mood boards and a whiteboard** (tldraw, check its licence, or Excalidraw), expanding cards and frames, embedded media; Pinterest and Unsplash import [v1/v2].
-- [ ] **Audio:** location soundtracks as Spotify, YouTube or Tabletop Audio links on locations and scenes [v2].
+- [x] **Audio:** soundtrack links (Spotify, YouTube, Tabletop Audio or any web address) on locations, characters and sessions (M42). Still to do: links on manuscript scenes, and playing them inside the app [v2].
 - [ ] **Public API** that can read and write world data [v3]; a **plugin, theme and template marketplace** [v3].
 - [ ] A **commission tracker** for artists [v3].
 

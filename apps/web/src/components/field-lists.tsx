@@ -1,8 +1,9 @@
-import { Minus, Plus, Trash2, Zap } from 'lucide-react';
+import { ExternalLink, Minus, Plus, Trash2, Zap } from 'lucide-react';
 import {
   CHARACTER_INTERVIEW_QUESTIONS,
   MAX_PALETTE_COLORS,
   type Ability,
+  type LabelledLink,
   type ShopItem,
   type QaPair,
 } from '@atlas/shared';
@@ -417,6 +418,88 @@ export function InventoryField({ id, value, onChange, disabled }: ListProps<Shop
           onClick={() => onChange([...items, newShopItem()])}
         >
           <Plus /> Add an item
+        </Button>
+      )}
+    </div>
+  );
+}
+
+const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value);
+
+/** Named links, such as a location's soundtrack. Read-only, they are plain links that open anew. */
+export function LinksField({ id, value, onChange, disabled }: ListProps<LabelledLink>) {
+  const links = asList<LabelledLink>(value);
+  const patch = (index: number, next: Partial<LabelledLink>) =>
+    onChange(links.map((link, i) => (i === index ? { ...link, ...next } : link)));
+
+  return (
+    <div id={id} className="space-y-2">
+      {links.map((link, index) =>
+        disabled ? (
+          isHttpUrl(link.url) ? (
+            <a
+              key={index}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm underline"
+            >
+              <ExternalLink className="size-3.5" /> {link.label || link.url}
+            </a>
+          ) : null
+        ) : (
+          <div key={index} className="flex items-center gap-2">
+            <Input
+              aria-label={`Name of link ${index + 1}`}
+              placeholder="Name"
+              maxLength={80}
+              className="w-40 shrink-0"
+              value={link.label}
+              onChange={(event) => patch(index, { label: event.target.value })}
+            />
+            <Input
+              aria-label={`Address of link ${index + 1}`}
+              type="url"
+              placeholder="https://"
+              maxLength={2000}
+              value={link.url}
+              onChange={(event) => patch(index, { url: event.target.value })}
+            />
+            {isHttpUrl(link.url) ? (
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open link"
+                className="flex size-9 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+              >
+                <ExternalLink className="size-4" />
+              </a>
+            ) : null}
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => onChange(links.filter((_, i) => i !== index))}
+            >
+              <Trash2 />
+              <span className="sr-only">Remove link {index + 1}</span>
+            </Button>
+          </div>
+        ),
+      )}
+      {disabled ? (
+        links.length === 0 ? (
+          <span className="text-sm text-muted-foreground">—</span>
+        ) : null
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...links, { label: '', url: '' }])}
+        >
+          <Plus /> Add a link
         </Button>
       )}
     </div>

@@ -48,6 +48,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: 'abilities', label: 'Abilities', type: 'abilities' },
       { key: 'interview', label: 'Interview', type: 'qa' },
       { key: 'wares', label: 'Wares for sale', type: 'inventory' },
+      { key: 'soundtrack', label: 'Theme music', type: 'links' },
     ],
   },
   {
@@ -78,6 +79,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: 'climate', label: 'Climate', type: 'text' },
       { key: 'notable_features', label: 'Notable features', type: 'long_text' },
       { key: 'wares', label: 'Wares for sale', type: 'inventory' },
+      { key: 'soundtrack', label: 'Soundtrack', type: 'links' },
     ],
   },
   {
@@ -189,6 +191,7 @@ export const BUILTIN_ENTITY_TYPES: BuiltinEntityType[] = [
       { key: SESSION_PLAYED_ON_FIELD, label: 'Played on', type: 'text' },
       { key: 'recap', label: 'Recap', type: 'long_text' },
       { key: 'next_up', label: 'Threads for next time', type: 'long_text' },
+      { key: 'soundtrack', label: 'Playlist', type: 'links' },
     ],
   },
   {

@@ -143,3 +143,40 @@ describe('shop wares', () => {
     ).toBe('Rope (1 gp, 3 in stock); Lantern; Map (5 sp, 0 in stock)');
   });
 });
+
+describe('labelled links', () => {
+  const music: FieldDefinition[] = [{ key: 'soundtrack', label: 'Soundtrack', type: 'links' }];
+
+  it('keeps http(s) links with a name', () => {
+    const result = parseFieldValues(music, {
+      soundtrack: [
+        { label: ' Tavern ', url: 'https://open.spotify.com/track/1' },
+        { url: 'http://example.com/a' },
+      ],
+    });
+    expect(result.soundtrack).toEqual([
+      { label: 'Tavern', url: 'https://open.spotify.com/track/1' },
+      { label: '', url: 'http://example.com/a' },
+    ]);
+  });
+
+  it('refuses other schemes, blanks and extra keys', () => {
+    expect(() =>
+      parseFieldValues(music, { soundtrack: [{ url: 'javascript:alert(1)' }] }),
+    ).toThrow();
+    expect(() => parseFieldValues(music, { soundtrack: [{ url: '' }] })).toThrow();
+    expect(() => parseFieldValues(music, { soundtrack: [{ url: 'ftp://x.example/a' }] })).toThrow();
+    expect(() =>
+      parseFieldValues(music, { soundtrack: [{ url: 'https://a.example', extra: 1 }] }),
+    ).toThrow();
+  });
+
+  it('describes links by name and address', () => {
+    expect(
+      describeFieldValue([
+        { label: 'Tavern', url: 'https://a.example' },
+        { label: '', url: 'https://b.example' },
+      ]),
+    ).toBe('Tavern (https://a.example); https://b.example');
+  });
+});

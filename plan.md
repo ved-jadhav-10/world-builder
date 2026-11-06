@@ -572,6 +572,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** API tests (handover, refusals, owner-only, join mail, trail order, leaving), the full suite, and Chrome with two real browser sessions (join via link, activity shown, handover, old owner refused, new owner sees the trail, no 4xx).
 - **Deferred:** several owners at once, inviting by name (looking up a user is a privacy question: exact email only would be the safe version), and a link's note in the join email.
 
+## Milestone 42 (Soundtrack links): done
+
+- **New field type `links`** ("Labelled links"): up to 40 entries of a name and an http(s) address (other schemes such as `javascript:` are refused), so it works for any music service. Read-only views show plain links that open in a new tab with `noopener`; editing shows the name and address with an open button.
+- **Built in:** Location (Soundtrack), Character (Theme music) and Session (Playlist) get a `soundtrack` field; migration 0028 adds it to existing worlds, skipping any that already have one. Custom types can use the field type.
+- **Verified:** shared and API tests (validation, unsafe schemes, the three types), full suite, Chrome (add, save, reload).
+- **Deferred:** links on manuscript scenes (scenes are not entries), embedding a player, and a "now playing" widget on the GM screen.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

@@ -14,6 +14,7 @@ export const FIELD_TYPES = [
   'abilities',
   'qa',
   'inventory',
+  'links',
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
@@ -30,6 +31,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   abilities: 'Abilities with charges',
   qa: 'Questions and answers',
   inventory: 'Wares for sale',
+  links: 'Labelled links',
 };
 
 export const fieldDefinitionSchema = z
