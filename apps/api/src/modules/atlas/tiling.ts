@@ -15,16 +15,53 @@ export interface TilingLog {
   error: (details: object, message: string) => void;
 }
 
+/** Longest side, in pixels, an SVG is drawn at when it becomes a map picture. */
+const SVG_TARGET_SIDE = 4096;
+
+/**
+ * Map generators export SVG. Tiles are cut from pictures, so an SVG is drawn onto a white PNG
+ * first; any other image is left alone. Returns the path of the file to use, which is a new one
+ * (the SVG is deleted) when it was converted.
+ */
+export async function rasterizeIfSvg(path: string): Promise<string> {
+  let meta: Metadata;
+  try {
+    meta = await sharp(path, { limitInputPixels: false }).metadata();
+  } catch {
+    return path; // Not something we can read; inspectImage reports it.
+  }
+  if (meta.format !== 'svg') return path;
+  if (!meta.width || !meta.height) throw badRequest('That SVG has no size we can draw it at.');
+  const density = Math.min(
+    600,
+    Math.max(1, (72 * SVG_TARGET_SIDE) / Math.max(meta.width, meta.height)),
+  );
+  const out = path + '.png';
+  try {
+    await sharp(path, { density, limitInputPixels: MAX_MAP_PIXELS })
+      .flatten({ background: '#ffffff' })
+      .png()
+      .toFile(out);
+  } catch {
+    await rm(out, { force: true });
+    throw badRequest('We could not draw that SVG.');
+  }
+  await rm(path, { force: true });
+  return out;
+}
+
 /** Reads an upload's real format and size from its bytes; the file name and type are not trusted. */
 export async function inspectImage(path: string): Promise<{ width: number; height: number }> {
   let meta: Metadata;
   try {
     meta = await sharp(path, { limitInputPixels: false }).metadata();
   } catch {
-    throw badRequest('That file is not an image we can read. Use a PNG, JPEG, WebP, TIFF or AVIF.');
+    throw badRequest(
+      'That file is not an image we can read. Use a PNG, JPEG, WebP, TIFF, AVIF or SVG.',
+    );
   }
   if (!meta.format || !SUPPORTED_FORMATS.has(meta.format) || !meta.width || !meta.height) {
-    throw badRequest('Use a PNG, JPEG, WebP, TIFF or AVIF image.');
+    throw badRequest('Use a PNG, JPEG, WebP, TIFF, AVIF or SVG image.');
   }
   // EXIF orientations 5 to 8 turn the picture on its side; tiles are cut from the upright image.
   const sideways = (meta.orientation ?? 1) >= 5;

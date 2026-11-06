@@ -476,6 +476,15 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Journeys on a date:** `journeyProgress` (shared, `journey.ts`) places the party between dated stops by the length of the line, and the map shows the part travelled solid, the rest faint, and a marker where they are. `reconcilePointDays` keeps stop dates with their stops when a line is reshaped (a stop added or removed shifts the ones after it).
 - **Deferred:** as-of for layers as a whole, a play button over the dates (see playback), journeys tied to an entry (the party), and the as-of manuscript.
 
+## Milestone 30 (Node maps, route finding and importers): done
+
+- **Blank canvas maps:** `POST /maps/blank` (editors) draws a plain picture (square 2048, wide 2560 by 1600 or tall 1600 by 2560, in a chosen colour) and sends it through the normal tiling, so pins and paths work on nothing. The upload dialog has "No picture: start from a blank canvas".
+- **Route finder** (`map-route.ts`, shared; the "Route" button on the map page): the shortest way along paths (and journeys) between two pins. A path joins a pin when one of its points is within 0.6% of the map's width of it, and two paths join where their points are that close. Lengths use the map's real pixel shape, so a tall map's vertical roads are not understated. The panel shows the roads taken, the distance and, with a scale, each way of travelling's time, and draws the route on the map.
+- **SVG:** an uploaded SVG (what Azgaar's and Watabou's generators export) is drawn onto a white PNG up to 4,096 px on its long side before tiling (works for replacing a map's picture too). A broken SVG is a 400.
+- **GeoJSON import** (`geojson-import.ts`, `POST /maps/:id/import/geojson`): points become pins (named from `name`, `title`, `label`, `burg` or `state`), lines paths, polygons regions; multi-part shapes split; everything scaled to fit with a margin, keeping proportions, north up unless turned off; up to 500 items, long lines thinned to 500 points; items arrive GM-only. Settings dialog has the file picker.
+- **Not verified against real files:** I had no real Azgaar or Watabou export to hand, so the GeoJSON path is tested against hand-made GeoJSON, not their actual output. Azgaar's own .map/JSON format is not read.
+- **Deferred:** hex and grid overlays, Azgaar's native format, snapping a path to a pin while drawing.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

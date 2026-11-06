@@ -12,6 +12,7 @@ import { useDeleteMap, useReplaceMapImage, useUpdateMap } from '@/api/atlas-quer
 import { errorMessage } from '@/api/client';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
+import { ImportGeoJson } from '@/components/atlas/import-geojson';
 import { EntityPicker } from '@/components/entity-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -151,7 +152,7 @@ export function MapSettingsDialog({
             <Input
               id="settings-image"
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/tiff,image/avif"
+              accept="image/png,image/jpeg,image/webp,image/tiff,image/avif,image/svg+xml,.svg"
               onChange={(event) => setNewImage(event.target.files?.[0] ?? null)}
             />
             <Button
@@ -164,6 +165,7 @@ export function MapSettingsDialog({
             </Button>
           </div>
         </section>
+        <ImportGeoJson map={map} />
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="settings-name">Name</Label>

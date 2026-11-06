@@ -49,6 +49,8 @@ export interface MapCanvasProps {
   measureLabel: string | null;
   /** The in-world day the map is read at, if any; journeys show how far along they are. */
   asOfDay: number | null;
+  /** A route to draw over the map (found between two pins); empty for none. */
+  highlight: MapPoint[];
   /** Bump to return to the whole-map view. */
   fitRequest: number;
   onSelect: (id: string | null) => void;
@@ -84,7 +86,7 @@ const MEASURE_COLOR = '#e11d48';
  */
 export function MapCanvas(props: MapCanvasProps) {
   const { worldId, map: atlasMap, features, typeById, tool, canEdit, selectedId, draft } = props;
-  const { hiddenLayers, measureLabel, asOfDay } = props;
+  const { hiddenLayers, measureLabel, asOfDay, highlight } = props;
   const { focus, fitRequest } = props;
   const { id: mapId, width, height, imageVersion } = atlasMap;
   const sceneKey = `${mapId}:${width}x${height}:${imageVersion}`;
@@ -276,6 +278,21 @@ export function MapCanvas(props: MapCanvasProps) {
       interactive: false,
     }).addTo(view.draftLayer);
   }, [sceneKey, draft, tool, measureLabel]);
+
+  // A found route, drawn over everything with a pale edge so it reads on any map.
+  const routeLayer = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    routeLayer.current?.remove();
+    routeLayer.current = null;
+    if (highlight.length < 2) return;
+    const line = highlight.map((p) => project(p, view.size));
+    routeLayer.current = L.layerGroup([
+      L.polyline(line, { color: '#fff', weight: 9, opacity: 0.9, interactive: false }),
+      L.polyline(line, { color: '#e11d48', weight: 5, interactive: false }),
+    ]).addTo(view.map);
+  }, [sceneKey, highlight]);
 
   // "Fit" returns to the whole-map view.
   useEffect(() => {

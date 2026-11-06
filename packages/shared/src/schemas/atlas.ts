@@ -105,6 +105,33 @@ export const mapCreateSchema = z.object({
 });
 export type MapCreateInput = z.input<typeof mapCreateSchema>;
 
+/** A map with no picture of its own: a plain canvas to lay out places and roads on. */
+export const BLANK_MAP_SHAPES = {
+  square: { width: 2048, height: 2048 },
+  wide: { width: 2560, height: 1600 },
+  tall: { width: 1600, height: 2560 },
+} as const;
+
+export const blankMapSchema = z.object({
+  name: mapNameSchema,
+  description: mapDescriptionSchema.default(''),
+  parentId: idSchema.nullable().default(null),
+  entityId: idSchema.nullable().default(null),
+  visibility: visibilitySchema.default('gm'),
+  shape: z.enum(['square', 'wide', 'tall']).default('square'),
+  /** The canvas colour. */
+  background: colorSchema.default('#efe6d2'),
+});
+export type BlankMapInput = z.input<typeof blankMapSchema>;
+
+/** A GeoJSON document of places, roads and areas to bring onto a map as items. */
+export const geojsonImportSchema = z.object({
+  geojson: z.unknown(),
+  /** Latitude grows upward, so by default north stays at the top. Turn off for pixel coordinates. */
+  flipY: z.boolean().default(true),
+});
+export type GeoJsonImportInput = z.input<typeof geojsonImportSchema>;
+
 export const mapUpdateSchema = z.object({
   name: mapNameSchema.optional(),
   description: mapDescriptionSchema.optional(),

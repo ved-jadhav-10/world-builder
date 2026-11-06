@@ -2,9 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AtlasMap,
   AtlasSearchResult,
+  BlankMapInput,
   EntityMapLink,
   FeatureCreateInput,
   FeatureUpdateInput,
+  GeoJsonImportInput,
   LayerCreateInput,
   LayerUpdateInput,
   MapFeature,
@@ -121,6 +123,33 @@ export function useUploadMap(worldId: string) {
       return apiUpload<AtlasMap>(`/worlds/${worldId}/maps`, form);
     },
     onSuccess: () => invalidateAtlas(qc, worldId),
+  });
+}
+
+/** A map with no picture: a plain canvas to lay out places and roads on. */
+export function useCreateBlankMap(worldId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BlankMapInput) =>
+      api<AtlasMap>('POST', `/worlds/${worldId}/maps/blank`, input),
+    onSuccess: () => invalidateAtlas(qc, worldId),
+  });
+}
+
+/** Brings places, roads and areas from a GeoJSON document onto a map. */
+export function useImportGeoJson(worldId: string, mapId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: GeoJsonImportInput) =>
+      api<{ created: number; skipped: number }>(
+        'POST',
+        `/worlds/${worldId}/maps/${mapId}/import/geojson`,
+        input,
+      ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: atlasKeys.features(worldId, mapId) });
+      invalidateAtlas(qc, worldId);
+    },
   });
 }
 

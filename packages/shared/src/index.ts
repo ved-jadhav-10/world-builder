@@ -54,3 +54,5 @@ export * from './schemas/diplomacy';
 export * from './diplomacy';
 export * from './reminders';
 export * from './journey';
+export * from './map-route';
+export * from './geojson-import';

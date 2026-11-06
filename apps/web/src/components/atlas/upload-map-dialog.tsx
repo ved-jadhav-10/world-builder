@@ -3,7 +3,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { MAX_MAP_BYTES, type AtlasMap, type Visibility } from '@atlas/shared';
-import { useMaps, useUploadMap } from '@/api/atlas-queries';
+import { useCreateBlankMap, useMaps, useUploadMap } from '@/api/atlas-queries';
 import { errorMessage } from '@/api/client';
 import { EntityIcon } from '@/components/entity-icon';
 import { EntityPicker, type PickedEntity } from '@/components/entity-picker';
@@ -13,7 +13,7 @@ import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { VisibilitySelect } from '@/lib/visibility';
 import { useWorld } from '@/lib/world-context';
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/tiff,image/avif';
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/tiff,image/avif,image/svg+xml,.svg';
 const MAX_MB = Math.round(MAX_MAP_BYTES / 1024 / 1024);
 
 /**
@@ -38,6 +38,11 @@ export function UploadMapDialog({
   const [visibility, setVisibility] = useState<Visibility>('gm');
   const { data: maps = [] } = useMaps(world.id);
   const upload = useUploadMap(world.id);
+  const createBlank = useCreateBlankMap(world.id);
+  const [blank, setBlank] = useState(false);
+  const [shape, setShape] = useState<'square' | 'wide' | 'tall'>('square');
+  const [background, setBackground] = useState('#efe6d2');
+  const busy = upload.isPending || createBlank.isPending;
 
   function reset() {
     setName('');
@@ -57,17 +62,19 @@ export function UploadMapDialog({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!file) return;
+    if (!file && !blank) return;
     const form = new FormData(event.currentTarget);
+    const common = {
+      name,
+      description: String(form.get('description') ?? ''),
+      parentId: String(form.get('parentId') ?? '') || null,
+      entityId: entity?.id ?? null,
+      visibility,
+    };
     try {
-      const map = await upload.mutateAsync({
-        image: file,
-        name,
-        description: String(form.get('description') ?? ''),
-        parentId: String(form.get('parentId') ?? '') || null,
-        entityId: entity?.id ?? null,
-        visibility,
-      });
+      const map = blank
+        ? await createBlank.mutateAsync({ ...common, shape, background })
+        : await upload.mutateAsync({ ...common, image: file! });
       setOpen(false);
       reset();
       if (onCreated) onCreated(map);
@@ -83,7 +90,7 @@ export function UploadMapDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (upload.isPending) return;
+        if (busy) return;
         setOpen(next);
         if (!next) reset();
       }}
@@ -91,10 +98,44 @@ export function UploadMapDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         title="Upload a map"
-        description={`PNG, JPEG, WebP, TIFF or AVIF, up to ${MAX_MB} MB. Large maps take a few minutes to prepare for zooming.`}
+        description={`PNG, JPEG, WebP, TIFF, AVIF or SVG (as exported by map generators), up to ${MAX_MB} MB. Large maps take a few minutes to prepare for zooming.`}
       >
         <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-1.5">
+          <label className="flex items-center gap-1.5 text-sm">
+            <input
+              type="checkbox"
+              checked={blank}
+              onChange={(event) => setBlank(event.target.checked)}
+            />
+            No picture: start from a blank canvas (for node maps and pointcrawls)
+          </label>
+          {blank ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="map-shape">Shape</Label>
+                <NativeSelect
+                  id="map-shape"
+                  value={shape}
+                  onChange={(event) => setShape(event.target.value as typeof shape)}
+                >
+                  <option value="square">Square</option>
+                  <option value="wide">Wide</option>
+                  <option value="tall">Tall</option>
+                </NativeSelect>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="map-background">Colour</Label>
+                <input
+                  id="map-background"
+                  type="color"
+                  value={background}
+                  onChange={(event) => setBackground(event.target.value)}
+                  className="h-9 w-full cursor-pointer rounded-md border bg-transparent p-1"
+                />
+              </div>
+            </div>
+          ) : null}
+          <div className={blank ? 'hidden' : 'space-y-1.5'}>
             <Label htmlFor="map-image">Image</Label>
             <label
               htmlFor="map-image"
@@ -114,7 +155,7 @@ export function UploadMapDialog({
               id="map-image"
               type="file"
               accept={ACCEPT}
-              required
+              required={!blank}
               className="sr-only"
               onChange={(event) => pickFile(event.target.files?.[0] ?? null)}
             />
@@ -187,8 +228,8 @@ export function UploadMapDialog({
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={!file || !name.trim() || upload.isPending}>
-              {upload.isPending ? 'Uploading…' : 'Upload'}
+            <Button type="submit" disabled={(!file && !blank) || !name.trim() || busy}>
+              {busy ? 'Working…' : blank ? 'Create' : 'Upload'}
             </Button>
           </DialogFooter>
         </form>

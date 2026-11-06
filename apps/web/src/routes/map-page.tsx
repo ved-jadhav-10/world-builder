@@ -9,6 +9,7 @@ import {
   MousePointer2,
   MoveUpRight,
   Pentagon,
+  Waypoints,
   RotateCcw,
   Route,
   Ruler,
@@ -49,6 +50,7 @@ import { MapCanvas, type FocusRequest, type MapTool } from '@/components/atlas/m
 import { MapInfoPanel } from '@/components/atlas/map-info-panel';
 import { MapSettingsDialog } from '@/components/atlas/map-settings-dialog';
 import { MeasurePanel } from '@/components/atlas/measure-panel';
+import { RoutePanel } from '@/components/atlas/route-panel';
 import { DateField } from '@/components/date-field';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -129,6 +131,7 @@ function dedupe(points: MapPoint[]): MapPoint[] {
 }
 
 const EMPTY_LAYERS: MapLayer[] = [];
+const EMPTY_POINTS: MapPoint[] = [];
 
 /** Which layers this viewer switched on or off, remembered per map in this browser. */
 function readLayerChoices(mapId: string): Record<string, boolean> {
@@ -182,6 +185,8 @@ function MapWorkspace({
   const { world, typeById, canEdit: canEditWorld, base } = useWorld();
   // Reading the map at a date is a view, not a place to draw.
   const [asOf, setAsOf] = useState<number | null>(null);
+  const [routing, setRouting] = useState(false);
+  const [routeLine, setRouteLine] = useState<MapPoint[]>([]);
   const canEdit = canEditWorld && asOf === null;
   const navigate = useNavigate();
   const featuresQuery = useMapFeatures(world.id, map.id, true, asOf);
@@ -359,6 +364,21 @@ function MapWorkspace({
               <Ruler />
               <span className="hidden sm:inline">Measure</span>
             </Button>
+            <Button
+              variant={routing ? 'default' : 'ghost'}
+              size="sm"
+              aria-pressed={routing}
+              title="Find a route between two pins"
+              aria-label="Route"
+              onClick={() => {
+                setRouting((on) => !on);
+                setTool('select');
+                setDraft([]);
+              }}
+            >
+              <Waypoints />
+              <span className="hidden sm:inline">Route</span>
+            </Button>
             <MapAsOf value={asOf} onChange={setAsOf} />
             <LayersMenu
               mapId={map.id}
@@ -401,6 +421,7 @@ function MapWorkspace({
             measureLabel={measureLabel}
             fitRequest={fitRequest}
             asOfDay={asOf}
+            highlight={routing ? routeLine : EMPTY_POINTS}
             onSelect={setPicked}
             onPlace={(kind, point) =>
               kind === 'pin' ? void create('pin', [point]) : setLabelAt(point)
@@ -459,6 +480,8 @@ function MapWorkspace({
             onClear={() => setDraft([])}
             onSaveAsPath={() => void create('path', dedupe(draft))}
           />
+        ) : routing ? (
+          <RoutePanel map={map} features={features} onRoute={setRouteLine} />
         ) : selected ? (
           <FeaturePanel
             key={selected.id}

@@ -464,3 +464,97 @@ describe('journeys, annotations and time-aware features', () => {
     expect(bad.statusCode).toBe(400);
   });
 });
+
+describe('node maps and importers', () => {
+  const svg = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#264"/><circle cx="50" cy="50" r="20" fill="#fc0"/></svg>',
+  );
+
+  it('makes a blank canvas map in a chosen shape and colour, ready to tile', async () => {
+    const { api, w } = await setup();
+    const res = await api.post(`${w}/maps/blank`, { name: 'Pointcrawl', shape: 'wide' });
+    expect(res.statusCode, res.body).toBe(201);
+    const created = res.json<AtlasMap>();
+    await tilingIdle();
+    const map = (await api.get(`${w}/maps/${created.id}`)).json<AtlasMap>();
+    expect(map).toMatchObject({ name: 'Pointcrawl', width: 2560, height: 1600, status: 'ready' });
+    const tile = await api.get(`${w}/maps/${map.id}/tiles/0/0/0`);
+    expect(tile.statusCode).toBe(200);
+    expect(
+      (await api.post(`${w}/maps/blank`, { name: 'Bad', background: 'not-a-colour' })).statusCode,
+    ).toBe(400);
+  });
+
+  it('draws an uploaded SVG into a picture, for map generators that export SVG', async () => {
+    const { w, post, api } = await setup();
+    const res = await post(`${w}/maps`, { name: 'Generated' }, svg);
+    expect(res.statusCode, res.body).toBe(201);
+    await tilingIdle();
+    const map = (await api.get(`${w}/maps/${res.json<AtlasMap>().id}`)).json<AtlasMap>();
+    expect(map.status).toBe('ready');
+    // A 2:1 drawing keeps its shape when drawn large.
+    expect(Math.abs(map.width - map.height * 2)).toBeLessThanOrEqual(2);
+    expect(map.width).toBeGreaterThan(1000);
+    const bad = await post(`${w}/maps`, { name: 'Broken' }, Buffer.from('<svg>nope'));
+    expect(bad.statusCode).toBe(400);
+  });
+
+  it('brings places, roads and areas in from GeoJSON, hidden until revealed', async () => {
+    const { api, w, makeMap } = await setup();
+    const map = await makeMap('Imported', 800, 800);
+    const geojson = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { name: 'Havenmouth' },
+          geometry: { type: 'Point', coordinates: [10, 10] },
+        },
+        {
+          type: 'Feature',
+          properties: { name: 'Vael' },
+          geometry: { type: 'Point', coordinates: [20, 30] },
+        },
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [10, 10],
+              [20, 30],
+            ],
+          },
+        },
+        { type: 'Feature', properties: null, geometry: null },
+      ],
+    };
+    const res = await api.post(`${w}/maps/${map.id}/import/geojson`, { geojson });
+    expect(res.statusCode, res.body).toBe(201);
+    expect(res.json()).toEqual({ created: 3, skipped: 1 });
+    const features = (await api.get(`${w}/maps/${map.id}/features`)).json<MapFeature[]>();
+    expect(features.map((f) => [f.kind, f.label, f.visibility]).sort()).toEqual([
+      ['path', '', 'gm'],
+      ['pin', 'Havenmouth', 'gm'],
+      ['pin', 'Vael', 'gm'],
+    ]);
+    const empty = await api.post(`${w}/maps/${map.id}/import/geojson`, {
+      geojson: { type: 'FeatureCollection', features: [] },
+    });
+    expect(empty.statusCode).toBe(400);
+  });
+
+  it('keeps importing and blank maps to editors', async () => {
+    const { w, player, makeMap } = await setup();
+    const map = await makeMap('Closed');
+    expect((await player.api.post(`${w}/maps/blank`, { name: 'x' })).statusCode).toBe(403);
+    const geojson = {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Point', coordinates: [1, 1] },
+    };
+    expect(
+      (await player.api.post(`${w}/maps/${map.id}/import/geojson`, { geojson })).statusCode,
+    ).toBe(403);
+  });
+});

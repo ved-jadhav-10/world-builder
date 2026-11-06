@@ -3,10 +3,12 @@ import multipart from '@fastify/multipart';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   atlasSearchQuerySchema,
+  blankMapSchema,
   featureCreateSchema,
   featureListQuerySchema,
   featureParamsSchema,
   featureUpdateSchema,
+  geojsonImportSchema,
   layerCreateSchema,
   layerParamsSchema,
   layerUpdateSchema,
@@ -24,11 +26,13 @@ import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth
 import {
   createFeature,
   createLayer,
+  createBlankMap,
   createMap,
   deleteFeature,
   deleteLayer,
   deleteMap,
   getMap,
+  importGeoJson,
   listEntityMapLinks,
   listFeatures,
   listLayers,
@@ -42,7 +46,7 @@ import {
   updateLayer,
   updateMap,
 } from './service';
-import { inspectImage } from './tiling';
+import { inspectImage, rasterizeIfSvg } from './tiling';
 
 // Tiles never change for a given map, but they are private: only the browser may keep them.
 const TILE_CACHE = 'private, max-age=31536000, immutable';
@@ -62,6 +66,7 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request, reply) => {
       const upload = await receiveUpload(request, MAX_MAP_BYTES);
       try {
+        upload.imagePath = await rasterizeIfSvg(upload.imagePath);
         const input = mapCreateSchema.parse(upload.fields);
         const size = await inspectImage(upload.imagePath);
         const map = await createMap(
@@ -76,6 +81,33 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
         // After a successful create the file has moved, so this only cleans up failures.
         await rm(upload.imagePath, { force: true });
       }
+    },
+  );
+
+  // A plain canvas for node maps and pointcrawls: the picture is drawn here, not uploaded.
+  app.post(
+    '/maps/blank',
+    { onRequest: requireRole('editor'), schema: { body: blankMapSchema } },
+    async (request, reply) => {
+      const map = await createBlankMap(db, currentWorldId(request), request.body, request.log);
+      return reply.status(201).send(map);
+    },
+  );
+
+  app.post(
+    '/maps/:id/import/geojson',
+    {
+      onRequest: requireRole('editor'),
+      schema: { params: mapItemParamsSchema, body: geojsonImportSchema },
+    },
+    async (request, reply) => {
+      const result = await importGeoJson(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        request.body,
+      );
+      return reply.status(201).send(result);
     },
   );
 
@@ -111,6 +143,7 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const upload = await receiveUpload(request, MAX_MAP_BYTES);
       try {
+        upload.imagePath = await rasterizeIfSvg(upload.imagePath);
         const size = await inspectImage(upload.imagePath);
         return await replaceMapImage(
           db,

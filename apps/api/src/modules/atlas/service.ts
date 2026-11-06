@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   and,
   asc,
@@ -16,11 +17,15 @@ import {
 } from 'drizzle-orm';
 import type { z } from 'zod';
 import {
+  BLANK_MAP_SHAPES,
+  geojsonToItems,
   mapMaxZoom,
   pointCountProblem,
   reconcilePointDays,
   type Audience,
   type AtlasMap,
+  type blankMapSchema,
+  type geojsonImportSchema,
   type AtlasSearchResult,
   type EntityMapLink,
   type featureCreateSchema,
@@ -37,6 +42,8 @@ import {
 import type { DbOrTx } from '../../db/client';
 import { entities, mapFeatures, mapLayers, maps } from '../../db/schema';
 import { badRequest, conflict, notFound } from '../../errors';
+import sharp from '../../lib/sharp';
+import { uploadsDir } from '../../lib/storage';
 import { visibleTo } from '../../lib/visibility';
 import { getEntityRow } from '../entities/service';
 import { mapDir, originalPath, removeMapFiles, thumbnailPath, tilePath } from './files';
@@ -223,6 +230,56 @@ export async function createMap(
   const created = await getMap(db, worldId, id);
   enqueueTiling(id, log);
   return created;
+}
+
+/** Draws a plain canvas and makes a map of it, so places and roads can be laid out on nothing. */
+export async function createBlankMap(
+  db: DbOrTx,
+  worldId: string,
+  input: z.output<typeof blankMapSchema>,
+  log: TilingLog,
+): Promise<AtlasMap> {
+  const { width, height } = BLANK_MAP_SHAPES[input.shape];
+  const directory = uploadsDir();
+  await mkdir(directory, { recursive: true });
+  const path = join(directory, randomUUID());
+  await sharp({ create: { width, height, channels: 3, background: input.background } })
+    .png()
+    .toFile(path);
+  try {
+    return await createMap(db, worldId, input, { path, width, height }, log);
+  } finally {
+    // After a successful create the file has moved, so this only cleans up failures.
+    await rm(path, { force: true });
+  }
+}
+
+/** Brings places, roads and areas from a GeoJSON document onto a map, hidden until revealed. */
+export async function importGeoJson(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  input: z.output<typeof geojsonImportSchema>,
+): Promise<{ created: number; skipped: number }> {
+  const map = await getMapRow(db, worldId, mapId);
+  const { items, skipped } = geojsonToItems(
+    input.geojson,
+    { width: map.width, height: map.height },
+    { flipY: input.flipY },
+  );
+  if (items.length === 0) {
+    throw badRequest('We found no places, roads or areas in that file.');
+  }
+  await db.insert(mapFeatures).values(
+    items.map((item) => ({
+      worldId,
+      mapId,
+      kind: item.kind,
+      points: item.points,
+      label: item.label,
+    })),
+  );
+  return { created: items.length, skipped };
 }
 
 export async function updateMap(
