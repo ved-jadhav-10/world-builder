@@ -496,6 +496,14 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Limits:** an item counts as revealed when any of its points is inside (a long road partly in view is shown whole); there is no automatic reveal by moving a token; a player who zoomed before a reveal sees the new area after reloading the tiles.
 - **Deferred:** brush-style uncovering, reveals tied to a session, soft fog edges.
 
+## Milestone 32 (Playback): done
+
+- **Play bar** (`components/playback-bar.tsx`, `lib/use-playback.ts`): play and pause, a slider over the days, the date, and 0.5x to 4x speed. Playing the whole span takes about 24 seconds at 1x; it stops at the end and plays again from the start. Dragging the slider pauses.
+- **Timeline:** the bar moves the marker (and clears it with the X); an "On this date" panel lists what the marker day falls inside, with links that open entries as of that date.
+- **Map:** "As of…" now offers "Play through time" when anything on the map is dated. While reading at a date the map shows items that hold then, journeys part-travelled, and (switchable) places and people only within their own start and end dates, so a city's pin appears when it is founded. This filtering is done in the browser over the full feature list so playback is smooth; the server's `?asOf=` filter from M29 stays for other callers.
+- **Not verified in a browser:** the animation loop is covered by typecheck and lint only.
+- **Deferred:** looping, an event log that scrolls with the playback, and following a journey's position with the camera.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

@@ -56,7 +56,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Map art importers**: SVG exports are drawn into a map picture, and a GeoJSON file brings places, roads and areas in as items (M30). Still to do: hex and grid overlays and a vector map editor [v3], and Azgaar's own .map format.
 - [x] **Calendars:** several calendars per world, timeline tracks by tag as well as by type, and **calendar reminders** (a world "today" and a coming-up list with yearly anniversaries) (M28). Still to do: reminders as notifications, and showing a date in the other calendars on entry pages.
 - [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.
-- [ ] **Timeline playback** and **chronicles playback** (animating events in place on the map) [v2].
+- [x] **Timeline playback** (a play bar that moves the marker, with an "on this date" list) and **chronicles playback** (the map's as-of date plays through time: dated items, journeys and dated places appear, move and go where they happen) (M32).
 - [x] **Continuity checker:** warns when a dead character reappears, a narrator is outside their life, a parent is younger than a child, a link starts outside someone's life, an item has two owners or a narrator is in two places at once (M12). Still to do: travel feasibility from map distances, and age against species lifespan [v2].
 - [ ] **Universal VTT export**, a **token maker** [v2].
 

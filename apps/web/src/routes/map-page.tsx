@@ -10,6 +10,7 @@ import {
   MousePointer2,
   MoveUpRight,
   Pentagon,
+  Play,
   Waypoints,
   RotateCcw,
   Route,
@@ -27,10 +28,13 @@ import {
   FEATURE_POINT_LIMITS,
   FEATURE_KIND_LABELS,
   formatDistance,
+  isActiveAt,
   pathLength,
+  pointAtDay,
   type AtlasMap,
   type FeatureKind,
   type FeatureUpdateInput,
+  type MapFeature,
   type MapLayer,
   type MapPoint,
 } from '@atlas/shared';
@@ -45,6 +49,7 @@ import {
   useUpdateFeature,
 } from '@/api/atlas-queries';
 import { errorMessage } from '@/api/client';
+import { useTimeline } from '@/api/timeline-queries';
 import { FeaturePanel } from '@/components/atlas/feature-panel';
 import { LayersMenu } from '@/components/atlas/layers-menu';
 import { MapCanvas, type FocusRequest, type MapTool } from '@/components/atlas/map-canvas';
@@ -53,6 +58,7 @@ import { MapSettingsDialog } from '@/components/atlas/map-settings-dialog';
 import { MeasurePanel } from '@/components/atlas/measure-panel';
 import { RoutePanel } from '@/components/atlas/route-panel';
 import { DateField } from '@/components/date-field';
+import { PlaybackBar } from '@/components/playback-bar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -79,9 +85,16 @@ const TOOLS: { tool: MapTool; label: string; icon: LucideIcon }[] = [
 function MapAsOf({
   value,
   onChange,
+  playFrom,
+  byEntityDates,
+  onByEntityDates,
 }: {
   value: number | null;
   onChange: (day: number | null) => void;
+  /** The first day worth playing from, or null when nothing on the map is dated. */
+  playFrom: number | null;
+  byEntityDates: boolean;
+  onByEntityDates: (on: boolean) => void;
 }) {
   const dates = useDates();
   return (
@@ -104,6 +117,25 @@ function MapAsOf({
           end; journeys show how far along they are.
         </p>
         <DateField label="Date" value={value} onChange={onChange} />
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={byEntityDates}
+            onChange={(event) => onByEntityDates(event.target.checked)}
+          />
+          <span>
+            Show places and people only within their own dates
+            <span className="block text-xs text-muted-foreground">
+              A pin for a city appears when it is founded and goes when it falls.
+            </span>
+          </span>
+        </label>
+        {value === null && playFrom !== null ? (
+          <Button type="button" size="sm" onClick={() => onChange(playFrom)}>
+            <Play /> Play through time
+          </Button>
+        ) : null}
         {value !== null ? (
           <Button type="button" size="sm" variant="outline" onClick={() => onChange(null)}>
             <X /> Back to now
@@ -135,6 +167,7 @@ function dedupe(points: MapPoint[]): MapPoint[] {
 
 const EMPTY_LAYERS: MapLayer[] = [];
 const EMPTY_POINTS: MapPoint[] = [];
+const EMPTY_FEATURES: MapFeature[] = [];
 
 /** Which layers this viewer switched on or off, remembered per map in this browser. */
 function readLayerChoices(mapId: string): Record<string, boolean> {
@@ -192,8 +225,41 @@ function MapWorkspace({
   const [routeLine, setRouteLine] = useState<MapPoint[]>([]);
   const canEdit = canEditWorld && asOf === null;
   const navigate = useNavigate();
-  const featuresQuery = useMapFeatures(world.id, map.id, true, asOf);
-  const features = featuresQuery.data ?? [];
+  const featuresQuery = useMapFeatures(world.id, map.id);
+  const { data: timeline } = useTimeline(world.id);
+  const [byEntityDates, setByEntityDates] = useState(true);
+  // Read at a date, the map drops what does not hold then, and (optionally) places and people
+  // outside their own dates. Done here, not by asking again, so playback is smooth.
+  const entityDays = useMemo(
+    () => new Map((timeline?.entities ?? []).map((e) => [e.id, e])),
+    [timeline],
+  );
+  const allFeatures = featuresQuery.data ?? EMPTY_FEATURES;
+  const features = useMemo(() => {
+    if (asOf === null) return allFeatures;
+    const point = pointAtDay(asOf);
+    return allFeatures.filter((f) => {
+      if (!isActiveAt(f.validFromDay, f.validToDay, point)) return false;
+      const dated = byEntityDates && f.entityId ? entityDays.get(f.entityId) : undefined;
+      return !dated || isActiveAt(dated.startDay, dated.endDay, point);
+    });
+  }, [allFeatures, asOf, byEntityDates, entityDays]);
+  // The stretch of days anything on this map is dated across, for playback.
+  const range = useMemo(() => {
+    const days: number[] = [];
+    for (const f of allFeatures) {
+      for (const d of [f.validFromDay, f.validToDay, ...(f.pointDays ?? [])]) {
+        if (d !== null && d !== undefined) days.push(d);
+      }
+      const dated = byEntityDates && f.entityId ? entityDays.get(f.entityId) : undefined;
+      if (dated?.startDay != null) days.push(dated.startDay);
+      if (dated?.endDay != null) days.push(dated.endDay);
+    }
+    if (days.length < 2) return null;
+    const from = Math.min(...days);
+    const to = Math.max(...days);
+    return from === to ? null : { from, to };
+  }, [allFeatures, byEntityDates, entityDays]);
   const layers = useMapLayers(world.id, map.id).data ?? EMPTY_LAYERS;
   const [layerChoices, setLayerChoices] = useState(() => readLayerChoices(map.id));
   const hiddenLayers = useMemo(
@@ -382,7 +448,13 @@ function MapWorkspace({
               <Waypoints />
               <span className="hidden sm:inline">Route</span>
             </Button>
-            <MapAsOf value={asOf} onChange={setAsOf} />
+            <MapAsOf
+              value={asOf}
+              onChange={setAsOf}
+              playFrom={range?.from ?? null}
+              byEntityDates={byEntityDates}
+              onByEntityDates={setByEntityDates}
+            />
             <LayersMenu
               mapId={map.id}
               layers={layers}
@@ -439,6 +511,18 @@ function MapWorkspace({
             }
             onOpenMap={(id) => void navigate(`${base}/atlas/${id}`)}
           />
+
+          {asOf !== null && range ? (
+            <div className="absolute inset-x-3 top-3 z-10">
+              <PlaybackBar
+                from={range.from}
+                to={range.to}
+                value={asOf}
+                onChange={setAsOf}
+                onClose={() => setAsOf(null)}
+              />
+            </div>
+          ) : null}
 
           {hint ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-3">

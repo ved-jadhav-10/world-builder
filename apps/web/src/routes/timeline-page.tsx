@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { dayToDate, formatYear } from '@atlas/shared';
 import { useTags } from '@/api/queries';
 import { useTimeline } from '@/api/timeline-queries';
+import { PlaybackBar } from '@/components/playback-bar';
 import { UpcomingPanel } from '@/components/upcoming-panel';
 import { TimelineChart, type TimelineItem, type TimelineLane } from '@/components/timeline-chart';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,52 @@ function TimelineList({
   );
 }
 
+/** What is going on at the marker: everything whose dates take in that day. */
+function OnThisDate({
+  day,
+  items,
+  details,
+  withMarker,
+}: {
+  day: number;
+  items: TimelineItem[];
+  details: Map<string, DetailInfo>;
+  withMarker: (path: string) => string;
+}) {
+  const dates = useDates();
+  const shown = items.slice(0, 12);
+  return (
+    <section aria-label="On this date" className="rounded-xl border bg-card p-4">
+      <h2 className="text-sm font-semibold">
+        On {dates.date(day)}
+        <span className="ml-2 font-normal text-muted-foreground">
+          {items.length === 0 ? 'nothing is dated here' : `${items.length} going on`}
+        </span>
+      </h2>
+      {shown.length > 0 ? (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {shown.map((item) => (
+            <li key={item.key}>
+              <Link
+                to={withMarker(details.get(item.key)?.path ?? '')}
+                className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] hover:bg-muted"
+              >
+                <span className="size-2 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.name}
+              </Link>
+            </li>
+          ))}
+          {items.length > shown.length ? (
+            <li className="px-1 py-1 text-[13px] text-muted-foreground">
+              and {items.length - shown.length} more
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export function TimelinePage() {
   const { world, base, canEdit } = useWorld();
   const dates = useDates();
@@ -292,6 +339,22 @@ export function TimelinePage() {
       </div>
 
       <UpcomingPanel />
+
+      <PlaybackBar
+        from={Math.min(...model.items.map((i) => i.from))}
+        to={Math.max(...model.items.map((i) => i.to))}
+        value={marker}
+        onChange={setMarker}
+        onClose={marker === null ? undefined : () => setMarker(null)}
+      />
+      {marker !== null ? (
+        <OnThisDate
+          day={marker}
+          items={items.filter((i) => i.from <= marker && marker <= i.to)}
+          details={model.details}
+          withMarker={withMarker}
+        />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Show">
         {model.lanes.map((lane) => {
