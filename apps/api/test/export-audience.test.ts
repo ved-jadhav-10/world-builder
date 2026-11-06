@@ -60,11 +60,7 @@ async function build() {
   return { ctx, open, forPlayers, forReaders, secret };
 }
 
-const exportFor = async (
-  api: { get: (url: string) => Promise<{ statusCode: number; json: <T>() => T }> },
-  w: string,
-  audience?: string,
-) => {
+const exportFor = async (api: ApiClient, w: string, audience?: string) => {
   const res = await api.get(`${w}/export${audience ? `?audience=${audience}` : ''}`);
   expect(res.statusCode).toBe(200);
   return res.json<WorldExport>();
