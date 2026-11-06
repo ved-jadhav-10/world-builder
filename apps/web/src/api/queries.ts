@@ -9,6 +9,7 @@ import type {
   BulkEntityInput,
   BulkEntityResult,
   Entity,
+  EntityIndexItem,
   EntityCreateInput,
   EntityRelationship,
   EntitySort,
@@ -147,6 +148,13 @@ export function useEntityList(
     placeholderData: keepPreviousData,
   });
 }
+
+/** Every visible entry, name only, for the content tree. */
+export const useEntityIndex = (worldId: string) =>
+  useQuery({
+    queryKey: [...keys.entities(worldId), 'index'],
+    queryFn: () => api<EntityIndexItem[]>('GET', `/worlds/${worldId}/entities/index`),
+  });
 
 export const useEntity = (worldId: string, id: string) =>
   useQuery({

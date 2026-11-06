@@ -17,6 +17,7 @@ import {
   bulkUpdateEntities,
   createEntity,
   getEntity,
+  listEntityIndex,
   listEntities,
   listTrash,
   purgeEntity,
@@ -29,6 +30,11 @@ import { afterEdit, beforeEdit } from '../revisions/service';
 export const entityRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/entities', { schema: { querystring: entityListQuerySchema } }, async (request) =>
     listEntities(db, currentWorldId(request), request.query, currentAudience(request)),
+  );
+
+  // Every visible entry in one go, names only. Before the :id route so "index" is not an id.
+  app.get('/entities/index', async (request) =>
+    listEntityIndex(db, currentWorldId(request), currentAudience(request)),
   );
 
   app.post(

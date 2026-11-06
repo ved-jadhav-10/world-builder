@@ -524,6 +524,14 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Species trait inheritance:** an entry linked "of species" or "of culture" shows a read-only "From their species and culture" panel with the other end's filled-in details and abilities, so changing the species changes it. It is display, not copying: the character's own fields are not changed.
 - **Deferred:** a turnaround sheet and stat blocks (v2); spending a charge from a play screen rather than the entry page.
 
+## Milestone 36 (Content tree, pop-outs and shortcuts): done
+
+- **Content tree** (`/tree`, in everyone's sidebar): every entry the viewer may see in one outline, grouped by type or by tag, with a name filter, collapsible groups and counts. Backed by `GET /entities/index` (id, type, name and tag ids only, up to 20,000, filtered by audience like the list).
+- **Pop-out windows:** an entry's "open in its own window" button (on its page and in the tree) opens `/w/<world>/popout/e/<id>` in a small window with no sidebar, for keeping beside the manuscript or another page. It is the ordinary entry page, so it edits and saves normally.
+- **Keyboard shortcuts** (`lib/shortcuts.ts`, `use-shortcuts.ts`): "g" then a letter goes to a page (c Codex, o content tree, a Atlas, t timeline, g graph, d diplomacy, q quests, l gallery; GM only: m manuscript, w writing goals, p plot, r arc tracker, k to-do; editors: s settings), "/" searches and "?" lists them. Nothing fires while typing in a field, the editor or an open dialog, or with Ctrl, Alt or Meta held.
+- **Not verified in a browser** (the pure routing of keys is unit-tested; the listener and pop-out window are not).
+- **Deferred:** pop-outs for the manuscript scene and map, a place hierarchy in the tree (by "located in"), and rebinding keys.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.

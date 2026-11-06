@@ -62,6 +62,9 @@ export const router = createBrowserRouter([
               },
               { path: 'continuity', lazy: () => import('@/routes/continuity-page') },
               { path: 'diplomacy', lazy: () => import('@/routes/diplomacy-page') },
+              { path: 'tree', lazy: () => import('@/routes/content-tree-page') },
+              // The same entry page, shown alone in a small window (see lib/popout.ts).
+              { path: 'popout/e/:entityId', lazy: () => import('@/routes/entity-page') },
               { path: 'tokens', lazy: () => import('@/routes/tokens-page') },
               { path: 'arcs', lazy: () => import('@/routes/arc-page') },
               { path: 'word-check', lazy: () => import('@/routes/word-check-page') },

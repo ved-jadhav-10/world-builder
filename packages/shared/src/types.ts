@@ -60,6 +60,14 @@ export interface EntitySummary {
   updatedAt: string;
 }
 
+/** One line per entry, for the content tree: no text, just where it belongs. */
+export interface EntityIndexItem {
+  id: string;
+  typeId: string;
+  name: string;
+  tagIds: string[];
+}
+
 export interface Entity extends EntitySummary {
   fields: Record<string, unknown>;
   body: RichTextDoc | null;

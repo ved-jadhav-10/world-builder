@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ClipboardList,
   ListChecks,
+  ListTree,
   MessageSquare,
   Dices,
   FileImage,
@@ -41,10 +42,13 @@ import { useCalendar } from '@/api/timeline-queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
 import { SearchPalette } from '@/components/search-palette';
+import { ShortcutsDialog } from '@/components/shortcuts-dialog';
 import { Button } from '@/components/ui/button';
 import { EmptyState, PageSpinner } from '@/components/ui/misc';
 import { UserMenu } from '@/components/user-menu';
 import { PreviewBanner, ViewAsSwitcher } from '@/components/view-as-switcher';
+import { isPopoutPath } from '@/lib/popout';
+import { useWorldShortcuts } from '@/lib/use-shortcuts';
 import { cn } from '@/lib/utils';
 import { useViewAs } from '@/lib/view-as';
 import { buildWorldContext, WorldContext, type WorldContextValue } from '@/lib/world-context';
@@ -120,6 +124,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
       <nav className="space-y-0.5">
         <NavLink to={base} end className={navItem}>
           <Library /> Codex
+        </NavLink>
+        <NavLink to={`${base}/tree`} className={navItem}>
+          <ListTree /> Content tree
         </NavLink>
         <NavLink to={`${base}/atlas`} className={navItem}>
           <MapIcon /> Atlas
@@ -232,6 +239,23 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
   );
 }
 
+/** Registers the keyboard shortcuts; it renders nothing. */
+function Shortcuts({
+  ctx,
+  onSearch,
+  onHelp,
+}: {
+  ctx: WorldContextValue;
+  onSearch: () => void;
+  onHelp: () => void;
+}) {
+  useWorldShortcuts(
+    { base: ctx.base, isGm: ctx.audience === 'gm', canEdit: ctx.canEdit },
+    { onSearch, onHelp },
+  );
+  return null;
+}
+
 export function WorldLayout() {
   const { slug = '' } = useParams();
   const worldQuery = useWorldBySlug(slug);
@@ -239,6 +263,7 @@ export function WorldLayout() {
   const calendarQuery = useCalendar(worldQuery.data?.id);
   const viewAs = useViewAs();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const { pathname } = useLocation();
   // The mobile menu remembers the page it was opened on, so navigating closes it.
   const [navOpenOn, setNavOpenOn] = useState<string | null>(null);
@@ -266,6 +291,17 @@ export function WorldLayout() {
     );
   }
   if (!ctx) return <PageSpinner />;
+  // A pop-out is one entry in a small window: no sidebar, but the same world behind it.
+  if (isPopoutPath(pathname, ctx.base)) {
+    return (
+      <WorldContext.Provider value={ctx}>
+        <main className="mx-auto max-w-3xl px-4 py-5">
+          <Outlet />
+        </main>
+        {ctx.previewing && viewAs ? <PreviewBanner audience={viewAs} /> : null}
+      </WorldContext.Provider>
+    );
+  }
   const isMapView = pathname.startsWith(`${ctx.base}/atlas/`);
 
   return (
@@ -325,6 +361,12 @@ export function WorldLayout() {
         </div>
       </div>
       <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <ShortcutsDialog
+        open={helpOpen}
+        onOpenChange={setHelpOpen}
+        ctx={{ isGm: ctx.audience === 'gm', canEdit: ctx.canEdit }}
+      />
+      <Shortcuts ctx={ctx} onSearch={() => setSearchOpen(true)} onHelp={() => setHelpOpen(true)} />
       {ctx.audience === 'gm' && ctx.canEdit ? <SprintRunner /> : null}
       {ctx.audience === 'player' && !ctx.previewing ? <HandoutAlert /> : null}
       {ctx.previewing && viewAs ? <PreviewBanner audience={viewAs} /> : null}

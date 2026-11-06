@@ -86,3 +86,25 @@ describe('series codex', () => {
     expect((await names(`?bookId=${two.id}`)).sort()).toEqual(['Pair', 'Solo']);
   });
 });
+
+describe('entry index', () => {
+  it('lists every visible entry with its tags, and nothing hidden from players', async () => {
+    const { api, w, entry, ...ctx } = await setup();
+    const open = await entry('Open', { visibility: 'player' });
+    await entry('Secret');
+    const tag = (await api.post(`${w}/tags`, { name: 'Northern', color: '#334455' })).json<{
+      id: string;
+    }>();
+    await api.put(`${w}/entities/${open.id}/tags/${tag.id}`);
+    const all = (await api.get(`${w}/entities/index`)).json<
+      { id: string; name: string; tagIds: string[] }[]
+    >();
+    expect(all.map((e) => e.name)).toEqual(['Open', 'Secret']);
+    expect(all.find((e) => e.name === 'Open')!.tagIds).toEqual([tag.id]);
+
+    const { joinWorld } = await import('./helpers');
+    const player = await joinWorld(app, ctx.world.id, 'player');
+    const seen = (await player.api.get(`${w}/entities/index`)).json<{ name: string }[]>();
+    expect(seen.map((e) => e.name)).toEqual(['Open']);
+  });
+});

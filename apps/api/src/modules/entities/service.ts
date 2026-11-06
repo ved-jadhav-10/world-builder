@@ -19,6 +19,7 @@ import {
   type BulkEntityResult,
   type bulkEntitySchema,
   type Entity,
+  type EntityIndexItem,
   type entityCreateSchema,
   type entityListQuerySchema,
   type EntitySummary,
@@ -274,6 +275,40 @@ export async function listTrash(db: DbOrTx, worldId: string): Promise<TrashedEnt
     ...toSummary(row),
     deletedAt: deletedAt!.toISOString(),
   }));
+}
+
+/** The most entries the content tree lists. */
+export const MAX_ENTITY_INDEX = 20_000;
+
+/** Every entry the audience can see, name only, with its tags: the content tree. */
+export async function listEntityIndex(
+  db: DbOrTx,
+  worldId: string,
+  audience: Audience = 'gm',
+): Promise<EntityIndexItem[]> {
+  const rows = await db
+    .select({ id: entities.id, typeId: entities.typeId, name: entities.name })
+    .from(entities)
+    .where(
+      and(
+        eq(entities.worldId, worldId),
+        isNull(entities.deletedAt),
+        visibleTo(entities.visibility, audience),
+      ),
+    )
+    .orderBy(sql`lower(${entities.name})`, asc(entities.id))
+    .limit(MAX_ENTITY_INDEX);
+  if (rows.length === 0) return [];
+  const links = await db
+    .select({ entityId: entityTags.entityId, tagId: entityTags.tagId })
+    .from(entityTags)
+    .innerJoin(entities, eq(entities.id, entityTags.entityId))
+    .where(and(eq(entities.worldId, worldId), isNull(entities.deletedAt)));
+  const tagIds = new Map<string, string[]>();
+  for (const link of links) {
+    tagIds.set(link.entityId, [...(tagIds.get(link.entityId) ?? []), link.tagId]);
+  }
+  return rows.map((row) => ({ ...row, tagIds: tagIds.get(row.id) ?? [] }));
 }
 
 // Keyset pagination: the cursor is the last row's [sortKey, id], so pages stay

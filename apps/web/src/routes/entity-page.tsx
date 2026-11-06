@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { BookCopy, History, Save, Trash2 } from 'lucide-react';
+import { BookCopy, ExternalLink, History, Save, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Controller, useForm, type Control, type Resolver } from 'react-hook-form';
 import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -43,6 +43,7 @@ import { entityBlocks } from '@/lib/revision-text';
 import { useCanComment } from '@/lib/use-can-comment';
 import { timeAgo } from '@/lib/utils';
 import { useManuscriptTree } from '@/lib/manuscript-tree';
+import { openPopout } from '@/lib/popout';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
 
@@ -359,6 +360,17 @@ function EntityEditor({
             placeholder="Name"
             className="min-w-0 flex-1 bg-transparent font-serif text-3xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title="Open in its own window"
+            className="mt-1 shrink-0"
+            onClick={() => openPopout(base, entity.id)}
+          >
+            <ExternalLink />
+            <span className="sr-only">Open in its own window</span>
+          </Button>
           {canEdit ? (
             <div className="flex shrink-0 items-center gap-1 pt-1">
               <Button type="submit" disabled={!isDirty || isSubmitting} title="Save (Ctrl+S)">
