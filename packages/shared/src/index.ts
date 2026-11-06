@@ -57,3 +57,4 @@ export * from './journey';
 export * from './map-route';
 export * from './geojson-import';
 export * from './fog';
+export * from './vtt';

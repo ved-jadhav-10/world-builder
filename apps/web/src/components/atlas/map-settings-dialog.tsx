@@ -12,6 +12,7 @@ import { useDeleteMap, useReplaceMapImage, useUpdateMap } from '@/api/atlas-quer
 import { errorMessage } from '@/api/client';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
+import { ExportVtt } from '@/components/atlas/export-vtt';
 import { ImportGeoJson } from '@/components/atlas/import-geojson';
 import { EntityPicker } from '@/components/entity-picker';
 import { Button } from '@/components/ui/button';
@@ -169,6 +170,7 @@ export function MapSettingsDialog({
           </div>
         </section>
         <ImportGeoJson map={map} />
+        <ExportVtt map={map} />
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="settings-name">Name</Label>

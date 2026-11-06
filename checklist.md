@@ -58,7 +58,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Progressions** for relationships, names and aliases (M26). Still to do: the as-of Atlas (borders by year) and as-of manuscript.
 - [x] **Timeline playback** (a play bar that moves the marker, with an "on this date" list) and **chronicles playback** (the map's as-of date plays through time: dated items, journeys and dated places appear, move and go where they happen) (M32).
 - [x] **Continuity checker:** warns when a dead character reappears, a narrator is outside their life, a parent is younger than a child, a link starts outside someone's life, an item has two owners or a narrator is in two places at once (M12). Still to do: travel feasibility from map distances, and age against species lifespan [v2].
-- [ ] **Universal VTT export**, a **token maker** [v2].
+- [x] **Universal VTT export** (a map's picture, grid, walls and lights as a .dd2vtt file) and a **token maker** (ring-and-crop PNG tokens made in the browser) (M33).
 
 ## D. Running the game (GM tools)
 

@@ -20,6 +20,9 @@ import {
 import type { z } from 'zod';
 import {
   BLANK_MAP_SHAPES,
+  buildUniversalVtt,
+  MAX_MAP_PIXELS,
+  VTT_MAX_IMAGE_SIDE,
   FOG_COLOR,
   isUncovered,
   revealMaskSvg,
@@ -408,6 +411,56 @@ async function fogTile(
     .composite([{ input: revealed }])
     .webp({ quality: 80 })
     .toBuffer();
+}
+
+/**
+ * The map as a Universal VTT file for tabletop apps: the picture (scaled down if very large), a
+ * grid, walls from a layer called Walls and lights from a layer called Lights. GM only.
+ */
+export async function exportUniversalVtt(
+  db: DbOrTx,
+  worldId: string,
+  mapId: string,
+  pixelsPerGrid: number,
+): Promise<{ filename: string; json: string }> {
+  const map = await getMapRow(db, worldId, mapId);
+  if (map.status !== 'ready')
+    throw conflict('This map is still being prepared. Try again shortly.');
+  const [features, layers] = await Promise.all([
+    db
+      .select({ kind: mapFeatures.kind, points: mapFeatures.points, layerId: mapFeatures.layerId })
+      .from(mapFeatures)
+      .where(and(eq(mapFeatures.mapId, mapId), eq(mapFeatures.worldId, worldId))),
+    db
+      .select({ id: mapLayers.id, name: mapLayers.name })
+      .from(mapLayers)
+      .where(eq(mapLayers.mapId, mapId)),
+  ]);
+  const { data, info } = await sharp(originalPath(worldId, mapId), {
+    limitInputPixels: MAX_MAP_PIXELS,
+  })
+    .rotate()
+    .resize({
+      width: VTT_MAX_IMAGE_SIDE,
+      height: VTT_MAX_IMAGE_SIDE,
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .png()
+    .toBuffer({ resolveWithObject: true });
+  const vtt = buildUniversalVtt({
+    imageWidth: info.width,
+    imageHeight: info.height,
+    pixelsPerGrid,
+    features,
+    layers,
+    imageBase64: data.toString('base64'),
+  });
+  const name = map.name
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60);
+  return { filename: `${name || 'map'}.dd2vtt`, json: JSON.stringify(vtt) };
 }
 
 export async function readThumbnail(

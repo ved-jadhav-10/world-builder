@@ -283,6 +283,11 @@ export const featureListQuerySchema = z.object({
   asOf: z.coerce.number().int().min(-1_000_000_000).max(1_000_000_000).optional(),
 });
 
+/** How many pixels of the picture make one grid square in a Universal VTT export. */
+export const vttExportQuerySchema = z.object({
+  grid: z.coerce.number().int().min(16).max(512).default(70),
+});
+
 export const atlasSearchQuerySchema = z.object({
   q: z.string().trim().min(1).max(100),
   limit: z.coerce.number().int().min(1).max(50).default(10),

@@ -1,5 +1,6 @@
 import {
   CalendarRange,
+  CircleUserRound,
   ChevronLeft,
   ClipboardList,
   ListChecks,
@@ -136,6 +137,9 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
             </NavLink>
             <NavLink to={`${base}/arcs`} className={navItem}>
               <Spline /> Arc tracker
+            </NavLink>
+            <NavLink to={`${base}/tokens`} className={navItem}>
+              <CircleUserRound /> Token maker
             </NavLink>
             <NavLink to={`${base}/plot`} className={navItem}>
               <ClipboardList /> Plot boards

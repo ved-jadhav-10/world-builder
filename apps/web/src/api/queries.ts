@@ -407,3 +407,10 @@ export const downloadManuscriptEpub = (
 /** Downloads the world as a zip of Markdown notes, pictures and JSON. */
 export const downloadMarkdownExport = (world: World) =>
   download(`/worlds/${world.id}/export/markdown`, `${world.slug}-markdown-${today()}.zip`);
+
+/** Downloads a map as a Universal VTT file for tabletop apps. */
+export const downloadMapVtt = (world: World, map: { id: string; name: string }, grid: number) =>
+  download(
+    `/worlds/${world.id}/maps/${map.id}/export/vtt?grid=${grid}`,
+    `${map.name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'map'}.dd2vtt`,
+  );

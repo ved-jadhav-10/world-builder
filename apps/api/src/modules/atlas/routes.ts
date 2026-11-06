@@ -17,12 +17,18 @@ import {
   mapItemParamsSchema,
   mapUpdateSchema,
   tileParamsSchema,
+  vttExportQuerySchema,
   worldItemParamsSchema,
 } from '@atlas/shared';
 import { db } from '../../db/client';
 import { limits } from '../../lib/rate-limits';
 import { receiveUpload } from '../../lib/upload';
-import { currentAudience, currentWorldId, requireRole } from '../../plugins/auth-guard';
+import {
+  currentAudience,
+  currentWorldId,
+  requireAudience,
+  requireRole,
+} from '../../plugins/auth-guard';
 import {
   createFeature,
   createLayer,
@@ -31,6 +37,7 @@ import {
   deleteFeature,
   deleteLayer,
   deleteMap,
+  exportUniversalVtt,
   getMap,
   importGeoJson,
   listEntityMapLinks,
@@ -108,6 +115,29 @@ export const atlasRoutes: FastifyPluginAsyncZod = async (app) => {
         request.body,
       );
       return reply.status(201).send(result);
+    },
+  );
+
+  // A Universal VTT file for Foundry, Fantasy Grounds and the like. It holds the full picture
+  // and the GM's walls, so it is for editors.
+  app.get(
+    '/maps/:id/export/vtt',
+    {
+      onRequest: [requireRole('editor'), requireAudience('gm')],
+      config: limits.export,
+      schema: { params: mapItemParamsSchema, querystring: vttExportQuerySchema },
+    },
+    async (request, reply) => {
+      const { filename, json } = await exportUniversalVtt(
+        db,
+        currentWorldId(request),
+        request.params.id,
+        request.query.grid,
+      );
+      return reply
+        .header('content-type', 'application/json')
+        .header('content-disposition', `attachment; filename="${filename}"`)
+        .send(json);
     },
   );
 

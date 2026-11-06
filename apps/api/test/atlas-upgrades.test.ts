@@ -678,3 +678,55 @@ describe('fog of war', () => {
     ).toHaveLength(0);
   });
 });
+
+describe('Universal VTT export', () => {
+  it('exports the picture, grid, walls and lights for tabletop apps', async () => {
+    const { api, w, makeMap, feature, layer } = await setup();
+    const map = await makeMap('Keep of Vael', 700, 350);
+    const walls = await layer(map.id, 'Walls');
+    const lights = await layer(map.id, 'Lights');
+    await feature(map.id, {
+      kind: 'path',
+      layerId: walls.id,
+      points: [
+        [0, 0],
+        [1, 0],
+      ],
+    });
+    await feature(map.id, { kind: 'pin', layerId: lights.id, points: [[0.5, 0.5]] });
+    await feature(map.id, { kind: 'pin', points: [[0.2, 0.2]] });
+
+    const res = await api.get(`${w}/maps/${map.id}/export/vtt?grid=70`);
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.headers['content-disposition']).toContain('Keep-of-Vael.dd2vtt');
+    const vtt = res.json<{
+      format: number;
+      resolution: { map_size: { x: number; y: number }; pixels_per_grid: number };
+      line_of_sight: { x: number; y: number }[][];
+      lights: { position: { x: number; y: number } }[];
+      image: string;
+    }>();
+    expect(vtt.format).toBe(0.3);
+    expect(vtt.resolution).toMatchObject({ map_size: { x: 10, y: 5 }, pixels_per_grid: 70 });
+    expect(vtt.line_of_sight).toEqual([
+      [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
+    ]);
+    expect(vtt.lights).toHaveLength(1);
+    expect(vtt.lights[0]!.position).toEqual({ x: 5, y: 2.5 });
+    const picture = await sharp(Buffer.from(vtt.image, 'base64')).metadata();
+    expect([picture.format, picture.width, picture.height]).toEqual(['png', 700, 350]);
+
+    const big = await api.get(`${w}/maps/${map.id}/export/vtt?grid=140`);
+    expect(big.json<typeof vtt>().resolution.map_size).toEqual({ x: 5, y: 2.5 });
+    expect((await api.get(`${w}/maps/${map.id}/export/vtt?grid=3`)).statusCode).toBe(400);
+  });
+
+  it('is for editors only', async () => {
+    const { w, makeMap, player } = await setup();
+    const map = await makeMap('Closed');
+    expect((await player.api.get(`${w}/maps/${map.id}/export/vtt`)).statusCode).toBe(403);
+  });
+});

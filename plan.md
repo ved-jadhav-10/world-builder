@@ -504,6 +504,13 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified in a browser:** the animation loop is covered by typecheck and lint only.
 - **Deferred:** looping, an event log that scrolls with the playback, and following a journey's position with the camera.
 
+## Milestone 33 (Universal VTT export and token maker): done
+
+- **Export:** `GET /maps/:id/export/vtt?grid=70` (editors, GM audience; rate-limited like other exports) returns a Universal VTT v0.3 file named after the map. `vtt.ts` (shared) builds it: the picture as base64 PNG (scaled to fit 8,192 px), the grid in squares (a pixels-per-square setting from 16 to 512), **walls** from paths and regions on a layer named "Walls" (a region is closed), and **lights** from pins on a layer named "Lights". Everything else on the map is left out. The map settings dialog has the download.
+- **Token maker** (sidebar, GM): pick a file or one of an entry's pictures, zoom and slide the crop (`tokenCrop`, shared), choose a round or rounded-square shape, ring colour and thickness, background, and 140, 280 or 560 px; downloads a transparent PNG. All in the browser.
+- **Not verified:** I could not test a real import into Foundry or Fantasy Grounds, so the file follows the published .dd2vtt layout from memory of the format. Portals and object lines are exported empty.
+- **Deferred:** portals (doors) from pins on a "Doors" layer, token frames from a library, Foundry journal/actor packs (H in the checklist).
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
