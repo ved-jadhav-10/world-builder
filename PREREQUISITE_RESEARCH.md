@@ -6,6 +6,8 @@ Oct 7, 2026 · @VJ
 
 There is a real but narrow gap: no product joins nested deep-zoom maps, a manuscript-grade chapter editor and structured character sheets in one connected world. LegendKeeper leads on nested maps but has no manuscript editor. Campfire and World Anvil have manuscripts but weaker map nesting, and Scrivener, Dabble, Novelcrafter and Plottr have no maps at all.
 
+**Update, November 10, 2026:** [vvd](https://vvd.world) (pronounced "vivid") narrows this gap. It joins cards, maps, timelines, a story editor, wikis and 5e campaigns in one app, on web, desktop and tablets, and claims 300K+ users. See [vvd, the closest all-in-one rival](#vvd-the-closest-all-in-one-rival) below.
+
 - **What to build:** one linked graph of story entities, seen through three views (Atlas for maps, Codex for characters and lore, Manuscript for chapters), plus a GM mode for running games.
 - **Who first:** fantasy novelists who also run or play tabletop RPGs. They are online, vocal, and currently pay for two separate products.
 - **Biggest idea from competitor research:** "progressions", facts that change by scene or date, so the whole world can be viewed as of any chapter. Novelcrafter does this only for its codex.
@@ -308,6 +310,7 @@ No tool covers all five core needs well: nested maps, character sheets, plotting
 | [LegendKeeper](https://www.legendkeeper.com/) | ✅ best in class | ◐ | ◐ | ✅ | ❌ | Web | Free plan views and exports only; Pro $9/mo or $7.50/mo annual |
 | [World Anvil](https://www.worldanvil.com/faq) | ◐ | ✅ | ◐ | ✅ | ◐ | Web | Free: 2 worlds, 42 articles, 100 MB; paid from $4.50/mo annual; lifetime tiers |
 | [Campfire](https://aitoolscoop.com/tool/campfire-writing/) | ◐ (2 free maps) | ✅ | ✅ | ✅ | ✅ | Web, desktop, mobile | Free tier; modules from $2/mo; all modules $12/mo |
+| [vvd](https://vvd.world/pricing) | ◐ (pins, regions, Map Maker; nesting not confirmed) | ✅ | ◐ (timelines, canvas) | ✅ | ✅ (Quill) | Web, Mac, Windows, iPad, Android tablets | Free: 1 world, 20 documents, 100 MB; $69, $129 or $350/yr |
 | [Kanka](https://kanka.io/pricing) | ◐ (no nested zoom) | ✅ | ◐ | ✅ | ❌ | Web, open source | Free, unlimited; $4.99, $9.99, $24.99/mo |
 | [Notebook.ai](https://new.notebook.ai/) | ❌ | ✅ | ◐ | ✅ | ◐ | Web | Free (5 universes); Premium $9/mo or $84/yr |
 | [Obsidian + plugins](https://publish.obsidian.md/hub/02+-+Community+Expansions/02.01+Plugins+by+Category/Plugins+for+TTRPG) | ◐ (DIY) | ◐ | ◐ | ✅ | ◐ | Desktop, mobile, local files | Free for personal use |
@@ -328,12 +331,40 @@ No tool covers all five core needs well: nested maps, character sheets, plotting
 - **LegendKeeper** sells true map-within-map nesting, regions, paths, measuring and multiplayer cursors, and reports 26M+ pages created ([changelog](https://www.legendkeeper.com/changelog/legendkeeper-0-18-0-0/)). It has no manuscript editor and no generative AI by design. It is your most direct map competitor.
 - **World Anvil** claims 2.5 million users and does almost everything, but reviewers cite a steep learning curve and dated UI. A cut in the free article cap left some users unable to edit their own work ([Trustpilot](https://www.trustpilot.com/review/worldanvil.com)).
 - **Campfire** has 18 modules including a manuscript editor. Its free plan caps you at 25,000 words, 10 characters and 2 maps, and its modular pricing confuses buyers. It rejects AI-generated work.
+- **vvd** is the closest to the whole vision, and ships fast (a changelog entry most weeks). It was missing from the October research; the section below covers it.
 - **Kanka** is free and unlimited, with 400,000+ users. Paid tiers mostly buy bigger uploads, and v3.0 added user-defined modules ([blog](https://blog.kanka.io/2025/02/19/version-3-0-custom-modules/)).
 - **Obsidian plugin stacks** are powerful but DIY. The Leaflet maps plugin is in maintenance mode and the original Fantasy Calendar plugin is unmaintained ([repo](https://github.com/fantasycalendar/obsidian-fantasy-calendar)).
 - **Novelcrafter** has the strongest writer-side codex, with progressions and a series codex ([docs](https://www.novelcrafter.com/help/docs/codex/progressions-additions)), but it is text-only with no maps.
 - **Map makers** create art but don't link it to lore. Import their output rather than compete; Inkarnate restructured its plans in early 2026.
 - **Narrative tools:** articy:draft X is the studio standard (Windows, subscription), Arcweave is browser-only, and Twine, Ink and Yarn Spinner are free.
 - **New 2024–2026 entrants** include CharGen, MythScribe, Aevon, Trails Weaver, Novelos, Scyn, Kindling, Hextml and dunia.gg. Many are AI-first, and many "alternatives" articles are written by these vendors, so treat them as marketing.
+
+### vvd, the closest all-in-one rival
+
+Checked November 10, 2026, from vvd's own site, changelog and App Store listing. These are its claims, not hands-on testing.
+
+- **Who:** sold on the App Store by Pact Social Inc. It claims 300K+ users. No launch date is given; the changelog goes back to October 2025, with relaunches in January and August 2026.
+- **Platforms:** web, Mac (Apple chips), Windows, iPad, Android tablets and Vision Pro, with offline edits that sync later. There's no iPhone app; phones use the website.
+- **Pricing:** Free (1 world, 20 documents, 100 MB, 1 Quill story). Hobbyist $69/yr (2 worlds, unlimited documents, 1 GB, private share links). Pro $129/yr (unlimited worlds, public and password-protected publishing, custom domain, 3 collaborators, API). Studio $350/yr (5 collaborators then $5.83/mo each, roles, admin panel). A "document" is anything a tool makes (card, map, timeline, page).
+- **Lore:** cards with custom types and templates, a canvas whiteboard, relation trees (family, corporate, military, royal court), timelines with eras, a World Graph, a dictionary for invented languages, tables, voice memos with transcripts, spoiler and visibility controls, and embeds.
+- **Maps:** markers, regions, zones and labels with pins that open cards. Map Maker (beta, October 2026) paints land, rivers and roads and works out travel times in 2D or 3D.
+- **Writing:** Quill, a story editor beside the lore, with auto-linking of card names, read and "play" modes, line-level audio and text effects, and EPUB, PDF and Word exports.
+- **Publishing:** wikis that are private, unlisted or public, with templates, several per world and custom domains on Pro, and password-protected share groups.
+- **Collaboration:** real-time editing with live cursors, version history, comments inside the world, and email invites.
+- **Campaigns:** campaigns for up to 20 players with invite links, sessions with recaps and deaths, public campaign pages, and editable 5e sheets and stat blocks. No dice roller, rollable tables or NPC tools are mentioned.
+- **Import and export:** imports from World Anvil, Obsidian, Notion, Google Docs and Word. Exports a world as Markdown plus a JSON archive and media.
+- **AI and trust:** "No AI training on your worlds" and "10% to artists, 1% to the planet." Transcripts and image search probably use AI, but no engine is named. A third-party "No-AI pledge" claim was not found on vvd's own pages.
+- **Complaints:** only 4 App Store ratings (4.0). One review calls it "money hungry" because sharing needs a paid plan.
+
+**Where we are ahead.** Running the game: dice, rollable tables, a GM screen with initiative, HP, loot and XP widgets, handouts with a reveal, quests, view-as audiences, secret blocks, GM-only fields, player journals, audience exports, Universal VTT export and tokens, all system-agnostic where vvd is built around 5e. Story over time: calendars, progressions, the continuity checker, timeline and map playback, plot boards, writing goals, word check. Maps for play: fog of war, measure with travel paces, node maps and routes, GeoJSON and SVG import, dated items. And the planned free tier (unlimited entries) is far more generous than 20 documents.
+
+**Where vvd is ahead.** It has shipped and has users. It has most of our open F, G and H items: public wikis with password pages and custom domains, real-time co-editing, offline and native apps, a whiteboard, importers, and an API. It also has map painting, a dictionary and voice memos.
+
+**What it means.**
+1. A public wiki, importers and some collaboration are now table stakes, not extras.
+2. The **spoiler-safe reader wiki** (readers see only what is true up to their chapter) is still our clearest opening. vvd's spoiler controls look like on/off visibility, not chapter-based; check this hands-on.
+3. Position on depth, not breadth: "the tool for GMs who also write", with continuity and time built in, a generous free tier, and INR and UPI pricing.
+4. Our planned Pro price ($6 to $8 a month) sits close to vvd Hobbyist ($69 a year), so the edge is generosity on free and sharing, not a lower price.
 
 ### Does anyone do nested maps well?
 
@@ -483,7 +514,7 @@ Expect a profitable indie SaaS: the category has millions of users, but price po
 
 ### Demand signals
 
-- World Anvil claims 2.5 million worldbuilders, Kanka 400,000+, and LegendKeeper 26M+ pages created. Obsidian estimated about one million users in 2023. All figures are self-reported.
+- World Anvil claims 2.5 million worldbuilders, Kanka 400,000+, vvd 300,000+, and LegendKeeper 26M+ pages created. Obsidian estimated about one million users in 2023. All figures are self-reported.
 - Mordor Intelligence sizes the adjacent screenwriting-software market at $185.78 million in 2025 ([report](https://www.mordorintelligence.com/industry-reports/screen-and-script-writing-software-market)). Broader "creative software" estimates vary too widely to rely on.
 
 ### Monetisation models in the category
@@ -499,6 +530,7 @@ Expect a profitable indie SaaS: the category has millions of users, but price po
 | Storage tiers | Owlbear Rodeo (200 MB, 5 GB, 10 GB) | Ties price to real costs |
 | Platform + bring-your-own AI key | Novelcrafter ($4 to $20/mo) | Keeps AI costs off your books |
 | Per seat | Arcweave ($15 to $25/member), articy | For studios |
+| Capped free + yearly tiers + seats | vvd ($69, $129, $350/yr; $5.83/mo per extra seat) | Free stops at 20 documents; public sharing needs Pro |
 
 ### Recommended pricing
 
@@ -523,7 +555,7 @@ In this market trust is a feature: a clear AI policy and guaranteed export prote
 ### AI policy
 
 - **Why it matters:** NaNoWriMo's September 2024 statement on AI led to board resignations and lost goodwill. It closed on March 31, 2025, citing a long decline in participation ([Futurism](https://futurism.com/nanowrimo-closing-embracing-ai)).
-- **Competitor stances:** LegendKeeper doesn't train AI on user content or share it with AI providers ([privacy policy](https://www.legendkeeper.com/privacy/)). World Anvil says it doesn't train on user work and blocks scrapers on a best-effort basis ([FAQ](https://www.worldanvil.com/faq)). Campfire rejects AI-generated work and doesn't train on user content ([post](https://www.threads.com/@campfirewriting/post/C_gQHpgR_y4?hl=en)). Novelcrafter and Sudowrite build around AI for a pro-AI audience.
+- **Competitor stances:** LegendKeeper doesn't train AI on user content or share it with AI providers ([privacy policy](https://www.legendkeeper.com/privacy/)). World Anvil says it doesn't train on user work and blocks scrapers on a best-effort basis ([FAQ](https://www.worldanvil.com/faq)). Campfire rejects AI-generated work and doesn't train on user content ([post](https://www.threads.com/@campfirewriting/post/C_gQHpgR_y4?hl=en)). vvd promises "no AI training on your worlds" ([App Store](https://apps.apple.com/us/app/vvd-world/id6795331755)). Novelcrafter and Sudowrite build around AI for a pro-AI audience.
 - **Publish an AI Charter:** no training on user work, no sale of data to AI companies, AI crawlers blocked on public wikis, AI features opt-in with the user's own key, and AI-assisted content labelled on public pages.
 - **Decide early** whether public galleries accept AI-generated art; a visible "human-made" tag is one option.
 
@@ -558,6 +590,7 @@ The biggest risk is a competitor closing the gap first, so validate the "maps + 
 | Risk | Mitigation |
 | --- | --- |
 | LegendKeeper adds a manuscript editor, or Campfire fixes its maps | Win on the connections (progressions, spoiler-safe wiki) and ship fast |
+| vvd already offers maps, lore, a story editor, wikis and campaigns in one app | Win on GM depth, progressions and the spoiler-safe wiki; a generous free tier and open sharing |
 | D&D Beyond builds deeper prep tools | Stay system-agnostic and deeper on the world |
 | Scope explosion | Keep the MVP narrow; everything else waits |
 | Storage costs from huge free-tier maps | Tiling, quotas and R2 |
@@ -584,6 +617,7 @@ The biggest risk is a competitor closing the gap first, so validate the "maps + 
 - Campfire's 80% royalty and $12/month figures come from third-party reviews.
 - Features marked "not re-verified" were taken from the research brief and not rechecked.
 - StartPlaying's help center says 15% per booking; an older page says 10%.
+- vvd's details (added November 10, 2026) come from its own pages, not hands-on use. Its monthly prices were unreadable, its comparison pages are its own marketing, and its App Store prices ($7.99, $17.99, $76.99, $167.99) differ from the web prices.
 - Many 2026 "alternatives" articles are vendor marketing, and user counts and market sizes are self-reported or low-reliability.
 
 ## Sources
@@ -591,6 +625,7 @@ The biggest risk is a competitor closing the gap first, so validate the "maps + 
 **Worldbuilding and writing tools**
 
 - [LegendKeeper home](https://www.legendkeeper.com/) · [features](https://www.legendkeeper.com/features/) · [0.18 changelog](https://www.legendkeeper.com/changelog/legendkeeper-0-18-0-0/) · [Boards](https://www.legendkeeper.com/boards-announcement/) · [privacy policy](https://www.legendkeeper.com/privacy/)
+- [vvd home](https://vvd.world) · [pricing](https://vvd.world/pricing) · [what's new](https://vvd.world/whats-new) · [vs Obsidian](https://vvd.world/compare/obsidian) · [worldbuilding tools](https://vvd.world/worldbuilding-tools) · [overview](https://vvd.crisp.help/en/article/vvd-overview-wy5lsa/) · [App Store](https://apps.apple.com/us/app/vvd-world/id6795331755)
 - [World Anvil FAQ](https://www.worldanvil.com/faq) · [pricing](https://www.worldanvil.com/pricing) · [features list](https://www.worldanvil.com/w/WorldAnvilCodex/a/list-features) · [news June 2026](https://blog.worldanvil.com/newsletter/world-anvil-news-june-2026/) · [July 2026](https://blog.worldanvil.com/newsletter/world-anvil-news-july-2026/) · [September 2026](https://blog.worldanvil.com/newsletter/world-anvil-news-september-2026/) · [Trustpilot reviews](https://www.trustpilot.com/review/worldanvil.com)
 - [Kanka features](https://kanka.io/features) · [pricing](https://kanka.io/pricing) · [v3.0 custom modules](https://blog.kanka.io/2025/02/19/version-3-0-custom-modules/)
 - [Campfire review 2026 (AI Tool Scoop)](https://aitoolscoop.com/tool/campfire-writing/) · [Campfire AI stance](https://www.threads.com/@campfirewriting/post/C_gQHpgR_y4?hl=en)

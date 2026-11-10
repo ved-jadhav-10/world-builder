@@ -626,6 +626,12 @@ Launch is not near, so the order is features first; launch readiness (A), integr
 2. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
 3. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
+### Competitor check: vvd (November 10, 2026)
+[vvd](https://vvd.world) already ships most of what F, G and H list: public wikis, real-time co-editing, offline and native apps, a whiteboard and importers. We are deeper on running games, progressions and continuity, and play maps. Details are in the research's [vvd section](PREREQUISITE_RESEARCH.md#vvd-the-closest-all-in-one-rival). What it changes:
+- The **spoiler-safe reader wiki** (F) is our clearest opening, since vvd's spoilers look like plain on/off visibility.
+- A public wiki, importers and collaboration are expected, not extras. The order above stays for now; whether to pull the World Anvil importer (H) earlier is an open question.
+- Lead the pitch with GM depth, time and continuity, and a free tier without a document cap.
+
 ### Deliberately not building (integrate or skip)
 A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automation; character builders for licensed game systems; hosting audio files; a paid-GM marketplace; random dungeon generation (import instead); streaming audio to Discord (use Kenku FM).
 

@@ -86,7 +86,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Hidden until chapter N** and **spoiler gating**: pages and fields revealed after a chosen chapter [v1; deferred in M5].
 - [x] **Field-level visibility:** a field can be marked GM only in the type editor (M45); block-level visibility came with secret blocks (M37). Still to do: fields shown to players only after a date or chapter (see spoiler gating).
 - [ ] **Public reader wiki** for chosen pages [v1], with **password-protected pages** for beta readers or players [v1]; AI crawlers blocked.
-- [ ] **Progression-driven spoiler-safe wiki:** readers see only what is true up to their chapter [v2; nobody offers it].
+- [ ] **Progression-driven spoiler-safe wiki:** readers see only what is true up to their chapter [v2; nobody offers it, though vvd has on/off spoiler controls, so check how far they go].
 - [x] **Export only what players can see:** the JSON and Markdown exports take an audience (players, readers or the public) and hold only what that audience can see (M43). Still to do: the same for the story-bible PDF and the manuscript exports.
 - [ ] **Later publishing:** per-world analytics, white-label, followers and notifications, featured worlds, challenges and prompts [v2]; custom domains, supporter tiers, a reading storefront [v3].
 
@@ -101,7 +101,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## H. Integrations
 
-- [ ] **Importers** [v1], building first whichever the research's interviews say users most want to leave: World Anvil, Kanka, Campfire, Obsidian and Markdown, Scrivener and DOCX, Notion, Homebrewery.
+- [ ] **Importers** [v1], building first whichever the research's interviews say users most want to leave: World Anvil, Kanka, Campfire, Obsidian and Markdown, Scrivener and DOCX, Notion, Homebrewery. (vvd already imports from World Anvil, Obsidian, Notion, Google Docs and Word.)
 - [ ] **Discord webhooks** (changes and session recaps) [v1]; a **Discord bot** for lore lookups and table rolls [v2].
 - [ ] **VTT exports:** Foundry journal and actor packs, an Owlbear extension, Roll20 handouts [v2].
 - [ ] **Link to D&D Beyond or Demiplane** character sheets, read-only [v3].
@@ -117,3 +117,4 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] Find which tool they most want to leave, and build that importer first.
 - [ ] Check whether upload-and-annotate is enough or users want to draw maps in-app.
 - [ ] Check whether GM features or writer features win the first 100 paying users.
+- [ ] Try vvd's free tier hands-on: how deep its spoiler controls, campaigns, map travel times and import go (see the research's vvd section).
