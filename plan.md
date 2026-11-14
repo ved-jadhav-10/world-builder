@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 25 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 48 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -615,6 +615,28 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Fixed on the way:** widgets could push the GM screen wider than a phone (the grid item had no minimum width); frames now shrink and rows wrap.
 - **Verified:** shared tests, an API test (saved as is, refusals), Chrome (add loot and members, split 100 XP three ways as 34/33/33, days, reload keeps it, no 4xx) and a phone-width screenshot read back.
 - **Deferred:** XP thresholds and levels per rules system, coin purses with conversion, linking loot to Item entries and members to Character entries, and a log of awards.
+
+## Milestone 47 (Vellum and ink: the look, the front page, themes): done
+
+- **One look, decided:** vellum paper tones and iron-gall ink. The chrome carries no colour; one hue, verdigris (the green wash of old sea charts), marks links, selection and data, and vermilion is kept for warnings, secrets and deletions. Tokens live at the top of `apps/web/src/index.css` (`--ink`, `--primary`, `--rubric` and the paper tones), with a faint paper grain behind everything. Corners are tighter and resting cards have no shadow.
+- **Type:** EB Garamond for titles and prose, Inter for controls, both self-hosted through `@fontsource-variable` (no request to Google Fonts any more, which also helps with privacy rules later).
+- **Themes:** Vellum (light), Lamplight (dark) or "match my device", chosen in the account menu and remembered on the device (`lib/theme.ts`; an inline script in `index.html` sets it before the first paint, and Tailwind's `dark:` follows `data-theme`).
+- **The mark:** a pair of chart dividers that is also the A of Atlas (`components/brand.tsx`, `public/favicon.svg`).
+- **Front page** (`routes/landing-page.tsx`, shown at `/` to visitors; signed-in people still get their worlds): the screen is split like the name, a real antique chart on one half and the reading column on the other. The chart changes with the section (world, kingdom, city, roads), and in the middle the fixed half becomes one entry the visitor can rename, move through the years and view as a player. On phones there is no pinned half; each part carries its own picture.
+- **Pictures:** six public-domain images from Wikimedia Commons in `apps/web/public/charts/` (Olaus Magnus's Carta marina 1539, Ortelius's Islandia 1587, Braun and Hogenberg's Paris 1572, Blaeu's Hven 1663, a Genoese portolan chart about 1320, a Metz Book of Hours leaf about 1440), credited in the front page's footer.
+- **App shell:** the sidebar is grouped (the four views, then Write, Explore, Play, then entry types), groups fold and remember it, and the product and world are named at the top. The account row is a menu (account, theme, sign out). Sign-in, sign-up, reset and invite pages share `components/auth-shell.tsx` with a chart beside the form. The worlds list gives each world a small sea chart drawn from its id (`components/world-cover.tsx`), and the Codex home lists the types as a table of contents.
+- **Verified:** the design inspector's page checks at 1440, 768 and 390 px (no failures: headline lines, margins, contrast, reduced motion), typecheck, lint, unit tests, and a Chrome tour of 16 pages in both themes with no console errors or failed requests.
+- **Deferred:** a pass over every inner page for spacing and density, illustrations for empty states, and a server-rendered marketing site (`apps/site`) for search engines.
+
+## Milestone 48 (Ambience: music and weather): done
+
+- **What it is:** six scenes of quiet music with weather under it, for writing or for the table: Scriptorium, Tavern hearth, Rain on the shutters, Open sea, Wildwood at night, Deep places. The control sits at the foot of the sidebar (and as an icon on phones and on the worlds page): play or pause, pick a scene, set the volume and the balance between weather and music.
+- **No recordings:** everything is made in the browser with the Web Audio API, so there is nothing to license, host or download. Plucked strings use the Karplus-Strong method, pipes and bells are a few sine partials, chords are filtered waves, and rain, fire, surf, wind, crickets, drips and thunder are shaped noise (`lib/ambience/synth.ts`, `scenes.ts`).
+- **The music is composed by rule, not at random** (`lib/ambience/compose.ts`, pure and tested): each scene has a mode, a tempo and a four-chord loop; the accompaniment spells the chord, and the tune moves in four-bar phrases that repeat with small changes, start each bar on a chord tone, keep to five notes of the mode and rest between phrases.
+- **Behaviour:** sound starts only from a click; it carries on across pages (the player lives outside React, `lib/ambience/player.ts`); scenes cross-fade; pausing hands the audio device back; the scene and levels are remembered on the device.
+- **Verified:** unit tests for the composer; every scene rendered offline in Chrome and measured (no clipping, no silence, all within about 2 dB of each other, music and weather checked apart); and the control driven in Chrome (play, switch, volume, navigate, pause, reload).
+- **Not verified:** how it sounds to a person. It was measured, not listened to, so the timbres and tunes need a human ear; the levels and recipes are easy to change in `scenes.ts`.
+- **Deferred:** a scene suggested by an entry (a tavern entry starting Tavern hearth), the GM setting the scene for the whole table, and playing soundtrack links (M42) inside the app.
 
 ## Roadmap: what's left
 

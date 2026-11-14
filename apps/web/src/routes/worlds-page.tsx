@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ROLE_LABELS } from '@atlas/shared';
 import { errorMessage } from '@/api/client';
 import { useCreateWorld, useWorlds } from '@/api/queries';
+import { AmbienceControl } from '@/components/ambience-control';
 import { Brand } from '@/components/brand';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
@@ -80,8 +81,11 @@ export function WorldsPage() {
     <div className="min-h-dvh">
       <header className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
         <Brand />
-        <div className="w-52">
-          <UserMenu />
+        <div className="flex items-center gap-2">
+          <AmbienceControl variant="icon" />
+          <div className="w-52">
+            <UserMenu />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-10">

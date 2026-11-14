@@ -135,6 +135,17 @@
   letter-spacing: 0.06em;
 }
 
+/* The little level meter beside a playing ambience scene */
+@keyframes ambience-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

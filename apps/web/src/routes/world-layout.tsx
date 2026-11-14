@@ -41,6 +41,7 @@ import { errorMessage } from '@/api/client';
 import { useLeaveWorld } from '@/api/member-queries';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
 import { useCalendar } from '@/api/timeline-queries';
+import { AmbienceControl } from '@/components/ambience-control';
 import { BrandMark } from '@/components/brand';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
@@ -267,7 +268,8 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
           </>
         ) : null}
         {world.role !== 'owner' ? <LeaveWorld ctx={ctx} /> : null}
-        <div className="mt-2 border-t pt-2">
+        <div className="mt-2 space-y-0.5 border-t pt-2">
+          <AmbienceControl />
           <UserMenu />
         </div>
       </div>
@@ -372,12 +374,10 @@ export function WorldLayout() {
               <span className="sr-only">Open menu</span>
             </Button>
             <span className="truncate font-serif font-semibold">{ctx.world.name}</span>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="ml-auto"
-              onClick={() => setSearchOpen(true)}
-            >
+            <span className="ml-auto">
+              <AmbienceControl variant="icon" />
+            </span>
+            <Button variant="ghost" size="icon-sm" onClick={() => setSearchOpen(true)}>
               <Search />
               <span className="sr-only">Search</span>
             </Button>
