@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 51 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 52 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -673,6 +673,18 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified:** a real Obsidian vault of any size, and a deployment on a real server behind HTTPS.
 - **Deferred:** importers for World Anvil, Kanka, Campfire, Scrivener and Notion (each needs sample exports from real users first), pictures inside a vault, restoring from this app's JSON export, and a smaller image.
 
+## Milestone 52 (Boards: canvas and mood board): done
+
+- **Boards** (Explore › Boards): an open table per board, as many as 100 a world. On it go **entry cards** that always show the entry as it is now (type, name, summary, portrait), **notes** on six papers in three sizes, **headings**, **pictures** from the gallery (uploaded, dropped or pasted onto the board), **frames** that carry what is inside them when moved, **colour swatches**, and **links**, which play in place when they are YouTube, Spotify or SoundCloud. Dragging from the edge of one item to another draws an **arrow**; a double click names it. Arrows re-attach to whichever sides face each other as things move.
+- **Mood boards** are the same board started differently. "Tidy pictures" lays the pictures (or the selected ones) out as a wall, and "Colours" on a picture adds its five main colours as swatches.
+- **Working on it:** new items land in the nearest free spot, never on top of old ones. Everything saves by itself a moment after a change; undo and redo (Ctrl+Z, Ctrl+Shift+Z) step through up to 100 states. Multi-select, resize, duplicate, delete, zoom, fit and a minimap on larger boards come from React Flow (`@xyflow/react`, MIT), restyled in the app's ink and vellum for both themes.
+- **Players:** a board is the GM's until it is marked "Shown to players"; then players can read it, without anything marked as kept from them, without cards for entries or pictures they may not see, and without arrows left pointing at something removed. The GM sees a crossed-out eye on each such item, and is offered to share the board's GM-only pictures in one go. Readers and the public have no boards.
+- **How:** one `boards` row per board (migration `0031_boards`), its whole arrangement in one validated JSON document (`boardDocSchema`, up to 400 items and 600 arrows). A save names the version it was made on, so two editors cannot silently overwrite each other: the second is told to reload. Entries and pictures are looked up at read time inside the world and through the audience rules, so an ID on a board reveals nothing by itself. Pure rules (`boardForPlayers`, `itemsInFrame`, `masonryLayout`, `paletteFromPixels`) are in `packages/shared/src/boards.ts`.
+- **Also:** boards are in the JSON export (a player's export holds only shared boards, filtered), and the sample world has one, "The compass affair".
+- **Verified:** shared tests (10), API tests (6: saving, stale saves, players, readers, other worlds, export), and Chrome (22 checks: each kind of item, upload, palette, an arrow and its label, reload, undo and redo, sharing, the list, a player's view, dark theme, phone width).
+- **Not verified:** two people editing one board at the same moment in two browsers (the API test covers the refusal), touch gestures on a real tablet, and boards near the size limits.
+- **Deferred:** freehand drawing, boards in the Markdown export, version history for boards, comments on a board, dragging an entry from the Codex list onto a board, and Pinterest or Unsplash import.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
@@ -682,6 +694,13 @@ Launch is not near, so the order is features first; launch readiness (A), integr
 1. **The rest of D, E and G** (B and C are done as of M38): GM tools, players and membership, co-editing and so on, as the checklist lists them.
 2. **The rest of F.** The reader wiki and its spoiler gating shipped in M49, behind a server switch that stays off in production until the moderation and legal items in A are done. Still open: spoiler blocks inside articles, and maps and the timeline on the wiki.
 3. **Last:** the rest of the importers (H; Markdown and Obsidian shipped in M51), validation (I), and launch readiness (A): object storage, a real deployment (the container and guide exist since M51), legal review and age rule, billing. What needs the owner is listed in [USER_TASKS.md](USER_TASKS.md).
+
+### Agreed next steps (November 14, 2026)
+Chosen with the owner after comparing against vvd. Boards (M52) were the first of these.
+1. **Importers for Notion and for Word and Google Docs** (.docx), reusing the Markdown importer; Kanka after. World Anvil waits until there is a real export file to build against.
+2. **A look prototype for maps**, as still pictures, for the owner to approve before anything is built on it: the sample world drawn as a "hand-coloured atlas" (a watercolour wash and painted relief shading under ink linework) at three zoom levels and once tilted in 3D.
+3. **Height and a 3D relief view for maps people already have:** paint height over an uploaded map (or import it from Azgaar), shade the flat map from it, and tilt it into 3D (three.js) with pins and journeys on the ground. This is the part no rival has, and it works with the map tools people already use.
+4. **The map painting editor, last,** and only if the look holds up and people ask to draw maps in the app: painted height and ground types, ink coastlines, rivers and roads, stamps drawn as ink line art with a wash fill, pigment sets, and Ink and Colour sliders so one map can lean towards a chart or a painting.
 
 ### Competitor check: vvd (November 10, 2026)
 [vvd](https://vvd.world) already ships most of what F, G and H list: public wikis, real-time co-editing, offline and native apps, a whiteboard and importers. We are deeper on running games, progressions and continuity, and play maps. Details are in the research's [vvd section](PREREQUISITE_RESEARCH.md#vvd-the-closest-all-in-one-rival). What it changes:

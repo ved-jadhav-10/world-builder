@@ -16,6 +16,10 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 - **Codex:** a page for every character, place, faction, item, species, culture, event and lore article. Add your own types and fields, link entries to each other ("lives in" and "contains" stay in sync), tag them and search across everything.
 
+**Think it through**
+
+- **Boards:** an open table for working things out. Lay entries out as cards, add notes, pictures and links, group them in frames and draw labelled arrows between them: a conspiracy, a heist, a family feud. Start one as a **mood board** to gather pictures, colours and music for a place or a book, and pull a palette out of any picture. Show a board to your players and they see it without anything you have kept from them.
+
 **Draw it**
 
 - **Atlas:** upload a map of any size and zoom into it smoothly. Drop pins that open an entry, add labels, roads, rivers and regions, and nest maps inside maps (world, then kingdom, then city).
@@ -51,7 +55,7 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 ## Where it stands
 
-Fifty-one milestones are built and tested: the four views (Codex, Atlas, Manuscript, Timeline), the tools for running a game, sharing with players and readers, the reader wiki, and the look and sound. It runs on your own machine today, and as one container on a server ([DEPLOY.md](DEPLOY.md)). What is left before real users is mostly not code: hosting, email, legal review and payments, all listed in [USER_TASKS.md](USER_TASKS.md). The plan and design decisions are in [plan.md](plan.md), what is still to build is in [checklist.md](checklist.md), and the market research is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
+Fifty-two milestones are built and tested: the four views (Codex, Atlas, Manuscript, Timeline), the tools for running a game, sharing with players and readers, the reader wiki, and the look and sound. It runs on your own machine today, and as one container on a server ([DEPLOY.md](DEPLOY.md)). What is left before real users is mostly not code: hosting, email, legal review and payments, all listed in [USER_TASKS.md](USER_TASKS.md). The plan and design decisions are in [plan.md](plan.md), what is still to build is in [checklist.md](checklist.md), and the market research is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
 
 ## Try it
 

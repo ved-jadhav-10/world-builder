@@ -1,0 +1,120 @@
+/* Boards: the paper colours of notes, and React Flow dressed in the app's ink and vellum. */
+
+:root {
+  --note-vellum: oklch(0.93 0.045 92);
+  --note-rose: oklch(0.9 0.05 25);
+  --note-sage: oklch(0.9 0.045 150);
+  --note-sky: oklch(0.9 0.04 235);
+  --note-slate: oklch(0.88 0.012 262);
+  --note-ink: oklch(0.24 0.022 262);
+  --board-dot: oklch(0.24 0.022 262 / 0.16);
+}
+
+:root[data-theme='dark'] {
+  --note-vellum: oklch(0.36 0.045 92);
+  --note-rose: oklch(0.36 0.06 25);
+  --note-sage: oklch(0.35 0.05 150);
+  --note-sky: oklch(0.35 0.05 235);
+  --note-slate: oklch(0.33 0.014 262);
+  --note-ink: oklch(0.93 0.016 88);
+  --board-dot: oklch(0.915 0.016 88 / 0.14);
+}
+
+.board-dots {
+  background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.board-note {
+  color: var(--note-ink);
+  box-shadow:
+    0 1px 0 oklch(0 0 0 / 0.06),
+    0 6px 14px -8px oklch(0 0 0 / 0.35);
+}
+.board-note[data-color='vellum'] {
+  background: var(--note-vellum);
+}
+.board-note[data-color='rose'] {
+  background: var(--note-rose);
+}
+.board-note[data-color='sage'] {
+  background: var(--note-sage);
+}
+.board-note[data-color='sky'] {
+  background: var(--note-sky);
+}
+.board-note[data-color='slate'] {
+  background: var(--note-slate);
+}
+.board-note[data-color='plain'] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--foreground);
+}
+
+.board-flow.react-flow {
+  --xy-background-color: transparent;
+  --xy-background-pattern-color: var(--board-dot);
+  --xy-edge-stroke: var(--foreground);
+  --xy-edge-stroke-selected: var(--primary);
+  --xy-connectionline-stroke: var(--primary);
+  --xy-edge-stroke-width: 1.25;
+  --xy-edge-label-color: var(--foreground);
+  --xy-edge-label-background-color: var(--background);
+  --xy-selection-background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  --xy-selection-border: 1px solid var(--primary);
+  --xy-handle-background-color: var(--card);
+  --xy-handle-border-color: var(--primary);
+  --xy-resize-background-color: var(--primary);
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 70%, transparent);
+  --xy-minimap-node-background-color: color-mix(in oklab, var(--foreground) 28%, transparent);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--muted);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: 0 0 0 1px var(--border);
+  --xy-attribution-background-color: transparent;
+}
+
+.board-flow .react-flow__edge-text {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+}
+.board-flow .react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 2;
+}
+.board-flow .react-flow__minimap {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.board-flow .react-flow__attribution {
+  opacity: 0.55;
+}
+.board-flow .react-flow__node.selected > .board-item {
+  outline: 1.5px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Connection points appear when the pointer is over an item, and only while editing. */
+.board-flow .react-flow__handle {
+  width: 9px;
+  height: 9px;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.board-flow[data-editable='true'] .react-flow__node:hover .react-flow__handle,
+.board-flow[data-editable='true'] .react-flow__node.selected .react-flow__handle,
+.board-flow.connecting .react-flow__handle {
+  opacity: 1;
+}
+/* Reaching a small handle with a finger is hard: give it a larger target on touch screens. */
+@media (pointer: coarse) {
+  .board-flow .react-flow__handle {
+    width: 16px;
+    height: 16px;
+  }
+}

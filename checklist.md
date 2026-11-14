@@ -94,7 +94,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 - [ ] **Real-time co-editing** (Yjs with Hocuspocus), live editing indicators, an activity feed [v2].
 - [ ] **Offline drafting** (y-indexeddb, cached tiles) [v2]; a Tauri **desktop app** [v3].
-- [ ] **Mood boards and a whiteboard** (tldraw, check its licence, or Excalidraw), expanding cards and frames, embedded media; Pinterest and Unsplash import [v1/v2].
+- [x] **Boards: a canvas and mood boards** (M52): entry cards, notes, pictures, frames, colour swatches, playable links and labelled arrows, shown to players without what is hidden from them. Built on React Flow (MIT). Still to do: freehand drawing, expanding cards, version history and comments on boards, Pinterest and Unsplash import [v2].
 - [x] **Audio:** soundtrack links (Spotify, YouTube, Tabletop Audio or any web address) on locations, characters and sessions (M42), and a built-in **ambience player** with six scenes of generated music and weather (M48). Linked tracks on YouTube, Spotify and SoundCloud play inside the app (M50). Still to do: links on manuscript scenes.
 - [ ] **Public API** that can read and write world data [v3]; a **plugin, theme and template marketplace** [v3].
 - [ ] A **commission tracker** for artists [v3].

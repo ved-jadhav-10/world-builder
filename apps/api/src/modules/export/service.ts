@@ -21,6 +21,7 @@ import { listAllComments } from '../comments/service';
 import { listDiplomacy } from '../diplomacy/service';
 import { listTemplates } from '../templates/service';
 import { listTodos } from '../todos/service';
+import { exportBoards } from '../boards/service';
 import { listWorldProgressions } from '../progressions/service';
 import { listAllBoards } from '../plot/service';
 import { listAllTables } from '../tables/service';
@@ -89,6 +90,7 @@ async function exportEverything(db: DbOrTx, worldId: string): Promise<WorldExpor
     plotBoards,
     handoutList,
     todoList,
+    boardList,
     templateList,
     commentList,
     diplomacyList,
@@ -103,6 +105,7 @@ async function exportEverything(db: DbOrTx, worldId: string): Promise<WorldExpor
     listAllBoards(db, worldId),
     listAllHandouts(db, worldId),
     listTodos(db, worldId),
+    exportBoards(db, worldId),
     listTemplates(db, worldId),
     listAllComments(db, worldId),
     listDiplomacy(db, worldId),
@@ -179,6 +182,7 @@ async function exportEverything(db: DbOrTx, worldId: string): Promise<WorldExpor
     plotBoards,
     handouts: handoutList,
     todos: todoList,
+    boards: boardList,
     entryTemplates: templateList,
     comments: commentList,
     diplomacy: diplomacyList,

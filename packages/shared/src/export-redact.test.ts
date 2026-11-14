@@ -21,6 +21,7 @@ const base = {
   plotBoards: [{ id: 'b' }],
   handouts: [],
   todos: [{ id: 't' }],
+  boards: [],
   entryTemplates: [{ id: 'e' }],
   comments: [{ id: 'c' }],
   diplomacy: [{ id: 'd' }],

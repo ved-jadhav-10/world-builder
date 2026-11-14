@@ -251,6 +251,7 @@ function world(): WorldExport {
     entryTemplates: [],
     comments: [],
     diplomacy: [],
+    boards: [],
     todos: [
       {
         id: 't1',
@@ -586,6 +587,7 @@ describe('worldToMarkdown', () => {
       plotBoards: [],
       handouts: [],
       todos: [],
+      boards: [],
       entryTemplates: [],
       comments: [],
       diplomacy: [],

@@ -27,6 +27,7 @@ import {
   REVISION_KINDS,
   ROLES,
   VISIBILITIES,
+  type BoardDoc,
   type CalendarDef,
   type FieldDefinition,
   type GmWidget,
@@ -981,5 +982,33 @@ export const diplomacyScores = pgTable(
     index('diplomacy_scores_world_idx').on(t.worldId),
     check('diplomacy_scores_range', sql`${t.score} between -100 and 100`),
     check('diplomacy_scores_order', sql`${t.lowId} < ${t.highId}`),
+  ],
+);
+
+/**
+ * A board: a free canvas of entry cards, notes, pictures, frames and arrows, or a mood board. The
+ * whole arrangement is one document (see `boardDocSchema`); `version` rises with every save of it
+ * so that two people editing cannot silently overwrite each other.
+ */
+export const boards = pgTable(
+  'boards',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    worldId: uuid('world_id')
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    kind: text('kind').notNull().default('canvas'),
+    /** Shown to players, minus whatever they may not see. */
+    shared: boolean('shared').notNull().default(false),
+    doc: jsonb('doc').$type<BoardDoc>().notNull().default({ items: [], links: [] }),
+    version: integer('version').notNull().default(0),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('boards_world_idx').on(t.worldId, t.updatedAt),
+    check('boards_kind_chk', sql`${t.kind} IN ('canvas', 'mood')`),
   ],
 );

@@ -1,4 +1,5 @@
 import type { ContinuityFinding } from './continuity';
+import type { BoardDoc, BoardKind } from './schemas/boards';
 import type { GmWidget } from './schemas/gm-screen';
 import type { DiceResult } from './dice';
 import type { TableRollResult } from './tables';
@@ -153,12 +154,25 @@ export interface WorldExport {
   handouts: Handout[];
   /** The to-do list, open tasks first. */
   todos: Todo[];
+  /** Boards and mood boards, each with its whole arrangement. */
+  boards: BoardExport[];
   /** Entry templates; saved filters are personal and stay out. */
   entryTemplates: EntryTemplate[];
   /** Every comment, flat; replies name their thread. */
   comments: Comment[];
   /** How entries stand with each other. */
   diplomacy: DiplomacyScore[];
+}
+
+/** A board as it is written into a world export. */
+export interface BoardExport {
+  id: string;
+  name: string;
+  kind: BoardKind;
+  shared: boolean;
+  doc: BoardDoc;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiErrorBody {

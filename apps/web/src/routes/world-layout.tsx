@@ -27,6 +27,7 @@ import {
   Handshake,
   SpellCheck,
   Spline,
+  StickyNote,
   SlidersHorizontal,
   Target,
   Trash2,
@@ -183,6 +184,7 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
   const explore: NavEntry[] = [
     { to: `${base}/tree`, label: 'Content tree', icon: ListTree },
     { to: `${base}/graph`, label: 'Graph', icon: Network },
+    ...(atTable ? [{ to: `${base}/boards`, label: 'Boards', icon: StickyNote }] : []),
     { to: `${base}/diplomacy`, label: 'Diplomacy', icon: Handshake },
     { to: `${base}/gallery`, label: 'Gallery', icon: Images },
   ];
@@ -357,7 +359,9 @@ export function WorldLayout() {
       </WorldContext.Provider>
     );
   }
-  const isMapView = pathname.startsWith(`${ctx.base}/atlas/`);
+  // An open map or board fills the screen.
+  const isMapView =
+    pathname.startsWith(`${ctx.base}/atlas/`) || pathname.startsWith(`${ctx.base}/boards/`);
 
   return (
     <WorldContext.Provider value={ctx}>

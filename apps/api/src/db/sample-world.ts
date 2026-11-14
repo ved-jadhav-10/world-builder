@@ -16,6 +16,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
+  boardDocSchema,
   dateToDay,
   DEFAULT_CALENDAR,
   entityCreateSchema,
@@ -41,6 +42,7 @@ import {
 import { createSession } from '../modules/sessions/service';
 import { createTable } from '../modules/tables/service';
 import { attachTag, createTag } from '../modules/tags/service';
+import { createBoard } from '../modules/boards/service';
 import { createTodo } from '../modules/todos/service';
 import type { Db } from './client';
 import { drawSampleMap } from './sample-map';
@@ -387,6 +389,90 @@ export async function fillSampleWorld(
   ] as const) {
     await createTodo(db, worldId, userId, todoCreateSchema.parse({ title, entityId }));
   }
+
+  /* A board: who is tied to whom over the compass, with the GM's own guess kept back. */
+  await createBoard(db, worldId, userId, {
+    name: 'The compass affair',
+    kind: 'canvas',
+    doc: boardDocSchema.parse({
+      items: [
+        { id: 'f-harbour', type: 'frame', title: 'In Vesh', x: -40, y: 60, w: 700, h: 400 },
+        {
+          id: 't-title',
+          type: 'note',
+          color: 'plain',
+          size: 'lg',
+          x: -40,
+          y: -60,
+          w: 520,
+          h: 56,
+          text: 'Who wants the compass?',
+        },
+        { id: 'e-mira', type: 'entry', entityId: mira.id, x: 0, y: 110, w: 290, h: 120 },
+        { id: 'e-odo', type: 'entry', entityId: odo.id, x: 340, y: 110, w: 290, h: 120 },
+        { id: 'e-guild', type: 'entry', entityId: guild.id, x: 340, y: 300, w: 290, h: 120 },
+        { id: 'e-compass', type: 'entry', entityId: compass.id, x: 760, y: 200, w: 290, h: 120 },
+        {
+          id: 'e-prince',
+          type: 'entry',
+          entityId: prince.id,
+          x: 0,
+          y: 300,
+          w: 290,
+          h: 120,
+          gmOnly: true,
+        },
+        {
+          id: 'n-open',
+          type: 'note',
+          color: 'vellum',
+          x: 780,
+          y: 380,
+          w: 220,
+          h: 150,
+          text: 'Open question: who told the Guild where the compass went down?',
+        },
+        {
+          id: 'n-truth',
+          type: 'note',
+          color: 'rose',
+          x: 760,
+          y: 0,
+          w: 240,
+          h: 150,
+          gmOnly: true,
+          text: 'The Prince does not want the compass. He wants what Mira fears losing.',
+        },
+        {
+          id: 's-sea',
+          type: 'swatch',
+          color: '#2f5d62',
+          label: 'Harbour at dusk',
+          x: 1100,
+          y: 200,
+          w: 96,
+          h: 116,
+        },
+        {
+          id: 's-lamp',
+          type: 'swatch',
+          color: '#c98b3a',
+          label: 'Lamp light',
+          x: 1210,
+          y: 200,
+          w: 96,
+          h: 116,
+        },
+      ],
+      links: [
+        { id: 'l1', from: 'e-mira', to: 'e-guild', label: 'once piloted for' },
+        { id: 'l2', from: 'e-guild', to: 'e-compass', label: 'is hunting' },
+        { id: 'l3', from: 'e-odo', to: 'e-compass', label: 'logged its loss' },
+        { id: 'l4', from: 'e-prince', to: 'e-guild', label: 'pays' },
+        { id: 'l5', from: 'n-truth', to: 'e-compass' },
+      ],
+    }),
+  });
 
   /* The chart */
   const chart = drawSampleMap();

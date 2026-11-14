@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type {
   AtlasMap,
+  BoardSummary,
   EntityType,
   ManuscriptNode,
   MapFeature,
@@ -84,6 +85,8 @@ describe('the sample world', () => {
 
     expect((await user.api.get(`${w}/tables`)).json<RollTable[]>()).toHaveLength(1);
     expect((await user.api.get(`${w}/todos`)).json<Todo[]>()).toHaveLength(3);
+    const boards = (await user.api.get(`${w}/boards`)).json<BoardSummary[]>();
+    expect(boards).toMatchObject([{ name: 'The compass affair', itemCount: 11 }]);
 
     // The sample is also a worked example of the reader wiki.
     await user.api.patch(`${w}/wiki-settings`, { enabled: true });

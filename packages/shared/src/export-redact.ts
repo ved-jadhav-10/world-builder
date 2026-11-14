@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { fieldSchemaFor, fieldValuesFor } from './fields';
 import { canSee, PREVIEW_AUDIENCES, type Audience } from './audience';
+import { boardForPlayers } from './boards';
 import { stripSecretBlocks } from './secret-blocks';
 import type { WorldExport } from './types';
 
@@ -89,6 +90,28 @@ export function redactWorldExport(data: WorldExport, audience: Audience): WorldE
     plotBoards: [],
     handouts: data.handouts.filter((handout) => canSee(audience, handout.visibility)),
     todos: [],
+    // Players get the boards shown to them, as they would see them in the app.
+    boards:
+      audience === 'player'
+        ? data.boards
+            .filter((board) => board.shared)
+            .map((board) => ({
+              ...board,
+              doc: boardForPlayers(
+                board.doc,
+                entityIds,
+                new Set(
+                  data.gallery
+                    .filter(
+                      (image) =>
+                        canSee(audience, image.visibility) &&
+                        (image.entityId === null || entityIds.has(image.entityId)),
+                    )
+                    .map((image) => image.id),
+                ),
+              ),
+            }))
+        : [],
     entryTemplates: [],
     comments: [],
     diplomacy: [],

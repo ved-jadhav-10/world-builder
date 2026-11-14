@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { and, asc, desc, eq, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import type {
   Audience,
@@ -8,6 +8,7 @@ import type {
   imageCreateSchema,
   ImageListQuery,
   imageUpdateSchema,
+  Visibility,
 } from '@atlas/shared';
 import type { DbOrTx } from '../../db/client';
 import { entities, images, manuscriptNodes } from '../../db/schema';
@@ -255,4 +256,45 @@ export async function listWorldImages(db: DbOrTx, worldId: string): Promise<Gall
     .where(eq(images.worldId, worldId))
     .orderBy(asc(images.createdAt));
   return rows.map(toImage);
+}
+
+/** Of the given images, those the audience can see, with their sizes. For cards that show pictures. */
+export async function visibleImagesById(
+  db: DbOrTx,
+  worldId: string,
+  ids: string[],
+  audience: Audience,
+): Promise<
+  { id: string; width: number; height: number; caption: string; visibility: Visibility }[]
+> {
+  if (ids.length === 0) return [];
+  const rows = await selectImages(db, audience).where(
+    and(eq(images.worldId, worldId), inArray(images.id, ids), imageVisible(audience)),
+  );
+  return rows.map(({ image }) => ({
+    id: image.id,
+    width: image.width,
+    height: image.height,
+    caption: image.caption,
+    visibility: image.visibility,
+  }));
+}
+
+/** The portrait of each given entry that the audience can see, as entry ID to image ID. */
+export async function portraitsFor(
+  db: DbOrTx,
+  worldId: string,
+  entityIds: string[],
+  audience: Audience,
+): Promise<Map<string, string>> {
+  if (entityIds.length === 0) return new Map();
+  const rows = await selectImages(db, audience).where(
+    and(
+      eq(images.worldId, worldId),
+      inArray(images.entityId, entityIds),
+      eq(images.isPortrait, true),
+      imageVisible(audience),
+    ),
+  );
+  return new Map(rows.map(({ image }) => [image.entityId!, image.id]));
 }
