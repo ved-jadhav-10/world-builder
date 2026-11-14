@@ -32,6 +32,21 @@ export const router = createBrowserRouter([
       { path: '/reset-password', element: <ResetPasswordPage /> },
       // An invite link works for visitors too: it asks them to sign in or up, then brings them back.
       { path: '/join/:token', element: <JoinPage /> },
+      // A world's public reader wiki: no account needed.
+      {
+        path: '/wiki/:slug',
+        lazy: async () => ({ Component: (await import('@/routes/wiki-pages')).WikiLayout }),
+        children: [
+          {
+            index: true,
+            lazy: async () => ({ Component: (await import('@/routes/wiki-pages')).WikiHomePage }),
+          },
+          {
+            path: 'e/:entryId',
+            lazy: async () => ({ Component: (await import('@/routes/wiki-pages')).WikiEntryPage }),
+          },
+        ],
+      },
       // The front door: your worlds when signed in, the public front page when not.
       { path: '/', element: <HomeGate /> },
       {

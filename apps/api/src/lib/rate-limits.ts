@@ -25,4 +25,8 @@ export const limits = {
   graph: limit(60, '1 minute'),
   /** An export reads the whole world. */
   export: limit(6, '10 minutes'),
+  /** Reading a public wiki; counted by address, since readers have no account. */
+  wikiRead: limit(300, '1 minute'),
+  /** Trying a wiki's password: slows down guessing. */
+  wikiUnlock: limit(10, '10 minutes'),
 };

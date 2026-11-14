@@ -74,6 +74,7 @@ function toEntity(row: EntityRow, entityTagList: Tag[]): Entity {
     body: row.body,
     startDay: row.startDay,
     endDay: row.endDay,
+    revealNodeId: row.revealNodeId,
     tags: entityTagList,
     createdAt: row.createdAt.toISOString(),
   };
@@ -126,9 +127,32 @@ export async function getEntity(
   const type = await getEntityTypeRow(db, worldId, row.typeId);
   return {
     ...entity,
+    // Where an entry is held back until would point into the author's manuscript.
+    revealNodeId: null,
     body: stripSecretBlocks(entity.body),
     fields: fieldValuesFor(type.fieldSchema, entity.fields, audience),
   };
+}
+
+/** A spoiler gate must point at a chapter or scene of this world's manuscript. */
+async function checkRevealNode(
+  db: DbOrTx,
+  worldId: string,
+  nodeId: string | null,
+): Promise<string | null> {
+  if (nodeId === null) return null;
+  const [node] = await db
+    .select({ id: manuscriptNodes.id })
+    .from(manuscriptNodes)
+    .where(
+      and(
+        eq(manuscriptNodes.id, nodeId),
+        eq(manuscriptNodes.worldId, worldId),
+        inArray(manuscriptNodes.kind, ['chapter', 'scene']),
+      ),
+    );
+  if (!node) throw notFound('Chapter');
+  return node.id;
 }
 
 /** The books an entry is scoped to must be books of this world; duplicates are dropped. */
@@ -158,9 +182,11 @@ export async function createEntity(
   const type = await getEntityTypeRow(db, worldId, input.typeId);
   const fields = parseFieldValues(type.fieldSchema, input.fields);
   const scopeBookIds = await checkBooks(db, worldId, input.scopeBookIds);
+  const revealNodeId = await checkRevealNode(db, worldId, input.revealNodeId);
   const [row] = await db
     .insert(entities)
     .values({
+      revealNodeId,
       worldId,
       typeId: type.id,
       name: input.name,
@@ -208,6 +234,10 @@ export async function updateEntity(
     input.scopeBookIds === undefined
       ? existing.scopeBookIds
       : await checkBooks(db, worldId, input.scopeBookIds);
+  const revealNodeId =
+    input.revealNodeId === undefined
+      ? existing.revealNodeId
+      : await checkRevealNode(db, worldId, input.revealNodeId);
   const [row] = await db
     .update(entities)
     .set({
@@ -215,6 +245,7 @@ export async function updateEntity(
       startDay,
       endDay,
       scopeBookIds,
+      revealNodeId,
       searchText: deriveSearchText(merged, gmOnlyFieldKeys(type.fieldSchema)),
     })
     .where(eq(entities.id, existing.id))

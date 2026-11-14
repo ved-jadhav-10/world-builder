@@ -356,3 +356,28 @@
 .atlas-cluster:hover {
   background: #1e293b;
 }
+
+/*
+  Garamond is a smaller, lighter face than the size names assume, so serif headings step up a
+  size and sit at a medium weight. Unlayered on purpose: these win over the utilities.
+*/
+.font-serif.text-lg {
+  font-size: 1.3rem;
+  line-height: 1.3;
+}
+.font-serif.text-xl {
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+.font-serif.text-2xl {
+  font-size: 1.95rem;
+  line-height: 1.15;
+}
+.font-serif.text-3xl {
+  font-size: 2.6rem;
+  line-height: 1.08;
+}
+.font-serif.font-semibold,
+.font-serif.font-bold {
+  font-weight: 500;
+}

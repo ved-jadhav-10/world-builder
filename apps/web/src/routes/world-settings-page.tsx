@@ -15,6 +15,7 @@ import {
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ManuscriptExportDialog } from '@/components/manuscript-export-dialog';
 import { Button } from '@/components/ui/button';
+import { WikiSettingsCard } from '@/components/wiki-settings-card';
 import { Input, Label, NativeSelect, Textarea } from '@/components/ui/inputs';
 import { useWorld } from '@/lib/world-context';
 
@@ -113,6 +114,8 @@ export function WorldSettingsPage() {
           </Link>
         </Button>
       </section>
+
+      <WikiSettingsCard />
 
       <section className="space-y-3 rounded-xl border bg-card p-5">
         <h2 className="font-semibold">Export</h2>

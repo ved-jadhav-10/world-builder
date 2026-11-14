@@ -13,6 +13,7 @@ import { calendarRoutes } from './modules/calendar/routes';
 import { continuityRoutes } from './modules/continuity/routes';
 import { revisionRoutes } from './modules/revisions/routes';
 import { handoutRoutes } from './modules/handouts/routes';
+import { wikiRoutes, wikiSettingsRoutes } from './modules/wiki/routes';
 import { wordCheckRoutes } from './modules/word-check/routes';
 import { commentRoutes } from './modules/comments/routes';
 import { journalRoutes } from './modules/journals/routes';
@@ -75,6 +76,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(gmScreenRoutes);
   await app.register(tableRoutes);
   await app.register(memberRoutes);
+  await app.register(wikiSettingsRoutes);
 };
 
 export async function buildApp(
@@ -111,6 +113,8 @@ export async function buildApp(
   app.get('/api/health', async () => ({ ok: true }));
   await app.register(authRoutes);
   await app.register(inviteRoutes, { prefix: '/api/invites' });
+  // The reader wiki is the one part of the API that needs no account.
+  await app.register(wikiRoutes, { prefix: '/api/wiki' });
   await app.register(worldCollectionRoutes, { prefix: '/api/worlds' });
   await app.register(worldScopedRoutes, { prefix: '/api/worlds/:worldId' });
 

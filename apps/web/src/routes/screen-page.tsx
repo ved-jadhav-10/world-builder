@@ -1,5 +1,6 @@
 import {
   ArrowDown,
+  GripVertical,
   ArrowUp,
   Coins,
   Dices,
@@ -360,6 +361,17 @@ function SessionWidget() {
   );
 }
 
+/** Puts the carried widget where the target is; the target and those after it shift along. */
+function reorder(list: GmWidget[], carriedId: string | null, targetId: string): GmWidget[] {
+  const from = list.findIndex((widget) => widget.id === carriedId);
+  const to = list.findIndex((widget) => widget.id === targetId);
+  if (from < 0 || to < 0 || from === to) return list;
+  const next = [...list];
+  const [carried] = next.splice(from, 1);
+  next.splice(to, 0, carried!);
+  return next;
+}
+
 // ---- The frame around each widget -------------------------------------------------------------
 
 function WidgetFrame({
@@ -369,6 +381,7 @@ function WidgetFrame({
   onTitle,
   onMove,
   onRemove,
+  drag,
   children,
 }: {
   widget: GmWidget;
@@ -377,15 +390,55 @@ function WidgetFrame({
   onTitle: (title: string) => void;
   onMove: (by: -1 | 1) => void;
   onRemove: () => void;
+  /** Dragging by the grip: which widget is being carried, and what to do when it lands here. */
+  drag: {
+    carrying: string | null;
+    start: () => void;
+    end: () => void;
+    dropHere: () => void;
+  };
   children: ReactNode;
 }) {
   const label = GM_WIDGET_LABELS[widget.type];
+  const [over, setOver] = useState(false);
+  const target = drag.carrying !== null && drag.carrying !== widget.id;
   return (
     <section
       aria-label={widget.title || label}
-      className="min-w-0 space-y-3 rounded-xl border bg-card p-3"
+      className={cn(
+        'min-w-0 space-y-3 rounded-xl border bg-card p-3 transition-shadow',
+        drag.carrying === widget.id && 'opacity-50',
+        over && target && 'ring-2 ring-ring',
+      )}
+      onDragOver={(event) => {
+        if (!target) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        if (!target) return;
+        event.preventDefault();
+        setOver(false);
+        drag.dropHere();
+      }}
     >
       <header className="flex items-center gap-1.5">
+        {/* The grip is the only draggable part, so text inside a widget can still be selected. */}
+        <span
+          draggable
+          onDragStart={(event) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', widget.id);
+            drag.start();
+          }}
+          onDragEnd={drag.end}
+          title="Drag to rearrange"
+          className="-ml-1 cursor-grab text-muted-foreground active:cursor-grabbing [&_svg]:size-4"
+        >
+          <GripVertical aria-hidden="true" />
+        </span>
         <span className="text-muted-foreground [&_svg]:size-4">{WIDGET_ICONS[widget.type]}</span>
         <Input
           aria-label={`Title of ${label}`}
@@ -433,6 +486,8 @@ function ScreenEditor({ screen }: { screen: GmScreen }) {
   const { world } = useWorld();
   const save = useSaveGmScreen(world.id);
   const [widgets, setWidgets] = useState<GmWidget[]>(screen.widgets);
+  // The widget being dragged by its grip, if any.
+  const [carrying, setCarrying] = useState<string | null>(null);
   // Entries picked this visit, so a pin shows its name before the save has resolved it.
   const [picked, setPicked] = useState<Map<string, PickedEntity>>(new Map());
   const saved = useRef(JSON.stringify(screen.widgets));
@@ -537,6 +592,15 @@ function ScreenEditor({ screen }: { screen: GmScreen }) {
               onTitle={(title) => change(widget.id, { title })}
               onMove={(by) => move(index, by)}
               onRemove={() => setWidgets((list) => list.filter((w) => w.id !== widget.id))}
+              drag={{
+                carrying,
+                start: () => setCarrying(widget.id),
+                end: () => setCarrying(null),
+                dropHere: () => {
+                  setWidgets((list) => reorder(list, carrying, widget.id));
+                  setCarrying(null);
+                },
+              }}
             >
               {widget.type === 'dice' ? <RollPanel compact /> : null}
               {widget.type === 'table' ? (

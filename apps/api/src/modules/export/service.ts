@@ -156,6 +156,7 @@ async function exportEverything(db: DbOrTx, worldId: string): Promise<WorldExpor
       body: e.body,
       startDay: e.startDay,
       endDay: e.endDay,
+      revealNodeId: e.revealNodeId,
       tagIds: tagIdsByEntity.get(e.id) ?? [],
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),

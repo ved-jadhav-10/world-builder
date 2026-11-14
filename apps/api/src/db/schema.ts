@@ -62,6 +62,12 @@ export const worlds = pgTable('worlds', {
   description: text('description').notNull().default(''),
   /** The in-world "today" as a day number, for calendar reminders. */
   currentDay: bigint('current_day', { mode: 'number' }),
+  /** The public reader wiki (modules/wiki): off until the owner turns it on. */
+  wikiEnabled: boolean('wiki_enabled').notNull().default(false),
+  /** A scrypt hash; when set, readers must give the password before they see anything. */
+  wikiPasswordHash: text('wiki_password_hash'),
+  wikiIntro: text('wiki_intro').notNull().default(''),
+  wikiShowChapterTitles: boolean('wiki_show_chapter_titles').notNull().default(false),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   deletedAt: deletedAt(),
@@ -194,6 +200,13 @@ export const entities = pgTable(
     /** In-world day numbers (see calendars): born/died, founded/fallen, begins/ends. */
     startDay: bigint('start_day', { mode: 'number' }),
     endDay: bigint('end_day', { mode: 'number' }),
+    /**
+     * Spoiler gate for the reader wiki: a chapter (or scene) of the manuscript. Readers who have
+     * not read that far are not shown the entry. Null = never held back.
+     */
+    revealNodeId: uuid('reveal_node_id').references((): AnyPgColumn => manuscriptNodes.id, {
+      onDelete: 'set null',
+    }),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

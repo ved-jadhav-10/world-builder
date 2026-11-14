@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 48 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 49 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -638,6 +638,20 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified:** how it sounds to a person. It was measured, not listened to, so the timbres and tunes need a human ear; the levels and recipes are easy to change in `scenes.ts`.
 - **Deferred:** a scene suggested by an entry (a tavern entry starting Tavern hearth), the GM setting the scene for the whole table, and playing soundtrack links (M42) inside the app.
 
+## Milestone 49 (The reader wiki, with spoiler-safe reading): done
+
+- **What it is:** a public, read-only companion to a world at `/wiki/<world address>`, off until the owner or a co-GM opens it in World settings › Reader wiki. It shows only entries whose visibility is Public. No account is needed to read it; an optional password keeps it to beta readers.
+- **The part nobody else does:** the reader says how far they have read ("Nothing yet", "Chapter 7", "The whole story") and the server works out every page for the end of that chapter. Names, summaries, fields and links that change later (progressions) still show their earlier state, in the index as well as on the page; an entry can be **held back until a chapter** has been read (a select on the entry page, `entities.reveal_node_id`); pictures tagged to a later scene wait too. A direct link to a held-back entry answers exactly as if it did not exist.
+- **Rules** in `packages/shared/src/wiki.ts` (pure, tested): chapters numbered across parts and books with the scenes each covers, the reader's point (chapter, last scene read, latest day read), and the reveal test. Anything doubtful falls on the safe side: an unknown chapter is the start, a gate whose chapter was deleted hides the entry until the end, and a change dated by day is not applied while the scenes read so far have no date.
+- **Never sent:** the manuscript, scene ids, chapter titles (unless the owner ticks "Show chapter titles"; the default is "Chapter 7"), GM-only fields and changes to them, secret blocks, non-public changes, links to entries the reader cannot see, and the gate itself (players and readers inside the app get `revealNodeId: null`, and audience exports drop it).
+- **API** (`modules/wiki`): `GET /api/wiki/:slug`, `/entries/:id`, `/images/:id/file|thumbnail`, all taking `?chapter=start|end|<chapter id>`, and `POST /unlock`. A locked wiki answers 401 with only the world's name. The password is stored as a scrypt hash; a correct one sets a 30-day cookie signed with the server secret and the hash, so changing or removing the password ends every earlier pass. Requests are rate limited by address (unlock attempts tightly). Settings are `GET` and `PATCH /api/worlds/:id/wiki-settings`, editors only. Migration 0030.
+- **Crawlers:** every wiki response carries `X-Robots-Tag: noai, noimageai`, and `public/robots.txt` asks the known AI crawlers to stay out of the whole site and all crawlers to stay out of the app and API.
+- **Server switch:** `PUBLIC_WIKIS` (on by default, but off in production until set to `true`), because publishing needs the terms and takedown process in checklist A first. `ABUSE_EMAIL`, when set, adds a "Report this wiki" link.
+- **Web:** `routes/wiki-pages.tsx` (index by type with a name filter, entry page with summary, article, details, connections and pictures, password gate, "not at this point in the story" page), and a small read-only article renderer (`components/rich-text-view.tsx`) so the public pages never load the editor. The reader's chapter is remembered on the device and travels in the address.
+- **Verified:** shared tests (5) and API tests (11: closed by default, start, as-of names in page and index, secrets, held-back entries and their links, unknown chapter, titles, password and pass invalidation, permissions, the gate hidden from members, GM-only fields), the full suite, and Chrome with three real sessions (author sets the gate and opens the wiki in the app; a visitor with no account steps through chapters; a stranger meets the password), 19 checks, phone width included.
+- **Limits:** an article's text is shown as written, so facts that change belong in progressions and late reveals in held-back entries (a "reveal after chapter" block inside an article is the obvious next step). Maps, the timeline and the relationship graph are not on the wiki yet. Readers signed in to the app with the Reader role are not gated by chapter (they have no stated progress).
+- **Deferred:** spoiler blocks inside articles, fields revealed after a chapter, maps and timeline on the wiki, a per-reader progress for signed-in readers, server-side rendering for search engines, custom domains and analytics.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
@@ -645,7 +659,7 @@ The to-do list is in [checklist.md](checklist.md): every feature not built yet, 
 ### Suggested order
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
 1. **The rest of D, E and G** (B and C are done as of M38): GM tools, players and membership, co-editing and so on, as the checklist lists them.
-2. **Spoiler gating and field-level visibility (F).** The public reader wiki itself waits for the moderation and legal items in A, since it makes content public.
+2. **The rest of F.** The reader wiki and its spoiler gating shipped in M49, behind a server switch that stays off in production until the moderation and legal items in A are done. Still open: spoiler blocks inside articles, and maps and the timeline on the wiki.
 3. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
 
 ### Competitor check: vvd (November 10, 2026)
@@ -661,5 +675,5 @@ A battlemap VTT, dynamic lighting, line of sight and 3D minis; full rules automa
 - Tiling runs in the API process, one map at a time; uploads and tiles are on local disk.
 - Rate-limit counters (ours and Better Auth's) live in each API process's memory, so they are per instance.
 - libvips caching is off (`sharp.cache(false)`) because it broke file deletes on Windows; a Linux deployment could turn it back on after testing.
-- The manuscript is the author's own workspace, GM-only; readers cannot see chapters yet (section F of the checklist).
+- The manuscript is the author's own workspace, GM-only; readers cannot see chapters, on the wiki or in the app. The wiki uses chapter order only to decide what a reader may see.
 - "View as" previews and invited members share one audience engine; new content types must go through `visibleTo()` and the audience rules, with a test in `audience.test.ts`.

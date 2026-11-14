@@ -36,6 +36,8 @@ export const entityCreateSchema = z
     startDay: dayNumberSchema.nullable().default(null),
     endDay: dayNumberSchema.nullable().default(null),
     scopeBookIds: scopeSchema.default([]),
+    /** Hidden from wiki readers until this chapter (or scene) of the manuscript; see wiki.ts. */
+    revealNodeId: idSchema.nullable().default(null),
   })
   .refine(entityDateRange, dateRangeIssue);
 export type EntityCreateInput = z.input<typeof entityCreateSchema>;
@@ -51,6 +53,7 @@ export const entityUpdateSchema = z
     startDay: dayNumberSchema.nullable().optional(),
     endDay: dayNumberSchema.nullable().optional(),
     scopeBookIds: scopeSchema.optional(),
+    revealNodeId: idSchema.nullable().optional(),
   })
   .refine(entityDateRange, dateRangeIssue);
 export type EntityUpdateInput = z.input<typeof entityUpdateSchema>;

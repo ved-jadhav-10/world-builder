@@ -17,7 +17,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Account extras** (deferred in M7): changing the email address, and downloading all of an account's data in one file (each world still exports on its own).
 - [ ] **Age rule:** minimum age 18, or verifiable parental consent (many fanfic writers and players are teenagers).
 - [ ] **India and EU compliance:** DPDP Consent Manager rules start November 13, 2026 and full obligations on May 13, 2027; GDPR basics (lawful basis, processing agreements, transfer clauses, cookie consent). Not legal advice; check with a professional.
-- [ ] **Moderation, if public sharing ships (F):** takedown process, an India grievance officer, NSFW and hate-speech rules, and no public publishing of non-SRD WotC text.
+- [ ] **Moderation, now that public sharing has shipped (F, M49; it stays switched off in production until this is done):** takedown process, an India grievance officer, NSFW and hate-speech rules, and no public publishing of non-SRD WotC text.
 - [ ] **Billing:** Razorpay (INR, UPI) and Paddle (global tax). Free tier with unlimited entries and limited map storage (for example 3 maps, 250 MB); Pro about $6 to $8 a month or ₹199 to ₹299; annual discount; a capped founder lifetime deal. Never cap in a way that locks users out of work they already have.
 - [ ] **Public marketing site** (`apps/site`, Next.js or Astro) with landing and SEO comparison pages, an in-app "what's new" [v1], and a Discord community with roadmap voting.
 - [ ] **Search upgrade** to Meilisearch or Typesense if Postgres full-text stops being enough.
@@ -83,10 +83,10 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## F. Sharing and publishing
 
-- [ ] **Hidden until chapter N** and **spoiler gating**: pages and fields revealed after a chosen chapter [v1; deferred in M5].
+- [x] **Hidden until chapter N** and **spoiler gating**: an entry can be held back from wiki readers until a chapter has been read (M49). Still to do: single fields and blocks of an article revealed after a chapter.
 - [x] **Field-level visibility:** a field can be marked GM only in the type editor (M45); block-level visibility came with secret blocks (M37). Still to do: fields shown to players only after a date or chapter (see spoiler gating).
-- [ ] **Public reader wiki** for chosen pages [v1], with **password-protected pages** for beta readers or players [v1]; AI crawlers blocked.
-- [ ] **Progression-driven spoiler-safe wiki:** readers see only what is true up to their chapter [v2; nobody offers it, though vvd has on/off spoiler controls, so check how far they go].
+- [x] **Public reader wiki** of a world's public entries, with an optional **password** for beta readers; AI crawlers asked to stay out (M49). Off in production until `PUBLIC_WIKIS=true`. Still to do: maps, timeline and graph on the wiki, a password per page, server-side rendering for search engines.
+- [x] **Progression-driven spoiler-safe wiki:** readers say which chapter they have reached and see every entry, name and link as it stood then (M49). Still to do: remembering progress for signed-in readers.
 - [x] **Export only what players can see:** the JSON and Markdown exports take an audience (players, readers or the public) and hold only what that audience can see (M43). Still to do: the same for the story-bible PDF and the manuscript exports.
 - [ ] **Later publishing:** per-world analytics, white-label, followers and notifications, featured worlds, challenges and prompts [v2]; custom domains, supporter tiers, a reading storefront [v3].
 

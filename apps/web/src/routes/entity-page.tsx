@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import {
   buildFieldValuesSchema,
+  chapterLabel,
+  wikiChapters,
   visibilitySchema,
   type Entity,
   type EntityRevisionContent,
@@ -47,6 +49,46 @@ import { useManuscriptTree } from '@/lib/manuscript-tree';
 import { openPopout } from '@/lib/popout';
 import { VISIBILITY_LABELS } from '@/lib/visibility-labels';
 import { useWorld } from '@/lib/world-context';
+
+/**
+ * The spoiler gate for the reader wiki: readers who have not finished the chosen chapter are not
+ * shown this entry at all. Only offered when there is a manuscript to point into.
+ */
+function RevealGate({ control, disabled }: { control: Control<FormValues>; disabled: boolean }) {
+  const { tree } = useManuscriptTree();
+  const chapters = useMemo(() => wikiChapters(tree.nodes), [tree.nodes]);
+  if (chapters.length === 0) return null;
+  return (
+    <Controller
+      control={control}
+      name="revealNodeId"
+      render={({ field }) => (
+        <div className="space-y-1.5">
+          <Label htmlFor="reveal-gate">Hold back from wiki readers</Label>
+          <NativeSelect
+            id="reveal-gate"
+            disabled={disabled}
+            value={field.value ?? ''}
+            onChange={(event) => field.onChange(event.target.value || null)}
+          >
+            <option value="">Never: shown from the start</option>
+            {chapters.map((chapter) => (
+              <option key={chapter.id} value={chapter.id}>
+                Until they have read {chapterLabel(chapter, true)}
+              </option>
+            ))}
+            {field.value && !chapters.some((chapter) => chapter.id === field.value) ? (
+              <option value={field.value}>Until a scene (set elsewhere)</option>
+            ) : null}
+          </NativeSelect>
+          <p className="text-xs text-muted-foreground">
+            For the public reader wiki. It only matters when the visibility is Public.
+          </p>
+        </div>
+      )}
+    />
+  );
+}
 
 /** Which books an entry is for. None ticked means it is shared across the whole series. */
 function BookScope({ control, disabled }: { control: Control<FormValues>; disabled: boolean }) {
@@ -100,6 +142,7 @@ interface FormValues {
   body: RichTextDoc | null;
   startDay: number | null;
   endDay: number | null;
+  revealNodeId: string | null;
 }
 
 /**
@@ -116,6 +159,7 @@ const toFormValues = (entity: Entity, type: EntityType): FormValues => ({
   body: entity.body,
   startDay: entity.startDay,
   endDay: entity.endDay,
+  revealNodeId: entity.revealNodeId,
 });
 
 const FALLBACK_TYPE: EntityType = {
@@ -191,6 +235,7 @@ function EntityEditor({
           body: z.unknown(),
           startDay: z.number().int().nullable(),
           endDay: z.number().int().nullable(),
+          revealNodeId: z.string().nullable(),
         })
         .refine((v) => v.startDay === null || v.endDay === null || v.endDay >= v.startDay, {
           path: ['endDay'],
@@ -498,6 +543,7 @@ function EntityEditor({
                 </p>
               </div>
               <BookScope control={form.control} disabled={!canEdit} />
+              {canEdit ? <RevealGate control={form.control} disabled={!canEdit} /> : null}
             </section>
 
             <RelationshipsPanel entity={entity} />

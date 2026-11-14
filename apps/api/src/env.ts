@@ -32,6 +32,16 @@ const schema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((value) => (value === undefined ? undefined : value === 'true')),
+  /**
+   * Whether worlds may have a public reader wiki at all. Defaults to on, except in production,
+   * where it stays off until someone decides the terms and takedown process are in place.
+   */
+  PUBLIC_WIKIS: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
+  /** Shown on wiki pages as the address for reporting a page; leave unset to show none. */
+  ABUSE_EMAIL: z.email().optional(),
   /** Set when the API sits behind a proxy or load balancer, so rate limits see real client IPs. */
   TRUST_PROXY: z
     .enum(['true', 'false'])
@@ -58,6 +68,7 @@ export const env = {
   /** Tests always run against the separate test database. */
   databaseUrl: isTest ? testDatabaseUrl! : parsed.data.DATABASE_URL,
   storageDir: resolve(repoRoot, parsed.data.STORAGE_DIR),
+  publicWikis: parsed.data.PUBLIC_WIKIS ?? parsed.data.NODE_ENV !== 'production',
   requireEmailVerification:
     parsed.data.REQUIRE_EMAIL_VERIFICATION ?? parsed.data.EMAIL_PROVIDER !== 'console',
 };

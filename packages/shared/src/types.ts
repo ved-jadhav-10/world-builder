@@ -74,6 +74,8 @@ export interface Entity extends EntitySummary {
   /** In-world day numbers (see calendar.ts); null when not dated. */
   startDay: number | null;
   endDay: number | null;
+  /** The chapter (or scene) readers of the wiki must reach before they see this entry. */
+  revealNodeId: string | null;
   tags: Tag[];
   createdAt: string;
 }

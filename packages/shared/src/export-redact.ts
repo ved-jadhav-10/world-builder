@@ -30,6 +30,8 @@ export function redactWorldExport(data: WorldExport, audience: Audience): WorldE
       ...entity,
       body: stripSecretBlocks(entity.body),
       fields: fieldValuesFor(schemaByType.get(entity.typeId) ?? [], entity.fields, audience),
+      // The spoiler gate names a chapter of the manuscript, which is not in this copy.
+      revealNodeId: null,
     }));
   const entityIds = new Set(entities.map((entity) => entity.id));
   const usedTagIds = new Set(entities.flatMap((entity) => entity.tagIds));

@@ -1,4 +1,5 @@
-import { ExternalLink, Minus, Plus, Trash2, Zap } from 'lucide-react';
+import { ExternalLink, Minus, Play, Plus, Square, Trash2, Zap } from 'lucide-react';
+import { useState } from 'react';
 import {
   CHARACTER_INTERVIEW_QUESTIONS,
   MAX_PALETTE_COLORS,
@@ -9,6 +10,7 @@ import {
 } from '@atlas/shared';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/inputs';
+import { mediaEmbedFor, type MediaEmbed } from '@/lib/media-embed';
 
 interface ListProps<T> {
   id: string;
@@ -426,65 +428,114 @@ export function InventoryField({ id, value, onChange, disabled }: ListProps<Shop
 
 const isHttpUrl = (value: string) => /^https?:\/\/\S+$/i.test(value);
 
-/** Named links, such as a location's soundtrack. Read-only, they are plain links that open anew. */
+/** The player for one link, shown once someone asks for it. */
+function LinkPlayer({ embed, title }: { embed: MediaEmbed; title: string }) {
+  return (
+    <iframe
+      src={embed.src}
+      title={title}
+      height={embed.height}
+      className="w-full rounded-lg border"
+      allow="autoplay; encrypted-media; fullscreen"
+      referrerPolicy="strict-origin-when-cross-origin"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+    />
+  );
+}
+
+/**
+ * Named links, such as a location's soundtrack. Read-only, they are plain links that open anew.
+ * A link to a track or playlist on YouTube, Spotify or SoundCloud can also play here: the
+ * service's player loads only when asked, never by itself.
+ */
 export function LinksField({ id, value, onChange, disabled }: ListProps<LabelledLink>) {
   const links = asList<LabelledLink>(value);
+  const [playing, setPlaying] = useState<number | null>(null);
   const patch = (index: number, next: Partial<LabelledLink>) =>
     onChange(links.map((link, i) => (i === index ? { ...link, ...next } : link)));
+  const playButton = (index: number, embed: MediaEmbed | null) =>
+    embed ? (
+      <button
+        type="button"
+        onClick={() => setPlaying(playing === index ? null : index)}
+        aria-pressed={playing === index}
+        title={playing === index ? 'Stop' : `Play here (${embed.service})`}
+        className="flex size-9 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+      >
+        {playing === index ? <Square className="size-3.5" /> : <Play className="size-4" />}
+        <span className="sr-only">
+          {playing === index ? 'Stop' : 'Play here'} link {index + 1}
+        </span>
+      </button>
+    ) : null;
 
   return (
     <div id={id} className="space-y-2">
       {links.map((link, index) =>
         disabled ? (
           isHttpUrl(link.url) ? (
-            <a
-              key={index}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm underline"
-            >
-              <ExternalLink className="size-3.5" /> {link.label || link.url}
-            </a>
+            <div key={index} className="space-y-2">
+              <div className="flex items-center gap-2">
+                {playButton(index, mediaEmbedFor(link.url))}
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-w-0 items-center gap-1.5 text-sm underline"
+                >
+                  <ExternalLink className="size-3.5 shrink-0" />
+                  <span className="truncate">{link.label || link.url}</span>
+                </a>
+              </div>
+              {playing === index && mediaEmbedFor(link.url) ? (
+                <LinkPlayer embed={mediaEmbedFor(link.url)!} title={link.label || 'Player'} />
+              ) : null}
+            </div>
           ) : null
         ) : (
-          <div key={index} className="flex items-center gap-2">
-            <Input
-              aria-label={`Name of link ${index + 1}`}
-              placeholder="Name"
-              maxLength={80}
-              className="w-40 shrink-0"
-              value={link.label}
-              onChange={(event) => patch(index, { label: event.target.value })}
-            />
-            <Input
-              aria-label={`Address of link ${index + 1}`}
-              type="url"
-              placeholder="https://"
-              maxLength={2000}
-              value={link.url}
-              onChange={(event) => patch(index, { url: event.target.value })}
-            />
-            {isHttpUrl(link.url) ? (
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open link"
-                className="flex size-9 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+          <div key={index} className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Input
+                aria-label={`Name of link ${index + 1}`}
+                placeholder="Name"
+                maxLength={80}
+                className="w-40 shrink-0"
+                value={link.label}
+                onChange={(event) => patch(index, { label: event.target.value })}
+              />
+              <Input
+                aria-label={`Address of link ${index + 1}`}
+                type="url"
+                placeholder="https://"
+                maxLength={2000}
+                value={link.url}
+                onChange={(event) => patch(index, { url: event.target.value })}
+              />
+              {playButton(index, mediaEmbedFor(link.url))}
+              {isHttpUrl(link.url) ? (
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open link"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+                >
+                  <ExternalLink className="size-4" />
+                </a>
+              ) : null}
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => onChange(links.filter((_, i) => i !== index))}
               >
-                <ExternalLink className="size-4" />
-              </a>
+                <Trash2 />
+                <span className="sr-only">Remove link {index + 1}</span>
+              </Button>
+            </div>
+            {playing === index && mediaEmbedFor(link.url) ? (
+              <LinkPlayer embed={mediaEmbedFor(link.url)!} title={link.label || 'Player'} />
             ) : null}
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => onChange(links.filter((_, i) => i !== index))}
-            >
-              <Trash2 />
-              <span className="sr-only">Remove link {index + 1}</span>
-            </Button>
           </div>
         ),
       )}
