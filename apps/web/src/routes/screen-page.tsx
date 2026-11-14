@@ -383,7 +383,7 @@ function WidgetFrame({
   return (
     <section
       aria-label={widget.title || label}
-      className="min-w-0 space-y-3 rounded-xl border bg-card p-3 shadow-xs"
+      className="min-w-0 space-y-3 rounded-xl border bg-card p-3"
     >
       <header className="flex items-center gap-1.5">
         <span className="text-muted-foreground [&_svg]:size-4">{WIDGET_ICONS[widget.type]}</span>

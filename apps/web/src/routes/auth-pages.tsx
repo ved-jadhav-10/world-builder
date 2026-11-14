@@ -2,7 +2,7 @@ import { MailCheck } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { Brand } from '@/components/brand';
+import { AuthShell, type AuthChart } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { FieldError, Input, Label } from '@/components/ui/inputs';
 import { authClient, signIn, signUp } from '@/lib/auth-client';
@@ -12,20 +12,18 @@ function AuthCard({
   title,
   children,
   footer,
+  chart,
 }: {
   title: string;
   children: ReactNode;
   footer: ReactNode;
+  chart?: AuthChart;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
-      <Brand className="mb-8" />
-      <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
-        <h1 className="font-serif text-2xl font-semibold">{title}</h1>
-        <div className="mt-6">{children}</div>
-      </div>
-      <p className="mt-6 text-sm text-muted-foreground">{footer}</p>
-    </div>
+    <AuthShell chart={chart} footer={footer}>
+      <h1 className="font-serif text-4xl font-medium">{title}</h1>
+      <div className="mt-8">{children}</div>
+    </AuthShell>
   );
 }
 
@@ -34,7 +32,8 @@ function withNext(path: string, next: string | null): string {
   return next ? `${path}?next=${encodeURIComponent(next)}` : path;
 }
 
-const linkClass = 'font-medium text-primary hover:underline';
+const linkClass =
+  'font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary';
 
 /** Why a confirmation link did not work, when the address it sent the browser to says so. */
 const LINK_PROBLEMS: Record<string, string> = {
@@ -153,6 +152,7 @@ export function SignUpPage() {
 
   return (
     <AuthCard
+      chart="carta-marina"
       title="Create your account"
       footer={
         <>

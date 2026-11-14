@@ -1,5 +1,5 @@
 import { createBrowserRouter } from 'react-router';
-import { RedirectIfSignedIn, RequireAuth } from '@/components/require-auth';
+import { HomeGate, RedirectIfSignedIn, RequireAuth } from '@/components/require-auth';
 import { NotFoundScreen, RouteError } from '@/components/route-error';
 import { AtlasIndexPage } from '@/routes/atlas-pages';
 import {
@@ -14,7 +14,6 @@ import { JoinPage } from '@/routes/join-page';
 import { TrashPage } from '@/routes/trash-page';
 import { WorldLayout } from '@/routes/world-layout';
 import { WorldSettingsPage } from '@/routes/world-settings-page';
-import { WorldsPage } from '@/routes/worlds-page';
 
 export const router = createBrowserRouter([
   {
@@ -33,10 +32,11 @@ export const router = createBrowserRouter([
       { path: '/reset-password', element: <ResetPasswordPage /> },
       // An invite link works for visitors too: it asks them to sign in or up, then brings them back.
       { path: '/join/:token', element: <JoinPage /> },
+      // The front door: your worlds when signed in, the public front page when not.
+      { path: '/', element: <HomeGate /> },
       {
         element: <RequireAuth />,
         children: [
-          { path: '/', element: <WorldsPage /> },
           { path: '/account', lazy: () => import('@/routes/account-page') },
           {
             path: '/w/:slug',

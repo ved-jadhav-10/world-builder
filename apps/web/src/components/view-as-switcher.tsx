@@ -18,7 +18,7 @@ export function ViewAsSwitcher() {
     <div className="space-y-1">
       <label
         htmlFor="view-as"
-        className="flex items-center gap-1.5 px-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+        className="flex items-center gap-1.5 px-0.5 text-[13px] text-muted-foreground"
       >
         <Eye className="size-3!" /> View as
       </label>

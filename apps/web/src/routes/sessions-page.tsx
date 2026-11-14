@@ -15,7 +15,7 @@ function SessionCard({ session }: { session: SessionSummary }) {
   const { base, typeById } = useWorld();
   const played = session.status === 'Played';
   return (
-    <li className="space-y-2 rounded-xl border bg-card p-4 shadow-xs">
+    <li className="space-y-2 rounded-xl border bg-card p-4">
       <div className="flex flex-wrap items-center gap-2">
         {session.number !== null ? (
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold tabular-nums">

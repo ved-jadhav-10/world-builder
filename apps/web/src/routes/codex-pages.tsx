@@ -25,10 +25,17 @@ export function CodexHome() {
     <div className="space-y-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted-foreground">Codex</p>
-          <h1 className="font-serif text-3xl font-semibold">{world.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            The codex of{' '}
+            <span className="tabular-nums">
+              {total} {total === 1 ? 'entry' : 'entries'}
+            </span>
+          </p>
+          <h1 className="font-serif text-5xl font-medium">{world.name}</h1>
           {world.description ? (
-            <p className="mt-2 max-w-2xl text-muted-foreground">{world.description}</p>
+            <p className="mt-3 max-w-2xl font-serif text-xl text-muted-foreground">
+              {world.description}
+            </p>
           ) : null}
         </div>
         {canEdit ? (
@@ -43,22 +50,26 @@ export function CodexHome() {
       </div>
 
       <section>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <h2 className="font-serif text-2xl font-medium">Contents</h2>
+        <ul className="mt-3 gap-x-10 sm:columns-2 lg:columns-3">
           {types.map((type) => (
-            <li key={type.id}>
+            <li key={type.id} className="break-inside-avoid">
               <Link
                 to={`${base}/codex/${type.key}`}
-                className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-xs transition hover:border-primary/40"
+                className="group flex items-baseline gap-2 rounded-md py-1.5 text-[15px] hover:text-primary"
               >
+                <EntityIcon icon={type.icon} color={type.color} className="self-center" />
+                <span className="truncate">{type.name}</span>
                 <span
-                  className="flex size-9 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${type.color}1a` }}
+                  aria-hidden="true"
+                  className="min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-input"
+                />
+                <span
+                  className={
+                    type.entityCount ? 'tabular-nums' : 'tabular-nums text-muted-foreground'
+                  }
                 >
-                  <EntityIcon icon={type.icon} color={type.color} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{type.name}</span>
-                  <span className="text-xs text-muted-foreground">{type.entityCount}</span>
+                  {type.entityCount}
                 </span>
               </Link>
             </li>
@@ -67,7 +78,7 @@ export function CodexHome() {
       </section>
 
       <section>
-        <h2 className="font-serif text-xl font-semibold">Recently updated</h2>
+        <h2 className="font-serif text-2xl font-medium">Recently updated</h2>
         <div className="mt-3">
           {recent.isPending ? (
             <Spinner />

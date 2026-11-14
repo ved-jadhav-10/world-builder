@@ -1,4 +1,10 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/eb-garamond/wght.css';
+@import '@fontsource-variable/eb-garamond/wght-italic.css';
+@import '@fontsource-variable/inter/wght.css';
+
+/* `dark:` utilities follow the theme the person picked, not only the system setting. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -15,59 +21,128 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-sidebar: var(--sidebar);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-rubric: var(--rubric);
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'EB Garamond Variable', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  /* Printed things have tight corners. */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
 }
 
-/* Warm paper and ink, light and dark. */
+/*
+  Vellum and iron-gall ink. The chrome carries no colour: surfaces are paper tones and the main
+  action is ink. One hue, verdigris (the green wash of old sea charts), marks links, selection and
+  data. Vermilion (--rubric) is the scribe's red: warnings, secrets and deletions only.
+*/
 :root {
   color-scheme: light;
-  --background: oklch(0.985 0.006 85);
-  --foreground: oklch(0.24 0.02 265);
-  --card: oklch(1 0 0);
-  --muted: oklch(0.955 0.008 85);
-  --muted-foreground: oklch(0.5 0.02 265);
-  --border: oklch(0.9 0.01 85);
-  --input: oklch(0.88 0.012 85);
-  --ring: oklch(0.55 0.14 275);
-  --primary: oklch(0.38 0.13 278);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --accent: oklch(0.94 0.02 278);
-  --accent-foreground: oklch(0.32 0.12 278);
-  --destructive: oklch(0.55 0.2 25);
-  --sidebar: oklch(0.965 0.009 85);
+  --background: oklch(0.953 0.012 88);
+  --foreground: oklch(0.24 0.022 262);
+  --card: oklch(0.982 0.008 90);
+  --muted: oklch(0.918 0.014 88);
+  --muted-foreground: oklch(0.46 0.018 262);
+  --border: oklch(0.868 0.018 86);
+  --input: oklch(0.82 0.02 86);
+  --ring: oklch(0.52 0.075 188);
+  --primary: oklch(0.43 0.07 188);
+  --primary-foreground: oklch(0.982 0.008 90);
+  --accent: oklch(0.91 0.028 180);
+  --accent-foreground: oklch(0.32 0.06 188);
+  --destructive: oklch(0.5 0.17 30);
+  --sidebar: oklch(0.935 0.014 88);
+  --ink: oklch(0.24 0.022 262);
+  --ink-foreground: oklch(0.975 0.008 90);
+  --rubric: oklch(0.5 0.17 30);
+  --grain-opacity: 0.5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --background: oklch(0.19 0.012 270);
-    --foreground: oklch(0.93 0.01 85);
-    --card: oklch(0.22 0.014 270);
-    --muted: oklch(0.25 0.014 270);
-    --muted-foreground: oklch(0.7 0.015 270);
-    --border: oklch(0.3 0.015 270);
-    --input: oklch(0.34 0.015 270);
-    --ring: oklch(0.68 0.13 278);
-    --primary: oklch(0.72 0.12 278);
-    --primary-foreground: oklch(0.18 0.02 270);
-    --accent: oklch(0.3 0.05 278);
-    --accent-foreground: oklch(0.88 0.06 278);
-    --destructive: oklch(0.65 0.19 25);
-    --sidebar: oklch(0.21 0.013 270);
-  }
+/* The same desk by lamplight. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --background: oklch(0.185 0.016 262);
+  --foreground: oklch(0.915 0.016 88);
+  --card: oklch(0.215 0.018 262);
+  --muted: oklch(0.255 0.018 262);
+  --muted-foreground: oklch(0.72 0.016 88);
+  --border: oklch(0.3 0.018 262);
+  --input: oklch(0.36 0.018 262);
+  --ring: oklch(0.72 0.08 185);
+  --primary: oklch(0.76 0.085 185);
+  --primary-foreground: oklch(0.185 0.016 262);
+  --accent: oklch(0.3 0.04 190);
+  --accent-foreground: oklch(0.88 0.06 185);
+  --destructive: oklch(0.68 0.17 32);
+  --sidebar: oklch(0.2 0.017 262);
+  --ink: oklch(0.915 0.016 88);
+  --ink-foreground: oklch(0.185 0.016 262);
+  --rubric: oklch(0.68 0.17 32);
+  --grain-opacity: 0.35;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    font-feature-settings: 'cv11', 'ss01';
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+  /* The grain of the sheet: one small noise tile, fixed behind everything. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.22  0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 28%, transparent);
+  }
+  /* Garamond is small on the body; headings set in it sit a touch tighter. */
+  .font-serif {
+    letter-spacing: -0.01em;
+    font-feature-settings:
+      'liga',
+      'dlig' 0,
+      'onum' 0;
+  }
+  h1.font-serif,
+  h2.font-serif {
+    text-wrap: balance;
+  }
+}
+
+/* Small helpers with a printed feel */
+@utility ornament-rule {
+  /* A double rule, as under a chart's title. */
+  border-top: 3px double var(--border);
+}
+@utility smallcaps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.06em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -132,7 +207,7 @@
 
 /* Manuscript prose reads like a book page */
 .prose-manuscript {
-  @apply font-serif text-[17px] leading-[1.8];
+  @apply font-serif text-[19px] leading-[1.75];
 }
 .prose-manuscript > * + * {
   @apply mt-4;

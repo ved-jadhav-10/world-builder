@@ -184,7 +184,7 @@ export function PlotIndexPage() {
           <li key={board.id}>
             <Link
               to={`${base}/plot/${board.id}`}
-              className="block space-y-1 rounded-xl border bg-card p-4 transition-shadow hover:shadow-md"
+              className="block space-y-1 rounded-xl border bg-card p-4 transition-shadow"
             >
               <h2 className="truncate font-serif text-lg font-semibold">{board.name}</h2>
               <p className="text-sm text-muted-foreground">
@@ -902,7 +902,7 @@ function ThreadRow({
                   setOver(key);
                 }}
                 onDrop={(event) => dropOn(event, beat.id, thread.id, index)}
-                className="cursor-grab rounded-lg border border-l-4 bg-card p-2 text-sm shadow-xs active:cursor-grabbing"
+                className="cursor-grab rounded-lg border border-l-4 bg-card p-2 text-sm active:cursor-grabbing"
                 style={{ borderLeftColor: card.color ?? thread.color }}
               >
                 <button

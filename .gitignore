@@ -11,3 +11,6 @@ coverage/
 
 # Uploaded map images and tiles (STORAGE_DIR)
 /storage/
+
+# Design skill working files
+.taste-skill/

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogTrigger } from '@/components
 import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { Badge, EmptyState, PageSpinner } from '@/components/ui/misc';
 import { UserMenu } from '@/components/user-menu';
+import { WorldCover } from '@/components/world-cover';
 import { timeAgo } from '@/lib/utils';
 
 function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
@@ -77,19 +78,17 @@ export function WorldsPage() {
 
   return (
     <div className="min-h-dvh">
-      <header className="border-b bg-card/60">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
-          <Brand />
-          <div className="w-48">
-            <UserMenu />
-          </div>
+      <header className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
+        <Brand />
+        <div className="w-52">
+          <UserMenu />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-10">
+      <main className="mx-auto max-w-5xl px-4 pb-16 pt-10">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl font-semibold">Your worlds</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h1 className="font-serif text-5xl font-medium">Your worlds</h1>
+            <p className="mt-2 text-muted-foreground">
               Every place, person and story beat, linked.
             </p>
           </div>
@@ -113,18 +112,24 @@ export function WorldsPage() {
                 <li key={world.id}>
                   <Link
                     to={`/w/${world.slug}`}
-                    className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-xs transition hover:border-primary/40 hover:shadow-md"
+                    className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="font-serif text-xl font-semibold">{world.name}</h2>
-                      {world.role !== 'owner' ? <Badge>{ROLE_LABELS[world.role]}</Badge> : null}
+                    <WorldCover
+                      seed={world.id}
+                      className="h-28 border-b transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                    <div className="flex flex-1 flex-col p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <h2 className="font-serif text-2xl font-medium">{world.name}</h2>
+                        {world.role !== 'owner' ? <Badge>{ROLE_LABELS[world.role]}</Badge> : null}
+                      </div>
+                      <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">
+                        {world.description || 'No description yet.'}
+                      </p>
+                      <p className="mt-4 text-xs text-muted-foreground">
+                        Updated {timeAgo(world.updatedAt)}
+                      </p>
                     </div>
-                    <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">
-                      {world.description || 'No description yet.'}
-                    </p>
-                    <p className="mt-4 text-xs text-muted-foreground">
-                      Updated {timeAgo(world.updatedAt)}
-                    </p>
                   </Link>
                 </li>
               ))}

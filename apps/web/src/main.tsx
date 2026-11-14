@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
 import { Toaster } from 'sonner';
 import { ApiError } from '@/api/client';
+import { watchSystemTheme } from '@/lib/theme';
 import { router } from '@/router';
 import './index.css';
 
@@ -17,6 +18,8 @@ function onApiError(error: unknown) {
     void router.navigate(`/sign-in?next=${encodeURIComponent(location.pathname)}`);
   }
 }
+
+watchSystemTheme();
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({ onError: onApiError }),

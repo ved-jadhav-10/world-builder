@@ -1,6 +1,7 @@
 import {
   CalendarRange,
   CircleUserRound,
+  ChevronDown,
   ChevronLeft,
   ClipboardList,
   ListChecks,
@@ -28,6 +29,7 @@ import {
   Target,
   Trash2,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { hasRole } from '@atlas/shared';
 import { useMemo, useState } from 'react';
@@ -39,6 +41,7 @@ import { errorMessage } from '@/api/client';
 import { useLeaveWorld } from '@/api/member-queries';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
 import { useCalendar } from '@/api/timeline-queries';
+import { BrandMark } from '@/components/brand';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EntityIcon } from '@/components/entity-icon';
 import { SearchPalette } from '@/components/search-palette';
@@ -55,8 +58,8 @@ import { buildWorldContext, WorldContext, type WorldContextValue } from '@/lib/w
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-muted',
-    isActive && 'bg-accent font-medium text-accent-foreground hover:bg-accent',
+    'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-foreground/85 transition-colors hover:bg-muted hover:text-foreground',
+    isActive && 'bg-muted font-medium text-foreground',
   );
 
 /** For anyone who was invited: step out of the world. The owner can't, since it would have none. */
@@ -90,119 +93,152 @@ function LeaveWorld({ ctx }: { ctx: WorldContextValue }) {
   );
 }
 
+interface NavEntry {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+}
+
+/** A titled group of links that folds away; the choice is remembered on this device. */
+function NavGroup({ id, title, items }: { id: string; title: string; items: NavEntry[] }) {
+  const storageKey = `atlas-nav-${id}`;
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey) !== 'closed';
+    } catch {
+      return true;
+    }
+  });
+  const { pathname } = useLocation();
+  if (!items.length) return null;
+  // A folded group still shows the page you are on, so you never lose your place.
+  const shown = open ? items : items.filter((item) => pathname.startsWith(item.to));
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(storageKey, next ? 'open' : 'closed');
+    } catch {
+      // Not remembered in a private window; it still folds for this visit.
+    }
+  };
+  return (
+    <nav className="space-y-0.5" aria-label={title}>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-1 rounded-md px-2.5 py-1 text-left text-[13px] text-muted-foreground hover:text-foreground"
+      >
+        {title}
+        <ChevronDown
+          className={cn('ml-auto size-3.5! transition-transform', !open && '-rotate-90')}
+        />
+      </button>
+      {shown.map((item) => (
+        <NavLink key={item.to} to={item.to} end={item.end} className={navItem}>
+          <item.icon /> {item.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
 function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => void }) {
   const { world, types, base, canEdit, audience } = ctx;
   // Comments are for the owner, co-GMs and commenters, and never shown in a preview.
   const canComment = hasRole(world.role, 'commenter') && !ctx.previewing;
   // Only someone who can edit has a GM view to switch away from (and back to).
   const isGm = world.role === 'owner' || world.role === 'editor';
+  const gm = audience === 'gm';
+  const atTable = gm || audience === 'player';
+
+  // The four views of one world come first; the rest is grouped by what you are doing.
+  const views: NavEntry[] = [
+    { to: base, label: 'Codex', icon: Library, end: true },
+    { to: `${base}/atlas`, label: 'Atlas', icon: MapIcon },
+    ...(gm ? [{ to: `${base}/manuscript`, label: 'Manuscript', icon: PenLine }] : []),
+    { to: `${base}/timeline`, label: 'Timeline', icon: CalendarRange },
+  ];
+  const write: NavEntry[] = [
+    ...(gm
+      ? [
+          { to: `${base}/plot`, label: 'Plot boards', icon: ClipboardList },
+          { to: `${base}/arcs`, label: 'Arc tracker', icon: Spline },
+          { to: `${base}/writing`, label: 'Writing goals', icon: Target },
+          { to: `${base}/word-check`, label: 'Word check', icon: SpellCheck },
+          { to: `${base}/continuity`, label: 'Continuity', icon: ShieldCheck },
+          { to: `${base}/todos`, label: 'To-do', icon: ListChecks },
+        ]
+      : []),
+    ...(canComment ? [{ to: `${base}/comments`, label: 'Comments', icon: MessageSquare }] : []),
+  ];
+  const explore: NavEntry[] = [
+    { to: `${base}/tree`, label: 'Content tree', icon: ListTree },
+    { to: `${base}/graph`, label: 'Graph', icon: Network },
+    { to: `${base}/diplomacy`, label: 'Diplomacy', icon: Handshake },
+    { to: `${base}/gallery`, label: 'Gallery', icon: Images },
+  ];
+  const play: NavEntry[] = [
+    { to: `${base}/quests`, label: 'Quests', icon: ScrollText },
+    ...(gm ? [{ to: `${base}/screen`, label: 'GM screen', icon: LayoutDashboard }] : []),
+    ...(atTable
+      ? [
+          { to: `${base}/sessions`, label: 'Sessions', icon: NotebookPen },
+          { to: `${base}/handouts`, label: 'Handouts', icon: FileImage },
+          { to: `${base}/tables`, label: 'Tables & dice', icon: Dices },
+        ]
+      : []),
+    ...(gm ? [{ to: `${base}/tokens`, label: 'Token maker', icon: CircleUserRound }] : []),
+  ];
+
   return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto p-4 [&_svg]:size-4">
-      <div>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft className="size-3!" /> All worlds
+    <div className="flex h-full flex-col gap-4 overflow-y-auto p-3 [&_svg]:size-4">
+      <div className="px-1.5 pt-1">
+        <Link to="/" className="inline-flex items-center gap-1.5" title="All worlds">
+          <BrandMark className="size-5!" />
+          <span className="font-serif text-[15px] text-muted-foreground">Atlas &amp; Ink</span>
         </Link>
-        <h2 className="mt-1 truncate font-serif text-xl font-semibold" title={world.name}>
+        <h2
+          className="mt-2 truncate font-serif text-[1.7rem] font-medium leading-tight"
+          title={world.name}
+        >
           {world.name}
         </h2>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-0.5 text-[13px] text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="size-3.5!" /> All worlds
+        </Link>
       </div>
 
       <button
         type="button"
         onClick={onSearch}
-        className="flex h-9 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground hover:border-primary/40"
+        className="flex h-9 shrink-0 items-center gap-2 rounded-md border bg-card px-3 text-sm text-muted-foreground hover:border-input"
       >
         <Search /> Search…
-        <kbd className="ml-auto rounded border px-1.5 text-[11px]">Ctrl K</kbd>
+        <kbd className="ml-auto rounded border px-1.5 font-sans text-[11px]">Ctrl K</kbd>
       </button>
 
       {isGm ? <ViewAsSwitcher /> : null}
 
-      <nav className="space-y-0.5">
-        <NavLink to={base} end className={navItem}>
-          <Library /> Codex
-        </NavLink>
-        <NavLink to={`${base}/tree`} className={navItem}>
-          <ListTree /> Content tree
-        </NavLink>
-        <NavLink to={`${base}/atlas`} className={navItem}>
-          <MapIcon /> Atlas
-        </NavLink>
-        {audience === 'gm' ? (
-          <>
-            <NavLink to={`${base}/manuscript`} className={navItem}>
-              <PenLine /> Manuscript
-            </NavLink>
-            <NavLink to={`${base}/writing`} className={navItem}>
-              <Target /> Writing goals
-            </NavLink>
-            <NavLink to={`${base}/word-check`} className={navItem}>
-              <SpellCheck /> Word check
-            </NavLink>
-            <NavLink to={`${base}/arcs`} className={navItem}>
-              <Spline /> Arc tracker
-            </NavLink>
-            <NavLink to={`${base}/tokens`} className={navItem}>
-              <CircleUserRound /> Token maker
-            </NavLink>
-            <NavLink to={`${base}/plot`} className={navItem}>
-              <ClipboardList /> Plot boards
-            </NavLink>
-            <NavLink to={`${base}/todos`} className={navItem}>
-              <ListChecks /> To-do
-            </NavLink>
-            <NavLink to={`${base}/continuity`} className={navItem}>
-              <ShieldCheck /> Continuity
-            </NavLink>
-          </>
-        ) : null}
-        {canComment ? (
-          <NavLink to={`${base}/comments`} className={navItem}>
-            <MessageSquare /> Comments
+      <nav className="space-y-0.5" aria-label="Views">
+        {views.map((item) => (
+          <NavLink key={item.to} to={item.to} end={item.end} className={navItem}>
+            <item.icon /> {item.label}
           </NavLink>
-        ) : null}
-        <NavLink to={`${base}/timeline`} className={navItem}>
-          <CalendarRange /> Timeline
-        </NavLink>
-        <NavLink to={`${base}/graph`} className={navItem}>
-          <Network /> Graph
-        </NavLink>
-        <NavLink to={`${base}/diplomacy`} className={navItem}>
-          <Handshake /> Diplomacy
-        </NavLink>
-        <NavLink to={`${base}/quests`} className={navItem}>
-          <ScrollText /> Quests
-        </NavLink>
-        {audience === 'gm' ? (
-          <NavLink to={`${base}/screen`} className={navItem}>
-            <LayoutDashboard /> GM screen
-          </NavLink>
-        ) : null}
-        {audience === 'gm' || audience === 'player' ? (
-          <>
-            <NavLink to={`${base}/handouts`} className={navItem}>
-              <FileImage /> Handouts
-            </NavLink>
-            <NavLink to={`${base}/sessions`} className={navItem}>
-              <NotebookPen /> Sessions
-            </NavLink>
-            <NavLink to={`${base}/tables`} className={navItem}>
-              <Dices /> Tables & dice
-            </NavLink>
-          </>
-        ) : null}
-        <NavLink to={`${base}/gallery`} className={navItem}>
-          <Images /> Gallery
-        </NavLink>
+        ))}
       </nav>
 
-      <nav className="space-y-0.5">
-        <p className="px-2.5 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Types
-        </p>
+      <NavGroup id="write" title="Write" items={write} />
+      <NavGroup id="explore" title="Explore" items={explore} />
+      <NavGroup id="play" title="Play" items={play} />
+
+      <nav className="space-y-0.5" aria-label="Entry types">
+        <p className="px-2.5 py-1 text-[13px] text-muted-foreground">Entry types</p>
         {types.map((type) => (
           <NavLink key={type.id} to={`${base}/codex/${type.key}`} className={navItem}>
             <EntityIcon icon={type.icon} color={type.color} />
@@ -231,7 +267,7 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
           </>
         ) : null}
         {world.role !== 'owner' ? <LeaveWorld ctx={ctx} /> : null}
-        <div className="border-t pt-3">
+        <div className="mt-2 border-t pt-2">
           <UserMenu />
         </div>
       </div>

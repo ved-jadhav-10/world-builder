@@ -43,7 +43,7 @@ function QuestCard({
         event.dataTransfer.effectAllowed = 'move';
       }}
       className={cn(
-        'space-y-2 rounded-lg border bg-card p-3 text-sm shadow-xs',
+        'space-y-2 rounded-lg border bg-card p-3 text-sm',
         canEdit && 'cursor-grab active:cursor-grabbing',
       )}
     >

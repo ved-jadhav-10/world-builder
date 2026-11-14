@@ -7,14 +7,23 @@
       name="description"
       content="Atlas & Ink: one connected home for your world's maps, lore and chapters."
     />
+    <meta name="theme-color" content="#f1ede3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14171f" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
     <title>Atlas & Ink</title>
+    <script>
+      // Set the theme before the first paint, so a dark desk never flashes white.
+      (function () {
+        var choice = null;
+        try {
+          choice = localStorage.getItem('atlas-theme');
+        } catch (e) {}
+        var dark =
+          choice === 'dark' ||
+          (choice !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

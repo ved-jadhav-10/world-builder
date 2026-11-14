@@ -230,7 +230,7 @@ export function RollPanel({
                 key={entry.id}
                 className={cn(
                   'rounded-lg border bg-card p-3 text-sm',
-                  index === 0 && 'border-primary/40 shadow-xs',
+                  index === 0 && 'border-primary/40',
                 )}
               >
                 <RollResult entry={entry} big={index === 0} />

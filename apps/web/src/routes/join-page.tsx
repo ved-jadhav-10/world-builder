@@ -3,18 +3,13 @@ import { toast } from 'sonner';
 import { INVITE_ROLE_INFO } from '@atlas/shared';
 import { ApiError, errorMessage } from '@/api/client';
 import { useAcceptInvite, useInvitePreview } from '@/api/member-queries';
-import { Brand } from '@/components/brand';
+import { AuthShell } from '@/components/auth-shell';
 import { Button } from '@/components/ui/button';
 import { PageSpinner } from '@/components/ui/misc';
 import { signOut, useSession } from '@/lib/auth-client';
 
 function JoinShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
-      <Brand className="mb-8" />
-      <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">{children}</div>
-    </div>
-  );
+  return <AuthShell chart="hven">{children}</AuthShell>;
 }
 
 /** Where an invite link lands: say what it is for, then sign in or up and join. */
