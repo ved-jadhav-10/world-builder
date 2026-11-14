@@ -3,9 +3,11 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import {
   entityCreateSchema,
   markdownImportSchema,
+  mapProperties,
   markdownLinksSchema,
   matchTypeKey,
   parseMarkdownNote,
+  withPropertyList,
   type MarkdownImportResult,
 } from '@atlas/shared';
 import { db } from '../../db/client';
@@ -63,6 +65,9 @@ export const importRoutes: FastifyPluginAsyncZod = async (app) => {
         const type = typeByKey.get(
           matchTypeKey(note.typeHint, types, request.body.defaultTypeKey),
         )!;
+        // What the note says about itself goes into the type's own fields where it fits; the
+        // rest is listed at the top of the article.
+        const { fields, rest } = mapProperties(note.properties, type.fieldSchema);
         const entity = await createEntity(
           db,
           worldId,
@@ -72,7 +77,8 @@ export const importRoutes: FastifyPluginAsyncZod = async (app) => {
             name,
             aliases: note.aliases,
             summary: note.summary,
-            body: note.body,
+            fields,
+            body: withPropertyList(note.body, rest),
           }),
         );
         taken.add(name.toLowerCase());

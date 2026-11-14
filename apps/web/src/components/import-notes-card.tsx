@@ -2,38 +2,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import { FolderInput, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { MAX_IMPORT_NOTES, parseMarkdownNote, type MarkdownImportResult } from '@atlas/shared';
+import {
+  MAX_IMPORT_NOTES,
+  parseMarkdownNote,
+  type DocxSplit,
+  type MarkdownImportResult,
+} from '@atlas/shared';
 import { api, errorMessage } from '@/api/client';
+import { readImportFiles, type ImportNote } from '@/lib/import-files';
 import { Button } from '@/components/ui/button';
 import { Label, NativeSelect } from '@/components/ui/inputs';
 import { useWorld } from '@/lib/world-context';
 
 /** A request stays well under the server's size limit. */
 const BATCH_BYTES = 1_200_000;
-const NOTE = /\.(md|markdown|txt)$/i;
-
-interface Note {
-  path: string;
-  content: string;
-}
-
-/** Reads the chosen files as notes. A picked folder's own name is dropped from each path. */
-async function readNotes(files: File[]): Promise<Note[]> {
-  const notes: Note[] = [];
-  for (const file of files) {
-    // Obsidian keeps its settings in a dot-folder; those are not notes.
-    const relative = file.webkitRelativePath || file.name;
-    if (!NOTE.test(file.name) || relative.split('/').some((part) => part.startsWith('.'))) continue;
-    const parts = relative.split('/');
-    const path = parts.length > 1 ? parts.slice(1).join('/') : relative;
-    notes.push({ path, content: (await file.text()).slice(0, 200_000) });
-  }
-  return notes;
-}
-
-function batches(notes: Note[]): Note[][] {
-  const out: Note[][] = [];
-  let current: Note[] = [];
+function batches(notes: ImportNote[]): ImportNote[][] {
+  const out: ImportNote[][] = [];
+  let current: ImportNote[] = [];
   let size = 0;
   for (const note of notes) {
     const bytes = note.content.length * 2 + note.path.length + 40;
@@ -58,26 +43,43 @@ export function ImportNotesCard() {
   const [fallback, setFallback] = useState(
     types.some((type) => type.key === 'lore_article') ? 'lore_article' : (types[0]?.key ?? ''),
   );
+  const [split, setSplit] = useState<'auto' | '1' | '2' | 'none'>('auto');
   const [busy, setBusy] = useState('');
-  const [report, setReport] = useState<(MarkdownImportResult & { linked: number }) | null>(null);
+  const [report, setReport] = useState<
+    (MarkdownImportResult & { linked: number; sources: string; ignored: string[] }) | null
+  >(null);
 
   async function run(list: FileList | null) {
     const files = [...(list ?? [])];
     if (!files.length) return;
     setReport(null);
     try {
-      setBusy('Reading the notes…');
-      const notes = await readNotes(files);
+      setBusy('Reading the files…');
+      const read = await readImportFiles(
+        files,
+        split === 'auto' || split === 'none' ? split : (Number(split) as DocxSplit),
+      );
+      const { notes } = read;
       if (!notes.length) {
-        toast.error('No Markdown notes (.md) among those files');
+        toast.error(
+          read.ignored.length
+            ? `Nothing to bring in: ${read.ignored[0]}`
+            : 'No notes among those files (Markdown, Word, or a zip of either)',
+        );
         return;
       }
-      const total: MarkdownImportResult & { linked: number } = {
-        created: 0,
-        skipped: [],
-        byType: {},
-        linked: 0,
-      };
+      const sources = [
+        read.from.notion ? `${read.from.notion} from Notion` : '',
+        read.from.word ? `${read.from.word} from Word documents` : '',
+        read.from.markdown ? `${read.from.markdown} from Markdown notes` : '',
+      ]
+        .filter(Boolean)
+        .join(', ');
+      const total: MarkdownImportResult & {
+        linked: number;
+        sources: string;
+        ignored: string[];
+      } = { created: 0, skipped: [], byType: {}, linked: 0, sources, ignored: read.ignored };
       const groups = batches(notes);
       for (const [index, group] of groups.entries()) {
         setBusy(`Making entries… (${index + 1} of ${groups.length})`);
@@ -120,14 +122,28 @@ export function ImportNotesCard() {
 
   return (
     <section className="space-y-3 rounded-xl border bg-card p-5">
-      <h2 className="font-semibold">Import notes</h2>
+      <h2 className="font-semibold">Import notes and documents</h2>
       <p className="text-sm text-muted-foreground">
-        Bring in a folder of Markdown notes: an Obsidian vault, an export from another tool, or a
-        Markdown export from here. Each note becomes an entry. A note’s <code>type</code> in its
-        front-matter, or the folder it sits in (Characters, Places…), decides its type;{' '}
-        <code>[[links]]</code> between notes become links between entries. Everything arrives
-        GM-only, and a note whose name already exists is left alone, so importing twice is safe.
+        Bring in work from another tool. Each note becomes an entry, GM-only, and a name that is
+        already taken is left alone, so importing twice is safe.
       </p>
+      <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+        <li>
+          <strong className="font-medium text-foreground">Markdown or Obsidian:</strong> choose the
+          folder, or a zip of it. A note’s <code>type</code> in its front-matter, or the folder it
+          sits in (Characters, Places…), decides its type; <code>[[links]]</code> become links.
+        </li>
+        <li>
+          <strong className="font-medium text-foreground">Notion:</strong> in Notion, Export ›
+          Markdown &amp; CSV, then choose the zip as it is. Properties such as Type and Tags are
+          read, and links between pages are kept.
+        </li>
+        <li>
+          <strong className="font-medium text-foreground">Word and Google Docs:</strong> download a
+          Google Doc as Word (.docx), then choose it. Headings, lists, bold, italic and links come
+          across.
+        </li>
+      </ul>
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="import-fallback">Notes that do not say what they are become</Label>
@@ -144,17 +160,31 @@ export function ImportNotesCard() {
             ))}
           </NativeSelect>
         </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="import-split">Cut Word documents into entries</Label>
+          <NativeSelect
+            id="import-split"
+            className="w-auto min-w-48"
+            value={split}
+            onChange={(event) => setSplit(event.target.value as typeof split)}
+          >
+            <option value="auto">At the headings, automatically</option>
+            <option value="1">At every Heading 1</option>
+            <option value="2">At every Heading 2</option>
+            <option value="none">Keep each document as one entry</option>
+          </NativeSelect>
+        </div>
         <Button variant="outline" disabled={!!busy} onClick={() => folderInput.current?.click()}>
           <FolderInput /> Choose a folder
         </Button>
         <Button variant="outline" disabled={!!busy} onClick={() => filesInput.current?.click()}>
-          <Upload /> Choose files
+          <Upload /> Choose files or a zip
         </Button>
         <input
           ref={folderInput}
           type="file"
           className="hidden"
-          aria-label="Folder of notes to import"
+          aria-label="Folder of notes or documents to import"
           // Not in React's types, but every current browser supports picking a folder this way.
           {...({ webkitdirectory: '' } as object)}
           multiple
@@ -164,8 +194,8 @@ export function ImportNotesCard() {
           ref={filesInput}
           type="file"
           className="hidden"
-          aria-label="Notes to import"
-          accept=".md,.markdown,.txt"
+          aria-label="Files to import"
+          accept=".md,.markdown,.txt,.docx,.zip"
           multiple
           onChange={(event) => run(event.target.files)}
         />
@@ -179,7 +209,9 @@ export function ImportNotesCard() {
                 .map(([name, count]) => `${count} ${name}`)
                 .join(', ')})`
             : ''}{' '}
-          and made {report.linked} {report.linked === 1 ? 'link' : 'links'}.
+          and made {report.linked} {report.linked === 1 ? 'link' : 'links'}
+          {report.sources ? ` (${report.sources})` : ''}.
+          {report.ignored.length ? ` Not read: ${report.ignored.slice(0, 4).join('; ')}.` : ''}
           {report.skipped.length
             ? ` Left alone, because the name is already taken: ${report.skipped.slice(0, 8).join(', ')}${report.skipped.length > 8 ? ` and ${report.skipped.length - 8} more` : ''}.`
             : ''}

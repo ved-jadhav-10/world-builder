@@ -76,6 +76,29 @@ describe('importing Markdown notes', () => {
     });
   });
 
+  it('puts properties into the type’s fields and lists the rest in the article', async () => {
+    const gm = await signUpWithWorld(app);
+    const res = await gm.api.post(`${gm.w}/import/markdown`, {
+      notes: [
+        {
+          path: 'Characters/Odo Karr.md',
+          content: '---\nage: 58\nlife status: alive\nhometown: Vesh\nmood: tired\n---\nPatient.',
+        },
+      ],
+    });
+    expect(res.statusCode, res.body).toBe(200);
+    const [odo] = (await gm.api.get(`${gm.w}/entities?limit=5`)).json<Page<EntitySummary>>().items;
+    const full = (await gm.api.get(`${gm.w}/entities/${odo!.id}`)).json<Entity>();
+    expect(full.fields).toMatchObject({ life_status: 'Alive' });
+    expect(String(full.fields.age)).toBe('58');
+    // "hometown" and "mood" are not fields of a character: they stay in the article, in view.
+    const text = JSON.stringify(full.body);
+    expect(text).toContain('hometown:');
+    expect(text).toContain('mood:');
+    expect(text).toContain('Patient.');
+    expect(text).not.toContain('age:');
+  });
+
   it('is for editors only, and checks what it is sent', async () => {
     const gm = await signUpWithWorld(app);
     const player = await joinWorld(app, gm.world.id, 'player');

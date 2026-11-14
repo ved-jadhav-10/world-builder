@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { parseFieldValues } from './fields';
 import type { RichTextDoc } from './schemas/entity';
+import type { FieldDefinition } from './schemas/entity-type';
 
 /*
  * Reading Markdown notes into entries: a vault from Obsidian, a folder of notes from anywhere
@@ -15,6 +17,12 @@ export interface ParsedNote {
   aliases: string[];
   tags: string[];
   summary: string;
+  /**
+   * Every other front-matter line, as the label it was written with and its value: `age: 41`,
+   * `Hometown: Vesh`. The importer puts each into the type's field of that name when there is
+   * one, and lists the rest at the top of the article, so nothing a note said is lost.
+   */
+  properties: [string, string][];
   body: RichTextDoc | null;
   /** Names of the notes this one links to, each once, in order of first mention. */
   links: string[];
@@ -56,10 +64,16 @@ type Inline = { type: 'text'; text: string; marks?: { type: string; attrs?: obje
 type Block = { type: string; attrs?: object; content?: (Block | Inline)[] };
 
 /** The front-matter block, read as plain `key: value` lines and simple lists. */
-function readFrontMatter(text: string): { data: Record<string, string | string[]>; rest: string } {
+function readFrontMatter(text: string): {
+  data: Record<string, string | string[]>;
+  /** Each key as it was written, by its lower-case form. */
+  labels: Record<string, string>;
+  rest: string;
+} {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text);
-  if (!match) return { data: {}, rest: text };
+  if (!match) return { data: {}, labels: {}, rest: text };
   const data: Record<string, string | string[]> = {};
+  const labels: Record<string, string> = {};
   let listKey: string | null = null;
   for (const line of match[1]!.split(/\r?\n/)) {
     const item = /^\s*-\s+(.*)$/.exec(line);
@@ -70,6 +84,7 @@ function readFrontMatter(text: string): { data: Record<string, string | string[]
     const pair = /^([A-Za-z0-9_ -]+):\s*(.*)$/.exec(line);
     if (!pair) continue;
     const key = pair[1]!.trim().toLowerCase();
+    labels[key] = pair[1]!.trim();
     const value = pair[2]!.trim();
     if (value === '') {
       data[key] = [];
@@ -86,7 +101,7 @@ function readFrontMatter(text: string): { data: Record<string, string | string[]
       listKey = null;
     }
   }
-  return { data, rest: text.slice(match[0].length) };
+  return { data, labels, rest: text.slice(match[0].length) };
 }
 
 const unquote = (value: string) => value.replace(/^(['"])(.*)\1$/, '$2').trim();
@@ -216,11 +231,32 @@ function toDoc(markdown: string, links: Set<string>): RichTextDoc | null {
   return blocks.length ? ({ type: 'doc', content: blocks } as RichTextDoc) : null;
 }
 
+/** Front-matter keys that mean something else already, or are only the tool's bookkeeping. */
+const NOT_PROPERTIES = new Set([
+  'type',
+  'category',
+  'title',
+  'name',
+  'aliases',
+  'alias',
+  'tags',
+  'tag',
+  'summary',
+  'description',
+  'cssclass',
+  'cssclasses',
+  'publish',
+  'permalink',
+  'created',
+  'modified',
+  'updated',
+]);
+
 /** One note, read. `path` is where it sat in the vault; its folder may say what it is. */
 export function parseMarkdownNote(path: string, content: string): ParsedNote {
   const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
   const file = parts.pop() ?? 'Untitled';
-  const { data, rest } = readFrontMatter(
+  const { data, labels, rest } = readFrontMatter(
     content.charCodeAt(0) === 0xfeff ? content.slice(1) : content,
   );
   let text = rest;
@@ -246,6 +282,14 @@ export function parseMarkdownNote(path: string, content: string): ParsedNote {
       .filter(Boolean)
       .slice(0, 20),
     summary: (asText(data.summary) || asText(data.description)).slice(0, 2000),
+    properties: Object.entries(data)
+      .filter(([key]) => !NOT_PROPERTIES.has(key))
+      .map(([key, value]): [string, string] => [
+        (labels[key] ?? key).slice(0, 60),
+        (Array.isArray(value) ? value.join(', ') : value).slice(0, 2000),
+      ])
+      .filter(([, value]) => value.trim() !== '')
+      .slice(0, 40),
     body,
     links: [...links],
   };
@@ -304,4 +348,100 @@ export function matchTypeKey(
     if (synonym && types.some((type) => type.key === synonym)) return synonym;
   }
   return types.some((type) => type.key === fallback) ? fallback : (types[0]?.key ?? fallback);
+}
+
+const flat = (value: string) => simplify(value.replace(/_/g, ' '));
+
+/** A property's text as the value a field of this kind takes, or undefined when it does not fit. */
+function fieldValue(field: FieldDefinition, text: string): unknown {
+  const value = text.trim();
+  switch (field.type) {
+    case 'text':
+    case 'long_text':
+      return value;
+    case 'url':
+      return /^https?:\/\//i.test(value) ? value : undefined;
+    case 'number': {
+      const number = Number(value.replace(/,/g, ''));
+      return value !== '' && Number.isFinite(number) ? number : undefined;
+    }
+    case 'boolean':
+      if (/^(yes|true|checked|1)$/i.test(value)) return true;
+      return /^(no|false|unchecked|0)$/i.test(value) ? false : undefined;
+    case 'select':
+      return field.options?.find((option) => option.toLowerCase() === value.toLowerCase());
+    case 'multi_select': {
+      const parts = value
+        .split(/[,;]/)
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const picked = parts.map((part) =>
+        field.options?.find((option) => option.toLowerCase() === part.toLowerCase()),
+      );
+      return parts.length > 0 && picked.every(Boolean) ? picked : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Puts a note's properties into the fields of the type it became, matching on the field's name or
+ * label ("Age", "life status"). A value goes in only if it fits the field (a number for a number,
+ * one of the options for a choice); anything else comes back in `rest`, to be shown in the article.
+ */
+export function mapProperties(
+  properties: readonly [string, string][],
+  fieldSchema: readonly FieldDefinition[],
+): { fields: Record<string, unknown>; rest: [string, string][] } {
+  const fields: Record<string, unknown> = {};
+  const rest: [string, string][] = [];
+  for (const [label, text] of properties) {
+    const wanted = flat(label);
+    const field = fieldSchema.find(
+      (candidate) =>
+        !(candidate.key in fields) &&
+        (flat(candidate.key) === wanted || flat(candidate.label) === wanted),
+    );
+    const value = field ? fieldValue(field, text) : undefined;
+    if (field && value !== undefined) {
+      try {
+        // The field's own rules have the last word.
+        const checked = parseFieldValues([field], { [field.key]: value });
+        if (field.key in checked) {
+          Object.assign(fields, checked);
+          continue;
+        }
+      } catch {
+        // It does not fit after all: it stays in the article.
+      }
+    }
+    rest.push([label, text]);
+  }
+  return { fields, rest };
+}
+
+/** The article with its leftover properties as a short list at the top. */
+export function withPropertyList(
+  body: RichTextDoc | null,
+  rest: readonly [string, string][],
+): RichTextDoc | null {
+  if (rest.length === 0) return body;
+  const list: Block = {
+    type: 'bulletList',
+    content: rest.map(([label, value]) => ({
+      type: 'listItem',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: `${label}:`, marks: [{ type: 'bold' }] },
+            { type: 'text', text: ` ${value}` },
+          ],
+        },
+      ],
+    })),
+  };
+  const content = (body as { content?: Block[] } | null)?.content ?? [];
+  return { type: 'doc', content: [list, ...content] } as RichTextDoc;
 }

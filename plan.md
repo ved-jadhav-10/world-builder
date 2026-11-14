@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 52 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 53 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -685,6 +685,17 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Not verified:** two people editing one board at the same moment in two browsers (the API test covers the refusal), touch gestures on a real tablet, and boards near the size limits.
 - **Deferred:** freehand drawing, boards in the Markdown export, version history for boards, comments on a board, dragging an entry from the Codex list onto a board, and Pinterest or Unsplash import.
 
+## Milestone 53 (Import from Notion, Word and Google Docs): done
+
+- **Notion:** choose the zip from Notion's Export › Markdown & CSV as it is (a large export that Notion splits into zips inside a zip is read as one). Page names lose Notion's IDs, a page in a database takes that database's name as its folder (so "Characters" fills the Character type), links between pages become links between entries, and callouts, toggles and line breaks are reduced to their text. A row's properties are read: Type, Tags, Aliases and Summary mean what they say, Notion's own bookkeeping (Created, Last edited) is dropped, and the rest are treated as below.
+- **Word and Google Docs:** choose a .docx (a Google Doc is downloaded as Word first). Headings, paragraphs, bulleted and numbered lists, bold, italic, links and tables (one line per row) come across. A document is cut into entries at its headings: at Heading 1 when there are several, at Heading 2 when Heading 1 is only the title, or wherever the person chooses, or not at all. The document's name stands in for a folder, so "Characters.docx" fills the Character type.
+- **Properties go into fields:** for every source, including plain Markdown front-matter, a property whose name matches a field of the entry's type (by key or label) goes into that field when its value fits: a number for a number, one of the options for a choice, yes or no for a switch. Anything that does not fit, or has no field, is listed at the top of the article, so nothing a note said is lost or silently changed.
+- **Zips of Markdown** (an Obsidian vault, zipped) are read too, without the folder that wraps them.
+- **How:** all reading happens in the browser (`apps/web/src/lib/import-files.ts`, with `fflate` loaded only when a zip or .docx is chosen) and ends in the same Markdown notes the M51 importer takes, so the server gained no new endpoint and never unpacks anything. The readers are pure and shared: `docx-import.ts` (reads Word's XML without a DOM) and `notion-import.ts`; `mapProperties` and `withPropertyList` are in `markdown-import.ts`.
+- **Verified:** shared tests (7 Word, 6 Notion, 4 properties), web tests (5: files, a broken document, a zip of zips, a zipped vault), an API test for fields, and Chrome (16 checks) with a .docx **written by Word itself** and a zip laid out like a Notion export.
+- **Not verified:** a real Notion workspace export (the reader is written from how the export looks, and tried only on files made to match), a document downloaded from Google Docs, and large files.
+- **Deferred:** pictures inside documents and exports, Notion's database views and relations beyond links, footnotes and comments in Word, bringing a Word document in as manuscript chapters, and the Kanka, World Anvil, Campfire and Scrivener importers.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
@@ -697,7 +708,7 @@ Launch is not near, so the order is features first; launch readiness (A), integr
 
 ### Agreed next steps (November 14, 2026)
 Chosen with the owner after comparing against vvd. Boards (M52) were the first of these.
-1. **Importers for Notion and for Word and Google Docs** (.docx), reusing the Markdown importer; Kanka after. World Anvil waits until there is a real export file to build against.
+1. **Importers for Notion and for Word and Google Docs** (.docx), reusing the Markdown importer: done in M53. Kanka after. World Anvil waits until there is a real export file to build against.
 2. **A look prototype for maps**, as still pictures, for the owner to approve before anything is built on it: the sample world drawn as a "hand-coloured atlas" (a watercolour wash and painted relief shading under ink linework) at three zoom levels and once tilted in 3D.
 3. **Height and a 3D relief view for maps people already have:** paint height over an uploaded map (or import it from Azgaar), shade the flat map from it, and tilt it into 3D (three.js) with pins and journeys on the ground. This is the part no rival has, and it works with the map tools people already use.
 4. **The map painting editor, last,** and only if the look holds up and people ask to draw maps in the app: painted height and ground types, ink coastlines, rivers and roads, stamps drawn as ink line art with a wash fill, pigment sets, and Ink and Colour sliders so one map can lean towards a chart or a painting.

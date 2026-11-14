@@ -14,7 +14,7 @@ export default defineConfig({
   // Pre-bundle what the lazily loaded scene editor and map viewer import, so opening the first
   // scene or map in dev does not trigger a dependency re-optimisation and page reload.
   optimizeDeps: {
-    include: ['@tiptap/pm/state', '@tiptap/pm/view', 'leaflet', 'react-dom/server'],
+    include: ['@tiptap/pm/state', '@tiptap/pm/view', 'leaflet', 'react-dom/server', 'fflate'],
   },
   server: {
     port: 5173,

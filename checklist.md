@@ -101,7 +101,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## H. Integrations
 
-- [ ] **Importers** [v1]. Markdown notes and Obsidian vaults import as entries with their links (M51). Still to do, building first whichever the research's interviews say users most want to leave: World Anvil, Kanka, Campfire, Obsidian and Markdown, Scrivener and DOCX, Notion, Homebrewery. (vvd already imports from World Anvil, Obsidian, Notion, Google Docs and Word.)
+- [ ] **Importers** [v1]. Markdown notes and Obsidian vaults import as entries with their links (M51); Notion exports and Word or Google Docs documents too, with properties going into the type's fields (M53). Still to do, building first whichever the research's interviews say users most want to leave: World Anvil (needs a real export file), Kanka, Campfire, Scrivener, Homebrewery. (vvd already imports from World Anvil, Obsidian, Notion, Google Docs and Word.)
 - [ ] **Discord webhooks** (changes and session recaps) [v1]; a **Discord bot** for lore lookups and table rolls [v2].
 - [ ] **VTT exports:** Foundry journal and actor packs, an Owlbear extension, Roll20 handouts [v2].
 - [ ] **Link to D&D Beyond or Demiplane** character sheets, read-only [v3].

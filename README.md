@@ -50,12 +50,12 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 
 **Bring it in, take it with you**
 
-- **Import:** a folder of Markdown notes or an Obsidian vault becomes entries, with their links.
+- **Import:** a folder of Markdown notes or an Obsidian vault, a Notion export, or a Word or Google Docs document becomes entries, with their links. Details such as an age or a hometown go into the matching fields.
 - **Export:** your world as Markdown notes for Obsidian or a full JSON backup; the manuscript as Word, EPUB or PDF; a story bible as PDF.
 
 ## Where it stands
 
-Fifty-two milestones are built and tested: the four views (Codex, Atlas, Manuscript, Timeline), the tools for running a game, sharing with players and readers, the reader wiki, and the look and sound. It runs on your own machine today, and as one container on a server ([DEPLOY.md](DEPLOY.md)). What is left before real users is mostly not code: hosting, email, legal review and payments, all listed in [USER_TASKS.md](USER_TASKS.md). The plan and design decisions are in [plan.md](plan.md), what is still to build is in [checklist.md](checklist.md), and the market research is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
+Fifty-three milestones are built and tested: the four views (Codex, Atlas, Manuscript, Timeline), the tools for running a game, sharing with players and readers, the reader wiki, and the look and sound. It runs on your own machine today, and as one container on a server ([DEPLOY.md](DEPLOY.md)). What is left before real users is mostly not code: hosting, email, legal review and payments, all listed in [USER_TASKS.md](USER_TASKS.md). The plan and design decisions are in [plan.md](plan.md), what is still to build is in [checklist.md](checklist.md), and the market research is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
 
 ## Try it
 

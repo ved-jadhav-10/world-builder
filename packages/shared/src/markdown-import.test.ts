@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { richTextToMarkdown } from './markdown';
-import { matchTypeKey, parseMarkdownNote } from './markdown-import';
+import {
+  mapProperties,
+  matchTypeKey,
+  parseMarkdownNote,
+  withPropertyList,
+} from './markdown-import';
+import type { FieldDefinition } from './schemas/entity-type';
 
 const types = [
   { key: 'character', name: 'Character' },
@@ -78,5 +84,90 @@ describe('reading Markdown notes', () => {
     expect(matchTypeKey('Ships of the line', types, 'lore_article')).toBe('ship');
     expect(matchTypeKey('Recipes', types, 'lore_article')).toBe('lore_article');
     expect(matchTypeKey(null, types, 'missing')).toBe('character');
+  });
+});
+
+describe('properties', () => {
+  const schema: FieldDefinition[] = [
+    { key: 'age', label: 'Age', type: 'number' },
+    { key: 'life_status', label: 'Life status', type: 'select', options: ['Alive', 'Dead'] },
+    { key: 'home', label: 'Hometown', type: 'text' },
+    { key: 'traits', label: 'Traits', type: 'multi_select', options: ['Dry', 'Kind', 'Wary'] },
+    { key: 'ally', label: 'Is an ally', type: 'boolean' },
+    { key: 'site', label: 'Website', type: 'url' },
+    { key: 'moon', label: 'Moon', type: 'date' },
+  ];
+
+  it('are every front-matter line the importer does not already use, as written', () => {
+    const note = parseMarkdownNote(
+      'x.md',
+      [
+        '---',
+        'type: character',
+        'Age: 41',
+        'Life status: alive',
+        'created: 2026-01-01',
+        'cssclasses: [wide]',
+        'empty:',
+        '---',
+        'Body',
+      ].join('\n'),
+    );
+    expect(note.properties).toEqual([
+      ['Age', '41'],
+      ['Life status', 'alive'],
+    ]);
+  });
+
+  it('go into the fields they name when the value fits, and come back otherwise', () => {
+    const { fields, rest } = mapProperties(
+      [
+        ['Age', '1,041'],
+        ['life status', 'ALIVE'],
+        ['Hometown', 'Vesh'],
+        ['traits', 'dry; Wary'],
+        ['is an ally', 'Yes'],
+        ['Website', 'example.com'],
+        ['Moon', 'Third moon'],
+        ['Mood', 'Wistful'],
+      ],
+      schema,
+    );
+    expect(fields).toEqual({
+      age: 1041,
+      life_status: 'Alive',
+      home: 'Vesh',
+      traits: ['Dry', 'Wary'],
+      ally: true,
+    });
+    expect(rest).toEqual([
+      ['Website', 'example.com'],
+      ['Moon', 'Third moon'],
+      ['Mood', 'Wistful'],
+    ]);
+  });
+
+  it('leave what does not fit: a word for a number, a choice that is not offered', () => {
+    const { fields, rest } = mapProperties(
+      [
+        ['Age', 'about forty'],
+        ['Life status', 'Missing'],
+        ['Traits', 'Dry, Cruel'],
+        ['Hometown', 'Vesh'],
+        ['hometown', 'Elsewhere'],
+      ],
+      schema,
+    );
+    expect(fields).toEqual({ home: 'Vesh' });
+    expect(rest.map(([label]) => label)).toEqual(['Age', 'Life status', 'Traits', 'hometown']);
+  });
+
+  it('are listed at the top of the article when they are left over', () => {
+    const body = parseMarkdownNote('x.md', 'Hello there.').body;
+    const withList = withPropertyList(body, [['Mood', 'Wistful']]);
+    expect(JSON.stringify(withList)).toMatch(/^\{"type":"doc","content":\[\{"type":"bulletList"/);
+    expect(JSON.stringify(withList)).toContain('Hello there.');
+    expect(withPropertyList(body, [])).toBe(body);
+    expect(withPropertyList(null, [['A', 'b']])).toMatchObject({ type: 'doc' });
   });
 });
