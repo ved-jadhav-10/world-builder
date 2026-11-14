@@ -73,8 +73,9 @@ export const wikiImageUrl = (slug: string, imageId: string, which: 'file' | 'thu
 
 const settingsKey = (worldId: string) => ['wiki-settings', worldId];
 
-export function useWikiSettings(worldId: string) {
+export function useWikiSettings(worldId: string, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: settingsKey(worldId),
     queryFn: () => api<WikiSettings>('GET', `/worlds/${worldId}/wiki-settings`),
   });

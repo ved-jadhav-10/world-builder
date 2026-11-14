@@ -1,7 +1,9 @@
 import {
   CalendarRange,
   CircleUserRound,
+  BookOpen,
   ChevronDown,
+  ExternalLink,
   ChevronLeft,
   ClipboardList,
   ListChecks,
@@ -41,6 +43,7 @@ import { errorMessage } from '@/api/client';
 import { useLeaveWorld } from '@/api/member-queries';
 import { useEntityTypes, useWorldBySlug } from '@/api/queries';
 import { useCalendar } from '@/api/timeline-queries';
+import { useWikiSettings } from '@/api/wiki-queries';
 import { AmbienceControl } from '@/components/ambience-control';
 import { BrandMark } from '@/components/brand';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -153,6 +156,8 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
   // Only someone who can edit has a GM view to switch away from (and back to).
   const isGm = world.role === 'owner' || world.role === 'editor';
   const gm = audience === 'gm';
+  // Only editors may read the wiki's settings; for them, an open wiki gets a link here.
+  const wiki = useWikiSettings(world.id, canEdit);
   const atTable = gm || audience === 'player';
 
   // The four views of one world come first; the rest is grouped by what you are doing.
@@ -237,6 +242,18 @@ function Sidebar({ ctx, onSearch }: { ctx: WorldContextValue; onSearch: () => vo
       <NavGroup id="write" title="Write" items={write} />
       <NavGroup id="explore" title="Explore" items={explore} />
       <NavGroup id="play" title="Play" items={play} />
+
+      {wiki.data?.enabled ? (
+        <a
+          href={`/wiki/${world.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-foreground/85 hover:bg-muted hover:text-foreground"
+        >
+          <BookOpen /> Reader wiki
+          <ExternalLink className="ml-auto size-3.5! text-muted-foreground" />
+        </a>
+      ) : null}
 
       <nav className="space-y-0.5" aria-label="Entry types">
         <p className="px-2.5 py-1 text-[13px] text-muted-foreground">Entry types</p>
