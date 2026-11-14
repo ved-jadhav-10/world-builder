@@ -27,7 +27,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [x] **Series codex:** entries are shared across every book by default, or scoped to one book or several (M34).
 - [x] **Mass edit:** bulk visibility, tag and trash from a type's list (M16). Still to do: moving entries between types, and bulk edit from search results [MVP].
 - [x] **To-do lists:** a world to-do list for the GM and editors; a task can point at an entry (M21). Still to do: due dates, priorities and manual ordering [MVP].
-- [x] **Saved filters and entry templates:** per-person saved filters (tag, visibility, sort) on a type's list, and entry templates made from an entry (M22). Still to do: **world templates** (starting a new world from a ready-made one) [MVP].
+- [x] **Saved filters and entry templates:** per-person saved filters (tag, visibility, sort) on a type's list, and entry templates made from an entry (M22). A new world can start from the **sample world** (M50). Still to do: more ready-made worlds, and saving your own world as a template.
 - [x] **More built-in types:** Religion, Language, Magic or Tech System and Glossary Term, with ready-made fields, added to new and existing worlds (M19).
 - [x] **Relationship graph and family trees**, generated from relationship data (M10). Still to do: dragging nodes, and aunts, uncles and cousins in the tree [v1].
 - [x] **Arc tracker** showing how a name, details and links change across chapters or scenes, powered by progressions (M26).
@@ -62,7 +62,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 
 ## D. Running the game (GM tools)
 
-- [x] **GM screen** with widgets: dice, table roller, pinned entries, scratchpad, clocks and the current session (M9). Still to do: drag to rearrange, and an initiative tracker (see the v2 item below) [v1].
+- [x] **GM screen** with widgets: dice, table roller, pinned entries, scratchpad, clocks and the current session (M9), rearranged by dragging (M50).
 - [x] **Session notes and recaps** linked to the entries involved (M9). Still to do: live tables embedded in prep notes [v1].
 - [x] **Player handouts** (text and a picture) revealed to players, who are told within seconds by polling (M20). Still to do: instant push, and handouts tied to scenes, entries and pins [v1].
 - [x] **Shops and merchants:** a "Wares for sale" list on locations and characters, with prices and optional stock (M40). Still to do: a shop view for players, buying into a character's inventory, and linking wares to item entries [v1].
@@ -95,7 +95,7 @@ Tags in brackets are the research's phase for the item (MVP, v1, v2, v3); "defer
 - [ ] **Real-time co-editing** (Yjs with Hocuspocus), live editing indicators, an activity feed [v2].
 - [ ] **Offline drafting** (y-indexeddb, cached tiles) [v2]; a Tauri **desktop app** [v3].
 - [ ] **Mood boards and a whiteboard** (tldraw, check its licence, or Excalidraw), expanding cards and frames, embedded media; Pinterest and Unsplash import [v1/v2].
-- [x] **Audio:** soundtrack links (Spotify, YouTube, Tabletop Audio or any web address) on locations, characters and sessions (M42), and a built-in **ambience player** with six scenes of generated music and weather (M48). Still to do: links on manuscript scenes, and playing linked tracks inside the app [v2].
+- [x] **Audio:** soundtrack links (Spotify, YouTube, Tabletop Audio or any web address) on locations, characters and sessions (M42), and a built-in **ambience player** with six scenes of generated music and weather (M48). Linked tracks on YouTube, Spotify and SoundCloud play inside the app (M50). Still to do: links on manuscript scenes.
 - [ ] **Public API** that can read and write world data [v3]; a **plugin, theme and template marketplace** [v3].
 - [ ] A **commission tracker** for artists [v3].
 

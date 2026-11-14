@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 49 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 50 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -651,6 +651,17 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** shared tests (5) and API tests (11: closed by default, start, as-of names in page and index, secrets, held-back entries and their links, unknown chapter, titles, password and pass invalidation, permissions, the gate hidden from members, GM-only fields), the full suite, and Chrome with three real sessions (author sets the gate and opens the wiki in the app; a visitor with no account steps through chapters; a stranger meets the password), 19 checks, phone width included.
 - **Limits:** an article's text is shown as written, so facts that change belong in progressions and late reveals in held-back entries (a "reveal after chapter" block inside an article is the obvious next step). Maps, the timeline and the relationship graph are not on the wiki yet. Readers signed in to the app with the Reader role are not gated by chapter (they have no stated progress).
 - **Deferred:** spoiler blocks inside articles, fields revealed after a chapter, maps and timeline on the wiki, a per-reader progress for signed-in readers, server-side rendering for search engines, custom domains and analytics.
+
+## Milestone 50 (The sample world, and smaller things): done
+
+- **Start from the sample.** The New world dialog offers "A blank world" or "The sample world". `POST /worlds` takes `template: 'blank' | 'sample'`; the sample is filled in by `db/sample-world.ts` (if that fails the new world is removed again, so nobody is left with half of one). `pnpm db:seed` uses the same content and also opens the demo world's reader wiki.
+- **What the sample holds** (Aerth): sixteen entries across people, places, a faction, an item, an event, two quests and a session, with public, player-only and GM-only among them and secret blocks in two articles; links, one of them dated; changes over time by date (Mira's life) and by scene (public, for the wiki); a three-chapter manuscript whose scenes mention the entries; a rumour table, a to-do list and a tavern's wares; and an entry held back from wiki readers until the last chapter.
+- **A chart drawn by code** (`db/sample-map.ts`): an archipelago in the manner of an old sea chart (coasts with shallows and hatching, a mountain spine, woods, wind roses with compass lines, a neatline, a scale and a title), made as an SVG from a fixed seed, so no image file sits in the repository and nobody's artwork is borrowed. It returns the spots for the sample's pins, coast road and sea lane, so they always sit on the right coast. The map goes through the normal pipeline (PNG, then tiles).
+- **GM screen:** widgets can be dragged by a grip to rearrange them; the arrow buttons stay for keyboard and touch.
+- **Soundtrack links play in the app:** a link to a track or playlist on YouTube, Spotify or SoundCloud gets a play button on the entry (`lib/media-embed.ts`, tested). The service's player loads only when pressed (YouTube through its no-cookie address), so opening an entry tells third parties nothing. Other links stay plain links.
+- **Wrong addresses and crashes** get a full page beside Ortelius's sea monsters ("Off the edge of the map") instead of a small box.
+- **Verified:** an API test (blank stays empty; the sample's counts, manuscript, map ready with its eight features, table, to-dos, and the wiki reading correctly at the start, chapter 2 and the end), the seed run against the test database, and Chrome (the dialog, then the codex, chart with pins, timeline, a scene with recognised names, quests, graph and tables; no failed requests).
+- **Deferred:** more ready-made worlds (a campaign starter, a novel planner), saving one of your own worlds as a template, and a nested city map in the sample.
 
 ## Roadmap: what's left
 

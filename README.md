@@ -56,7 +56,7 @@ pnpm db:seed             # optional: a demo world, sign in as demo@atlas.local /
 pnpm dev                 # open http://localhost:5173
 ```
 
-The demo world, Aerth, has characters, places, a calendar, a timeline, quests, and a mix of public and secret entries, so "view as a player" has something to show. It also has a real player (`player@atlas.local`) and reader (`reader@atlas.local`), both with the password `demo-password`, so you can sign in as them in a private window and compare. Maps and pictures are uploads, so add your own.
+The demo world, Aerth, has a chart with pins, a cast, a three-chapter manuscript, a calendar, a timeline, quests, and a mix of public and secret entries, so "view as a player" has something to show. It also has a real player (`player@atlas.local`) and reader (`reader@atlas.local`), both with the password `demo-password`, so you can sign in as them in a private window and compare. Its reader wiki is open at `/wiki/aerth`: pick a chapter and watch the names change. You can also make your own copy of Aerth at any time: New world, then "The sample world".
 
 ## For developers
 

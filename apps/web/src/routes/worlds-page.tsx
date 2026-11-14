@@ -13,12 +13,13 @@ import { Input, Label, Textarea } from '@/components/ui/inputs';
 import { Badge, EmptyState, PageSpinner } from '@/components/ui/misc';
 import { UserMenu } from '@/components/user-menu';
 import { WorldCover } from '@/components/world-cover';
-import { timeAgo } from '@/lib/utils';
+import { cn, timeAgo } from '@/lib/utils';
 
 function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const createWorld = useCreateWorld();
   const navigate = useNavigate();
+  const [template, setTemplate] = useState<'blank' | 'sample'>('blank');
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,6 +28,7 @@ function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
       const world = await createWorld.mutateAsync({
         name: String(form.get('name')),
         description: String(form.get('description') ?? ''),
+        template,
       });
       setOpen(false);
       void navigate(`/w/${world.slug}`);
@@ -43,6 +45,40 @@ function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
         description="You can rename it or change the description later."
       >
         <form onSubmit={onSubmit} className="space-y-4">
+          <fieldset className="grid gap-2 sm:grid-cols-2">
+            <legend className="mb-1.5 text-[13px] font-medium text-muted-foreground">
+              Start from
+            </legend>
+            {(
+              [
+                ['blank', 'A blank world', 'The built-in entry types and nothing else.'],
+                [
+                  'sample',
+                  'The sample world',
+                  'Aerth: a chart, a cast, three chapters and a quest, to explore or take apart.',
+                ],
+              ] as const
+            ).map(([value, title, detail]) => (
+              <label
+                key={value}
+                className={cn(
+                  'cursor-pointer rounded-lg border p-3 text-sm transition-colors',
+                  template === value ? 'border-foreground bg-muted' : 'hover:bg-muted/60',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="template"
+                  value={value}
+                  checked={template === value}
+                  onChange={() => setTemplate(value)}
+                  className="sr-only"
+                />
+                <span className="block font-medium">{title}</span>
+                <span className="mt-0.5 block text-[13px] text-muted-foreground">{detail}</span>
+              </label>
+            ))}
+          </fieldset>
           <div className="space-y-1.5">
             <Label htmlFor="world-name">Name</Label>
             <Input
@@ -52,6 +88,8 @@ function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
               maxLength={120}
               placeholder="e.g. Aerth"
               autoFocus
+              key={template}
+              defaultValue={template === 'sample' ? 'Aerth' : ''}
             />
           </div>
           <div className="space-y-1.5">
@@ -65,7 +103,9 @@ function NewWorldDialog({ trigger }: { trigger: React.ReactNode }) {
           </div>
           <DialogFooter>
             <Button type="submit" disabled={createWorld.isPending}>
-              Create world
+              {createWorld.isPending && template === 'sample'
+                ? 'Drawing the chart…'
+                : 'Create world'}
             </Button>
           </DialogFooter>
         </form>
