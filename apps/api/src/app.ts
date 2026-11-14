@@ -1,4 +1,6 @@
+import { resolve } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import {
   serializerCompiler,
@@ -27,6 +29,7 @@ import { exportRoutes } from './modules/export/routes';
 import { galleryRoutes } from './modules/gallery/routes';
 import { graphRoutes } from './modules/graph/routes';
 import { gmScreenRoutes } from './modules/gm-screen/routes';
+import { importRoutes } from './modules/import/routes';
 import { inviteRoutes, memberRoutes } from './modules/members/routes';
 import { manuscriptRoutes } from './modules/manuscript/routes';
 import { plotRoutes } from './modules/plot/routes';
@@ -77,6 +80,7 @@ const worldScopedRoutes: FastifyPluginAsyncZod = async (app) => {
   await app.register(tableRoutes);
   await app.register(memberRoutes);
   await app.register(wikiSettingsRoutes);
+  await app.register(importRoutes);
 };
 
 export async function buildApp(
@@ -104,9 +108,18 @@ export async function buildApp(
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   app.setErrorHandler(errorHandler);
-  app.setNotFoundHandler((_request, reply) =>
-    reply.status(404).send({ error: 'Not Found', message: 'Route not found' }),
-  );
+  // In production one process is the whole site: built pages are served from WEB_DIST, and any
+  // address that is not a file or an API route gets the app, which does its own routing.
+  const webDist = env.WEB_DIST ? resolve(env.WEB_DIST) : null;
+  if (webDist) {
+    await app.register(fastifyStatic, { root: webDist, wildcard: false, maxAge: '1h' });
+  }
+  app.setNotFoundHandler((request, reply) => {
+    if (webDist && request.method === 'GET' && !request.url.startsWith('/api/')) {
+      return reply.header('cache-control', 'no-cache').sendFile('index.html');
+    }
+    return reply.status(404).send({ error: 'Not Found', message: 'Route not found' });
+  });
   app.decorateRequest('user', null);
   app.decorateRequest('world', null);
 

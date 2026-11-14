@@ -35,13 +35,23 @@ Atlas & Ink keeps all of it in one linked web. Everything in your world is an **
 - **Quest log:** a board of quests (not started, ongoing, completed, abandoned), linked to the people and places involved.
 - **Galleries:** portraits and artwork for each entry, tagged to a moment in the story, plus a gallery for the whole world.
 
-**Take it with you**
+**Share it without spoiling it**
 
-- **Export:** download your world as Markdown notes for Obsidian (one per entry, with links and pictures) or as a full JSON backup.
+- **Reader wiki:** open a public, read-only companion to your world. Readers say which chapter they have reached and see every entry as it stood then: later names, facts and links stay hidden, and entries you hold back appear when their chapter is read. An optional password keeps it to beta readers.
+
+**Set the mood**
+
+- **Ambience:** six scenes of quiet music with weather under it (a scriptorium, a tavern hearth, rain, open sea, a night wood, deep places), made in your browser, for writing or for the table. Soundtrack links on YouTube, Spotify and SoundCloud play inside an entry.
+- **Two themes:** Vellum by day, Lamplight by night.
+
+**Bring it in, take it with you**
+
+- **Import:** a folder of Markdown notes or an Obsidian vault becomes entries, with their links.
+- **Export:** your world as Markdown notes for Obsidian or a full JSON backup; the manuscript as Word, EPUB or PDF; a story bible as PDF.
 
 ## Where it stands
 
-The planned milestones are built: Codex, Manuscript, Atlas, Timeline, the GM tools, invites for players, readers and co-GMs, and accounts with email confirmation, password reset, account deletion and request limits. Email goes through Resend once you set it up; until then the messages print to the API log. Next is getting it ready for real users: hosting, file storage in the cloud, the legal pages and billing. The plan and the design decisions are in [plan.md](plan.md), what is left to build is in [checklist.md](checklist.md), and the market research behind the product is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
+Fifty-one milestones are built and tested: the four views (Codex, Atlas, Manuscript, Timeline), the tools for running a game, sharing with players and readers, the reader wiki, and the look and sound. It runs on your own machine today, and as one container on a server ([DEPLOY.md](DEPLOY.md)). What is left before real users is mostly not code: hosting, email, legal review and payments, all listed in [USER_TASKS.md](USER_TASKS.md). The plan and design decisions are in [plan.md](plan.md), what is still to build is in [checklist.md](checklist.md), and the market research is in [PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md).
 
 ## Try it
 

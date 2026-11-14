@@ -22,6 +22,8 @@ const schema = z.object({
   API_PORT: z.coerce.number().int().default(3000),
   /** Where uploaded map images and their tiles are kept; relative paths start at the repo root. */
   STORAGE_DIR: z.string().min(1).default('storage'),
+  /** The built web app's folder. When set, the API serves it too, so one process is the whole site. */
+  WEB_DIST: z.string().min(1).optional(),
   /** `console` prints each email to the API log (development); `resend` sends it for real. */
   EMAIL_PROVIDER: z.enum(['console', 'resend']).default('console'),
   RESEND_API_KEY: z.string().min(1).optional(),

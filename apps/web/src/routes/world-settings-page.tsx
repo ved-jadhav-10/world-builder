@@ -13,6 +13,7 @@ import {
   useUpdateWorld,
 } from '@/api/queries';
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { ImportNotesCard } from '@/components/import-notes-card';
 import { ManuscriptExportDialog } from '@/components/manuscript-export-dialog';
 import { Button } from '@/components/ui/button';
 import { WikiSettingsCard } from '@/components/wiki-settings-card';
@@ -116,6 +117,8 @@ export function WorldSettingsPage() {
       </section>
 
       <WikiSettingsCard />
+
+      <ImportNotesCard />
 
       <section className="space-y-3 rounded-xl border bg-card p-5">
         <h2 className="font-semibold">Export</h2>

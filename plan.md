@@ -2,7 +2,7 @@
 
 **Product** ([PREREQUISITE_RESEARCH.md](PREREQUISITE_RESEARCH.md)): one linked graph of story entities, seen through 3 views (Atlas = maps, Codex = characters/lore, Manuscript = chapters), plus a GM mode. The full MVP is about 5 months of work.
 
-**Status:** Milestones 1 to 50 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
+**Status:** Milestones 1 to 51 are built, tested and on `main`; M2 to M25 each have a "done" section further down. Everything still to do is ticked off in [checklist.md](checklist.md), and the [Roadmap](#roadmap-whats-left) at the end gives the order. From here down to Verification is the original M1 plan, kept as written; notes in square brackets mark where a later milestone changed it.
 
 **This milestone:** auth + Postgres + the entity/type/relationship model + a working **Codex** (create, edit, search, link, trash, export). Atlas and Manuscript come later and build on this model. VibeWise is skipped.
 
@@ -663,6 +663,16 @@ All built; each has a "done" section below: **M2** Manuscript, **M3** Atlas, **M
 - **Verified:** an API test (blank stays empty; the sample's counts, manuscript, map ready with its eight features, table, to-dos, and the wiki reading correctly at the start, chapter 2 and the end), the seed run against the test database, and Chrome (the dialog, then the codex, chart with pins, timeline, a scene with recognised names, quests, graph and tables; no failed requests).
 - **Deferred:** more ready-made worlds (a campaign starter, a novel planner), saving one of your own worlds as a template, and a nested city map in the sample.
 
+## Milestone 51 (Markdown import, and a way to deploy): done
+
+- **Import notes** (World settings › Import notes): a folder or a set of Markdown files becomes entries, one per note. Made for Obsidian vaults, and it reads this app's own Markdown export too. A note's type comes from `type:` in its front-matter, else from the folder it sits in ("Characters", "NPCs", "Places", "Cities" and the like are understood), else from a type you choose. Aliases, tags and a summary are read from the front-matter; headings, lists, quotes, code, bold, italic and web links are kept; `[[wikilinks]]` become links of a new kind, "mentions" / "mentioned in". Everything arrives GM-only, and a note whose name already exists is skipped, so importing twice adds nothing.
+- **How:** the browser reads the files and sends text in batches (`POST /import/markdown`, then `/import/markdown/links` once every note exists), so there is no zip to unpack or temp file on the server. The reader is pure and shared (`packages/shared/src/markdown-import.ts`, tested); links that are not http(s) stay plain text.
+- **One container to deploy:** the API can now serve the built web app (`WEB_DIST`, through `@fastify/static`, with any non-API address falling through to the app), and `dist/migrate.js` brings the database up to date without Drizzle Kit. A `Dockerfile`, `docker-compose.prod.yml` and `.env.production.example` build and run the whole thing with Postgres; [DEPLOY.md](DEPLOY.md) has the steps, settings, updates, backups and limits.
+- **For the owner:** [USER_TASKS.md](USER_TASKS.md) lists what only a person can do (listen to the music, hosting, email, storage, legal review, payments, interviews) and the decisions taken on their behalf. Draft terms, privacy policy and content rules are in [docs/legal/](docs/legal/), marked as drafts needing review and not linked from the app.
+- **Verified:** shared tests (4) and API tests (2) for the import, Chrome (a folder with a hidden settings folder: four entries by folder, four links, the entry opens with them), the production bundle started locally, and the Docker image built and started against the local database (migrations ran, pages, assets and API answered, running as a non-root user).
+- **Not verified:** a real Obsidian vault of any size, and a deployment on a real server behind HTTPS.
+- **Deferred:** importers for World Anvil, Kanka, Campfire, Scrivener and Notion (each needs sample exports from real users first), pictures inside a vault, restoring from this app's JSON export, and a smaller image.
+
 ## Roadmap: what's left
 
 The to-do list is in [checklist.md](checklist.md): every feature not built yet, grouped by area (A to H, plus the validation work in I) and tagged with the research's phase (MVP, v1, v2, v3). This section keeps the decisions that go with it.
@@ -671,7 +681,7 @@ The to-do list is in [checklist.md](checklist.md): every feature not built yet, 
 Launch is not near, so the order is features first; launch readiness (A), integrations (H) and validation (I) come last.
 1. **The rest of D, E and G** (B and C are done as of M38): GM tools, players and membership, co-editing and so on, as the checklist lists them.
 2. **The rest of F.** The reader wiki and its spoiler gating shipped in M49, behind a server switch that stays off in production until the moderation and legal items in A are done. Still open: spoiler blocks inside articles, and maps and the timeline on the wiki.
-3. **Last:** integrations and importers (H), validation (I), and launch readiness (A): object storage, deployment, legal pages and age rule, billing.
+3. **Last:** the rest of the importers (H; Markdown and Obsidian shipped in M51), validation (I), and launch readiness (A): object storage, a real deployment (the container and guide exist since M51), legal review and age rule, billing. What needs the owner is listed in [USER_TASKS.md](USER_TASKS.md).
 
 ### Competitor check: vvd (November 10, 2026)
 [vvd](https://vvd.world) already ships most of what F, G and H list: public wikis, real-time co-editing, offline and native apps, a whiteboard and importers. We are deeper on running games, progressions and continuity, and play maps. Details are in the research's [vvd section](PREREQUISITE_RESEARCH.md#vvd-the-closest-all-in-one-rival). What it changes:
